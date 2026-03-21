@@ -8,8 +8,7 @@ import {
 } from '../utils/notifications';
 import { createWSClient } from '../utils/websocket';
 import { useStore } from '../store';
-
-const WS_URL = 'wss://api.zbr.uz/ws/vendor';
+import { ENDPOINTS } from '../constants/api';
 
 /**
  * Call once in root layout. Handles:
@@ -21,7 +20,7 @@ export function useNotifications() {
   const router = useRouter();
   const setPushToken = useStore((s) => s.setPushToken);
   const pushToken = useStore((s) => s.pushToken);
-  const wsRef = useRef(createWSClient(WS_URL));
+  const wsRef = useRef(createWSClient(ENDPOINTS.ws));
 
   // 1. Request push permissions and save token (max 3 attempts)
   useEffect(() => {

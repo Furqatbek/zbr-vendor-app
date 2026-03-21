@@ -2,7 +2,7 @@
  * WebSocket client for real-time order & notification updates.
  *
  * Usage:
- *   const ws = createWSClient('wss://api.zbr.uz/ws');
+ *   const ws = createWSClient(ENDPOINTS.ws);
  *   ws.connect(pushToken);
  *   ws.onMessage((event) => { ... });
  *   ws.disconnect();
