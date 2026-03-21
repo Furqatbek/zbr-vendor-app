@@ -1,7 +1,9 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography } from '../../constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors, Typography, Spacing } from '../../constants/theme';
 import { useStore } from '../../store';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -9,6 +11,10 @@ type IconName = React.ComponentProps<typeof Ionicons>['name'];
 export default function TabLayout() {
   const orders = useStore((s) => s.orders);
   const newOrderCount = orders.filter((o) => o.status === 'received').length;
+  const insets = useSafeAreaInsets();
+
+  // Ensure tab bar sits above the device's system navigation area
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 8 : 0);
 
   return (
     <Tabs
@@ -19,10 +25,15 @@ export default function TabLayout() {
           backgroundColor: Colors.white,
           borderTopColor: Colors.gray200,
           borderTopWidth: 1,
+          paddingBottom: bottomInset,
+          height: 56 + bottomInset,
         },
         tabBarLabelStyle: {
           ...Typography.caption2,
           fontWeight: '500',
+        },
+        tabBarItemStyle: {
+          paddingTop: 6,
         },
         headerStyle: {
           backgroundColor: Colors.white,
