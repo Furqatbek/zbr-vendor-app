@@ -18,9 +18,11 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      sceneContainerStyle={{ paddingTop: insets.top, backgroundColor: Colors.gray50 }}
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerStyle: { backgroundColor: Colors.white },
+        headerTintColor: Colors.accent,
+        headerTitleStyle: { ...Typography.title3, color: Colors.black },
         tabBarActiveTintColor: Colors.accent,
         tabBarInactiveTintColor: Colors.gray400,
         tabBarStyle: {

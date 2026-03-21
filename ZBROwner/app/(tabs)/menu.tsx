@@ -117,22 +117,17 @@ export default function MenuScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* Header */}
-      <View style={styles.header}>
-        {viewMode === 'items' && selectedCategoryId && (
-          <TouchableOpacity
-            onPress={() => { setViewMode('categories'); setSelectedCategoryId(null); }}
-            style={styles.backButton}
-          >
-            <Ionicons name="chevron-back" size={24} color={Colors.accent} />
-          </TouchableOpacity>
-        )}
-        <Text style={styles.headerTitle}>
-          {viewMode === 'categories'
-            ? t('menu.menuCategories')
-            : categories.find((c) => c.id === selectedCategoryId)?.name ?? t('menu.menuCategories')}
-        </Text>
-      </View>
+      {viewMode === 'items' && selectedCategoryId && (
+        <TouchableOpacity
+          onPress={() => { setViewMode('categories'); setSelectedCategoryId(null); }}
+          style={styles.backRow}
+        >
+          <Ionicons name="chevron-back" size={20} color={Colors.accent} />
+          <Text style={styles.backText}>
+            {categories.find((c) => c.id === selectedCategoryId)?.name ?? t('menu.menuCategories')}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {viewMode === 'categories' ? (
         <FlatList
@@ -230,9 +225,8 @@ export default function MenuScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.gray50 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.base, paddingVertical: Spacing.md, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.gray200 },
-  backButton: { marginRight: Spacing.sm, minWidth: 44, minHeight: 44, justifyContent: 'center' },
-  headerTitle: { ...Typography.title3, color: Colors.black },
+  backRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.base, paddingVertical: Spacing.sm, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.gray200 },
+  backText: { ...Typography.subhead, color: Colors.accent, marginLeft: 4 },
   listContent: { padding: Spacing.base, paddingBottom: 100 },
   categoryCard: { marginBottom: Spacing.sm },
   categoryRow: { flexDirection: 'row', alignItems: 'center' },
