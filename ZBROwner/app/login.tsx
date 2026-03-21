@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography, BorderRadius } from '../constants/theme';
 import { useT } from '../i18n';
+import { useAuthStore } from '../store/authStore';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -12,6 +13,7 @@ export default function LoginScreen() {
   const t = useT();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { login, isLoading } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,7 +34,7 @@ export default function LoginScreen() {
     return true;
   }, [t]);
 
-  const handleLogin = useCallback(() => {
+  const handleLogin = useCallback(async () => {
     const isEmailValid = validateEmail(email);
     let isPasswordValid = true;
 
@@ -43,10 +45,16 @@ export default function LoginScreen() {
       setPasswordError('');
     }
 
-    if (isEmailValid && isPasswordValid) {
+    if (!isEmailValid || !isPasswordValid) return;
+
+    try {
+      await login(email.trim(), password);
       router.replace('/(tabs)');
+    } catch (error: any) {
+      const message = error?.message || t('login.loginFailed' as any);
+      Alert.alert(t('common.error' as any), message);
     }
-  }, [email, password, validateEmail, t, router]);
+  }, [email, password, validateEmail, t, router, login]);
 
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -84,6 +92,7 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="email"
+                editable={!isLoading}
               />
             </View>
             {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
@@ -103,6 +112,7 @@ export default function LoginScreen() {
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoComplete="password"
+                editable={!isLoading}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                 <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={22} color={Colors.gray400} />
@@ -112,13 +122,27 @@ export default function LoginScreen() {
           </View>
 
           {/* Forgot Password */}
-          <TouchableOpacity style={styles.forgotRow} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.forgotRow}
+            activeOpacity={0.7}
+            onPress={() => router.push('/forgot-password' as any)}
+            disabled={isLoading}
+          >
             <Text style={styles.forgotText}>{t('login.forgotPassword' as any)}</Text>
           </TouchableOpacity>
 
           {/* Sign In Button */}
-          <TouchableOpacity style={styles.button} activeOpacity={0.8} onPress={handleLogin}>
-            <Text style={styles.buttonText}>{t('login.signIn' as any)}</Text>
+          <TouchableOpacity
+            style={[styles.button, isLoading && styles.buttonDisabled]}
+            activeOpacity={0.8}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color={Colors.white} />
+            ) : (
+              <Text style={styles.buttonText}>{t('login.signIn' as any)}</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -160,5 +184,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  buttonDisabled: { opacity: 0.7 },
   buttonText: { ...Typography.headline, color: Colors.white },
 });

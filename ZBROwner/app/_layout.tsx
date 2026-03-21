@@ -1,12 +1,46 @@
-import React from 'react';
-import { Stack } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Colors } from '../constants/theme';
 import I18nProvider from '../i18n/I18nProvider';
 import { useI18n } from '../i18n';
 import { useNotifications } from '../hooks/useNotifications';
+import { useAuthStore } from '../store/authStore';
+
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { user, isInitialized, initialize } = useAuthStore();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const inAuthGroup = segments[0] === 'login' || segments[0] === 'forgot-password';
+
+    if (!user && !inAuthGroup) {
+      router.replace('/login');
+    } else if (user && inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [user, isInitialized, segments, router]);
+
+  if (!isInitialized) {
+    return (
+      <View style={styles.splash}>
+        <ActivityIndicator size="large" color={Colors.accent} />
+      </View>
+    );
+  }
+
+  return <>{children}</>;
+}
 
 function AppStack() {
   const { t } = useI18n();
@@ -15,6 +49,7 @@ function AppStack() {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.white } }}>
       <Stack.Screen name="login" />
+      <Stack.Screen name="forgot-password" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen
         name="order/[id]"
@@ -71,9 +106,20 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <I18nProvider>
           <StatusBar style="dark" />
-          <AppStack />
+          <AuthGuard>
+            <AppStack />
+          </AuthGuard>
         </I18nProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+  },
+});

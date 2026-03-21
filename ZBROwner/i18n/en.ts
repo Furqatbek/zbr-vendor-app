@@ -373,5 +373,16 @@ export default {
     emailRequired: 'Email is required',
     emailInvalid: 'Please enter a valid email address',
     passwordRequired: 'Password is required',
+    loginFailed: 'Login failed. Please check your credentials.',
+  },
+
+  forgotPassword: {
+    title: 'Reset Password',
+    subtitle: 'Enter your email address and we\'ll send you a link to reset your password.',
+    sendLink: 'Send Reset Link',
+    emailSent: 'Email Sent!',
+    checkInbox: 'Check your inbox for a password reset link. The link will expire in 1 hour.',
+    backToLogin: 'Back to Login',
+    requestFailed: 'Failed to send reset email. Please try again.',
   },
 } as const;

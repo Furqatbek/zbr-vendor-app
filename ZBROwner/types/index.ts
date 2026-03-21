@@ -1,3 +1,40 @@
+// Auth types
+export interface AuthUser {
+  id: number;
+  email: string;
+  fullName: string;
+  roles: string[];
+}
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  expiresIn: number;
+}
+
+export interface LoginRequest {
+  emailOrPhone: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  message: string;
+  data: AuthTokens & { user: AuthUser };
+}
+
+export interface RefreshResponse {
+  success: boolean;
+  message: string;
+  data: AuthTokens;
+}
+
+export interface ApiResponse {
+  success: boolean;
+  message: string;
+}
+
 export type OrderStatus =
   | 'received'
   | 'confirmed'

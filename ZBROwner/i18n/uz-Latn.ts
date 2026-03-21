@@ -352,5 +352,16 @@ export default {
     emailRequired: 'Elektron pochta talab qilinadi',
     emailInvalid: "To'g'ri elektron pochta manzilini kiriting",
     passwordRequired: 'Parol talab qilinadi',
+    loginFailed: 'Kirish xatosi. Ma\'lumotlarni tekshiring.',
+  },
+
+  forgotPassword: {
+    title: 'Parolni tiklash',
+    subtitle: 'Elektron pochta manzilingizni kiriting, biz sizga parolni tiklash havolasini yuboramiz.',
+    sendLink: 'Havola yuborish',
+    emailSent: 'Xat yuborildi!',
+    checkInbox: 'Parolni tiklash havolasi uchun pochtangizni tekshiring. Havola 1 soat amal qiladi.',
+    backToLogin: 'Kirishga qaytish',
+    requestFailed: 'Xatni yuborib bo\'lmadi. Qayta urinib ko\'ring.',
   },
 } as const;

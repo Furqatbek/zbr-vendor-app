@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
 import { useStore } from '../../store';
+import { useAuthStore } from '../../store/authStore';
 import Card from '../../components/Card';
 import PillSwitch from '../../components/PillSwitch';
 import RatingStars from '../../components/RatingStars';
@@ -18,6 +19,7 @@ export default function MoreScreen() {
   const insets = useSafeAreaInsets();
   const { t, locale, setLocale } = useI18n();
   const { refreshing, handleRefresh } = useRefresh();
+  const authLogout = useAuthStore((s) => s.logout);
 
   const locales: Locale[] = ['en', 'ru', 'uz-Latn', 'uz-Cyrl'];
 
@@ -134,7 +136,7 @@ export default function MoreScreen() {
         activeOpacity={0.7}
         onPress={() => Alert.alert(t('more.logOut'), t('more.logOutConfirm'), [
           { text: t('common.cancel'), style: 'cancel' },
-          { text: t('more.logOut'), style: 'destructive' },
+          { text: t('more.logOut'), style: 'destructive', onPress: () => authLogout() },
         ])}
       >
         <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
