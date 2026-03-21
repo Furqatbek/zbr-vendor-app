@@ -176,6 +176,7 @@ export default {
     byRevenue: 'Выручка',
     showingItems: '{{count}} товаров',
     noItems: 'Проданных товаров не найдено',
+    updating: 'Обновление...',
   },
 
   reviews: {

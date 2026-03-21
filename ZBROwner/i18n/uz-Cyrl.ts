@@ -176,6 +176,7 @@ export default {
     byRevenue: 'Даромад',
     showingItems: '{{count}} та маҳсулот',
     noItems: 'Сотилган маҳсулотлар топилмади',
+    updating: 'Янгиланмоқда...',
   },
 
   reviews: {

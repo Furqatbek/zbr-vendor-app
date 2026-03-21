@@ -1,7 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  withSequence,
+  Easing,
+  FadeIn,
+  FadeOut,
+  Layout,
+} from 'react-native-reanimated';
+import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 import { useStore } from '../../store';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
@@ -19,10 +30,59 @@ function getDateRange(filter: DateFilter): Date | null {
     start.setDate(start.getDate() - 7);
     return start;
   }
-  // month
   start.setDate(start.getDate() - 30);
   return start;
 }
+
+function RefreshBanner({ visible }: { visible: boolean }) {
+  const rotation = useSharedValue(0);
+  const t = useT();
+
+  useEffect(() => {
+    if (visible) {
+      rotation.value = withRepeat(
+        withTiming(360, { duration: 1000, easing: Easing.linear }),
+        -1,
+        false,
+      );
+    } else {
+      rotation.value = 0;
+    }
+  }, [visible]);
+
+  const spinStyle = useAnimatedStyle(() => ({
+    transform: [{ rotateZ: `${rotation.value}deg` }],
+  }));
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(200)}
+      style={bannerStyles.container}
+    >
+      <Animated.View style={spinStyle}>
+        <Ionicons name="sync" size={16} color={Colors.accent} />
+      </Animated.View>
+      <Text style={bannerStyles.text}>{t('soldItems.updating' as any)}</Text>
+    </Animated.View>
+  );
+}
+
+const bannerStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: Spacing.sm,
+    marginBottom: Spacing.sm,
+    backgroundColor: Colors.accentLight,
+    borderRadius: BorderRadius.button,
+  },
+  text: { ...Typography.subhead, color: Colors.accent, fontWeight: '600' },
+});
 
 export default function SoldItemsScreen() {
   const { revenueData } = useStore();
@@ -57,6 +117,9 @@ export default function SoldItemsScreen() {
 
   const renderHeader = () => (
     <View>
+      {/* Refresh Banner */}
+      <RefreshBanner visible={refreshing} />
+
       {/* Date Filter */}
       <View style={styles.filterRow}>
         {dateFilters.map((f) => {
@@ -123,21 +186,23 @@ export default function SoldItemsScreen() {
   };
 
   const renderItem = ({ item, index }: { item: typeof filteredItems[0]; index: number }) => (
-    <Card style={styles.itemCard}>
-      <View style={styles.itemRow}>
-        <View style={styles.rankCircle}>
-          <Text style={styles.rankText}>{index + 1}</Text>
+    <Animated.View entering={FadeIn.duration(300).delay(index * 50)} layout={Layout.springify()}>
+      <Card style={styles.itemCard}>
+        <View style={styles.itemRow}>
+          <View style={styles.rankCircle}>
+            <Text style={styles.rankText}>{index + 1}</Text>
+          </View>
+          <View style={styles.itemInfo}>
+            <Text style={styles.itemName}>{item.name}</Text>
+            <Text style={styles.itemMeta}>{item.category} · {formatDate(item.soldAt)}</Text>
+          </View>
+          <View style={styles.itemStats}>
+            <Text style={styles.itemUnits}>{t('reports.sold' as any, { count: item.unitsSold })}</Text>
+            <Text style={styles.itemRevenue}>{t('common.currency' as any, { amount: item.revenue.toFixed(2) })}</Text>
+          </View>
         </View>
-        <View style={styles.itemInfo}>
-          <Text style={styles.itemName}>{item.name}</Text>
-          <Text style={styles.itemMeta}>{item.category} · {formatDate(item.soldAt)}</Text>
-        </View>
-        <View style={styles.itemStats}>
-          <Text style={styles.itemUnits}>{t('reports.sold' as any, { count: item.unitsSold })}</Text>
-          <Text style={styles.itemRevenue}>{t('common.currency' as any, { amount: item.revenue.toFixed(2) })}</Text>
-        </View>
-      </View>
-    </Card>
+      </Card>
+    </Animated.View>
   );
 
   return (

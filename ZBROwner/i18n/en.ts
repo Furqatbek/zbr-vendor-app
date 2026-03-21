@@ -187,6 +187,7 @@ export default {
     byRevenue: 'Revenue',
     showingItems: '{{count}} items',
     noItems: 'No sold items found',
+    updating: 'Updating...',
   },
 
   // Reviews
