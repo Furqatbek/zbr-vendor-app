@@ -8,7 +8,7 @@ export const WS_BASE_URL = 'ws://localhost:8080';
 
 export const ENDPOINTS = {
   // Auth
-  login: '/login',
+  login: '/api/v1/auth/login',
   refresh: '/refresh',
   logout: '/logout',
   passwordReset: '/password-reset',
