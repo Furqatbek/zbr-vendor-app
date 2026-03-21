@@ -188,31 +188,73 @@ export default function OrderDetailScreen() {
         </View>
       </Card>
 
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
+      {/* Quick Contact */}
+      <Card style={styles.contactSection}>
+        <Text style={styles.sectionTitle}>Quick Contact</Text>
         {order.customerPhone && (
           <TouchableOpacity
-            style={styles.actionButton}
+            style={styles.contactCard}
             onPress={() => Linking.openURL(`tel:${order.customerPhone}`)}
+            activeOpacity={0.7}
           >
-            <Ionicons name="call-outline" size={20} color={Colors.accent} />
-            <Text style={styles.actionText}>Customer</Text>
+            <View style={[styles.contactIcon, { backgroundColor: Colors.infoLight }]}>
+              <Ionicons name="person-outline" size={22} color={Colors.info} />
+            </View>
+            <View style={styles.contactInfo}>
+              <Text style={styles.contactTitle}>Customer</Text>
+              <Text style={styles.contactSubtitle}>{order.customerName}</Text>
+            </View>
+            <View style={styles.contactActions}>
+              <TouchableOpacity
+                style={styles.contactActionBtn}
+                onPress={() => Linking.openURL(`tel:${order.customerPhone}`)}
+              >
+                <Ionicons name="call" size={18} color={Colors.accent} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.contactActionBtn}>
+                <Ionicons name="chatbubble" size={18} color={Colors.accent} />
+              </TouchableOpacity>
+            </View>
           </TouchableOpacity>
         )}
-        {order.courierPhone && (
+        {order.courierName && (
           <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => Linking.openURL(`tel:${order.courierPhone}`)}
+            style={styles.contactCard}
+            onPress={() => order.courierPhone && Linking.openURL(`tel:${order.courierPhone}`)}
+            activeOpacity={0.7}
           >
-            <Ionicons name="bicycle-outline" size={20} color={Colors.accent} />
-            <Text style={styles.actionText}>Courier</Text>
+            <View style={[styles.contactIcon, { backgroundColor: Colors.accentLight }]}>
+              <Ionicons name="bicycle-outline" size={22} color={Colors.accent} />
+            </View>
+            <View style={styles.contactInfo}>
+              <Text style={styles.contactTitle}>Courier</Text>
+              <Text style={styles.contactSubtitle}>
+                {order.courierName}{order.courierETA ? ` · ETA ${order.courierETA} min` : ''}
+              </Text>
+            </View>
+            {order.courierPhone && (
+              <View style={styles.contactActions}>
+                <TouchableOpacity
+                  style={styles.contactActionBtn}
+                  onPress={() => Linking.openURL(`tel:${order.courierPhone}`)}
+                >
+                  <Ionicons name="call" size={18} color={Colors.accent} />
+                </TouchableOpacity>
+              </View>
+            )}
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="headset-outline" size={20} color={Colors.accent} />
-          <Text style={styles.actionText}>Support</Text>
+        <TouchableOpacity style={styles.contactCard} activeOpacity={0.7}>
+          <View style={[styles.contactIcon, { backgroundColor: Colors.successLight }]}>
+            <Ionicons name="headset-outline" size={22} color={Colors.success} />
+          </View>
+          <View style={styles.contactInfo}>
+            <Text style={styles.contactTitle}>Platform Support</Text>
+            <Text style={styles.contactSubtitle}>Live chat or hotline</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={Colors.gray400} />
         </TouchableOpacity>
-      </View>
+      </Card>
 
       {/* Courier Rating Modal */}
       <Modal visible={showRatingSheet} transparent animationType="slide">
@@ -302,9 +344,14 @@ const styles = StyleSheet.create({
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: Spacing.md, marginTop: Spacing.sm, borderTopWidth: 2, borderTopColor: Colors.gray200 },
   totalLabel: { ...Typography.headline, color: Colors.black },
   totalPrice: { ...Typography.title3, color: Colors.accent },
-  quickActions: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.base, marginTop: Spacing.sm },
-  actionButton: { alignItems: 'center', gap: 4, minWidth: 80, minHeight: 48, justifyContent: 'center' },
-  actionText: { ...Typography.caption1, color: Colors.accent, fontWeight: '500' },
+  contactSection: { marginBottom: Spacing.base },
+  contactCard: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.gray100, minHeight: 56 },
+  contactIcon: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
+  contactInfo: { flex: 1 },
+  contactTitle: { ...Typography.headline, color: Colors.black },
+  contactSubtitle: { ...Typography.footnote, color: Colors.gray500, marginTop: 2 },
+  contactActions: { flexDirection: 'row', gap: Spacing.sm },
+  contactActionBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.accentLight, justifyContent: 'center', alignItems: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   ratingSheet: { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: Spacing.xl, paddingBottom: 40, alignItems: 'center' },
   sheetHandle: { width: 36, height: 5, borderRadius: 3, backgroundColor: Colors.gray300, marginBottom: Spacing.xl },

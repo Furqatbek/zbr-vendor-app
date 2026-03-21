@@ -13,33 +13,6 @@ export default function MoreScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const contactCards = [
-    {
-      type: 'customer' as const,
-      icon: 'person-outline' as const,
-      title: 'Contact Customer',
-      subtitle: 'Call or message current order customer',
-      color: Colors.info,
-      bgColor: Colors.infoLight,
-    },
-    {
-      type: 'courier' as const,
-      icon: 'bicycle-outline' as const,
-      title: 'Contact Courier',
-      subtitle: 'Call the assigned delivery courier',
-      color: Colors.accent,
-      bgColor: Colors.accentLight,
-    },
-    {
-      type: 'support' as const,
-      icon: 'headset-outline' as const,
-      title: 'Platform Support',
-      subtitle: 'Live chat or hotline',
-      color: Colors.success,
-      bgColor: Colors.successLight,
-    },
-  ];
-
   const menuItems = [
     { icon: 'storefront-outline' as const, label: 'Restaurant Profile', onPress: () => {} },
     { icon: 'time-outline' as const, label: 'Working Hours', onPress: () => {} },
@@ -64,25 +37,8 @@ export default function MoreScreen() {
         </View>
       </View>
 
-      {/* Quick Contact */}
-      <Text style={styles.sectionTitle}>Quick Contact</Text>
-      {contactCards.map((card) => (
-        <TouchableOpacity key={card.type} activeOpacity={0.7}>
-          <Card style={styles.contactCard}>
-            <View style={[styles.contactIcon, { backgroundColor: card.bgColor }]}>
-              <Ionicons name={card.icon} size={24} color={card.color} />
-            </View>
-            <View style={styles.contactInfo}>
-              <Text style={styles.contactTitle}>{card.title}</Text>
-              <Text style={styles.contactSubtitle}>{card.subtitle}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.gray400} />
-          </Card>
-        </TouchableOpacity>
-      ))}
-
       {/* Settings Menu */}
-      <Text style={[styles.sectionTitle, { marginTop: Spacing.xl }]}>Settings</Text>
+      <Text style={styles.sectionTitle}>Settings</Text>
       <Card style={styles.menuCard}>
         {menuItems.map((item, index) => (
           <TouchableOpacity
@@ -117,11 +73,6 @@ const styles = StyleSheet.create({
   restaurantInfo: { flex: 1, gap: Spacing.sm },
   restaurantName: { ...Typography.title2, color: Colors.black },
   sectionTitle: { ...Typography.headline, color: Colors.black, marginBottom: Spacing.sm },
-  contactCard: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.sm },
-  contactIcon: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
-  contactInfo: { flex: 1 },
-  contactTitle: { ...Typography.headline, color: Colors.black },
-  contactSubtitle: { ...Typography.footnote, color: Colors.gray500, marginTop: 2 },
   menuCard: { padding: 0 },
   menuRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.base, gap: Spacing.md, minHeight: 48 },
   menuRowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
