@@ -15,7 +15,8 @@ type WSMessage = {
 
 type MessageHandler = (message: WSMessage) => void;
 
-const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000]; // exponential backoff, max ~16s
+const MAX_RETRIES = 3;
+const RECONNECT_DELAYS = [1000, 2000, 4000]; // exponential backoff
 
 export function createWSClient(url: string) {
   let socket: WebSocket | null = null;
@@ -57,8 +58,9 @@ export function createWSClient(url: string) {
   }
 
   function scheduleReconnect() {
+    if (reconnectAttempt >= MAX_RETRIES) return;
     if (reconnectTimer) clearTimeout(reconnectTimer);
-    const delay = RECONNECT_DELAYS[Math.min(reconnectAttempt, RECONNECT_DELAYS.length - 1)];
+    const delay = RECONNECT_DELAYS[reconnectAttempt] ?? RECONNECT_DELAYS[RECONNECT_DELAYS.length - 1];
     reconnectTimer = setTimeout(() => {
       reconnectAttempt++;
       connect(currentToken);

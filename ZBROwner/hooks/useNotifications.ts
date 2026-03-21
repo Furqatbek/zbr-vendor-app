@@ -23,13 +23,29 @@ export function useNotifications() {
   const pushToken = useStore((s) => s.pushToken);
   const wsRef = useRef(createWSClient(WS_URL));
 
-  // 1. Request push permissions and save token
+  // 1. Request push permissions and save token (max 3 attempts)
   useEffect(() => {
-    registerForPushNotifications().then((token) => {
-      if (token) {
-        setPushToken(token);
-      }
-    });
+    let attempt = 0;
+    const maxAttempts = 3;
+
+    function tryRegister() {
+      attempt++;
+      registerForPushNotifications()
+        .then((token) => {
+          if (token) {
+            setPushToken(token);
+          } else if (attempt < maxAttempts) {
+            setTimeout(tryRegister, attempt * 2000);
+          }
+        })
+        .catch(() => {
+          if (attempt < maxAttempts) {
+            setTimeout(tryRegister, attempt * 2000);
+          }
+        });
+    }
+
+    tryRegister();
   }, [setPushToken]);
 
   // 2. Notification listeners
