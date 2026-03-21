@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Switch, Alert, TextInput, Modal,
-  ScrollView, KeyboardAvoidingView, Platform,
+  ScrollView, KeyboardAvoidingView, Platform, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
@@ -9,6 +9,7 @@ import { useStore } from '../../store';
 import type { MenuCategory, MenuItem } from '../../types';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
+import { useRefresh } from '../../hooks/useRefresh';
 
 type ViewMode = 'categories' | 'items';
 
@@ -19,6 +20,7 @@ export default function MenuScreen() {
   } = useStore();
 
   const t = useT();
+  const { refreshing, handleRefresh } = useRefresh();
 
   const [viewMode, setViewMode] = useState<ViewMode>('categories');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -138,6 +140,7 @@ export default function MenuScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderCategory}
           contentContainerStyle={styles.listContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}
           ListFooterComponent={
             <TouchableOpacity style={styles.addButton} onPress={() => setShowAddCategory(true)}>
               <Ionicons name="add-circle" size={20} color={Colors.accent} />
@@ -151,6 +154,7 @@ export default function MenuScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderMenuItem}
           contentContainerStyle={styles.listContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="fast-food-outline" size={48} color={Colors.gray300} />

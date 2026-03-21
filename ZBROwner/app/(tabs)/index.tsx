@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Animated,
-  ScrollView,
+  ScrollView, RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -15,6 +15,7 @@ import SlideToAction from '../../components/SlideToAction';
 import CountdownTimer from '../../components/CountdownTimer';
 import PillSwitch from '../../components/PillSwitch';
 import { useT } from '../../i18n';
+import { useRefresh } from '../../hooks/useRefresh';
 
 type Segment = 'new' | 'preparing' | 'waiting';
 
@@ -28,6 +29,8 @@ export default function OrdersScreen() {
     restaurantName, isOpen, toggleOpen,
     orders, acceptOrder, declineOrder, updateOrderStatus,
   } = useStore();
+
+  const { refreshing, handleRefresh } = useRefresh();
 
   const newOrders = useMemo(() => orders.filter((o) => o.status === 'received'), [orders]);
   const preparingOrders = useMemo(() => orders.filter((o) => o.status === 'preparing'), [orders]);
@@ -213,6 +216,7 @@ export default function OrdersScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderOrder}
         ListHeaderComponent={renderHeader}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons

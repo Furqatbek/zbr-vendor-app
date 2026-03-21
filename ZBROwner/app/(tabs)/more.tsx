@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,12 +10,14 @@ import PillSwitch from '../../components/PillSwitch';
 import RatingStars from '../../components/RatingStars';
 import { useI18n, LOCALE_NAMES } from '../../i18n';
 import type { Locale } from '../../i18n';
+import { useRefresh } from '../../hooks/useRefresh';
 
 export default function MoreScreen() {
   const { restaurantName, isOpen, toggleOpen, orders, reviews, revenueData, restaurantProfile, staffMembers } = useStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, locale, setLocale } = useI18n();
+  const { refreshing, handleRefresh } = useRefresh();
 
   const locales: Locale[] = ['en', 'ru', 'uz-Latn', 'uz-Cyrl'];
 
@@ -41,7 +43,7 @@ export default function MoreScreen() {
   ];
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}>
       {/* Restaurant Header */}
       <View style={styles.restaurantHeader}>
         <View style={styles.avatarPlaceholder}>

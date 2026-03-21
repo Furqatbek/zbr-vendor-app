@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
 import { useStore } from '../../store';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
+import { useRefresh } from '../../hooks/useRefresh';
 
 type Period = 'day' | 'week' | 'month';
 
@@ -20,6 +21,7 @@ const periodKeys: Record<Period, string> = {
 export default function ReportsScreen() {
   const { revenueData, selectedPeriod, setSelectedPeriod } = useStore();
   const t = useT();
+  const { refreshing, handleRefresh } = useRefresh();
 
   const chartConfig = {
     backgroundGradientFrom: Colors.white,
@@ -38,7 +40,7 @@ export default function ReportsScreen() {
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}>
       {/* Period Selector */}
       <View style={styles.segmentContainer}>
         {(['day', 'week', 'month'] as Period[]).map((p) => (

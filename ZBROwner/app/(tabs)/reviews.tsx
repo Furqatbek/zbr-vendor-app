@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal, Alert,
+  View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal, Alert, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
@@ -10,6 +10,7 @@ import Card from '../../components/Card';
 import RatingStars from '../../components/RatingStars';
 import Chip from '../../components/Chip';
 import { useT } from '../../i18n';
+import { useRefresh } from '../../hooks/useRefresh';
 
 type Filter = 'all' | 'positive' | 'negative' | 'unresponded';
 
@@ -23,6 +24,7 @@ const filterKeys: Record<Filter, string> = {
 export default function ReviewsScreen() {
   const { reviews, replyToReview } = useStore();
   const t = useT();
+  const { refreshing, handleRefresh } = useRefresh();
   const [filter, setFilter] = useState<Filter>('all');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
@@ -147,6 +149,7 @@ export default function ReviewsScreen() {
         ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}
       />
 
       {/* Reply Modal */}
