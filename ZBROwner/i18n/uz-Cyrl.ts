@@ -54,7 +54,7 @@ export default {
     address: 'Манзил',
     minutes: 'дақиқа',
     km: 'км',
-    currency: '${{amount}}',
+    currency: '{{amount}}',
     removeItemConfirm: '"{{name}}" менюдан олиб ташлансинми?',
   },
 

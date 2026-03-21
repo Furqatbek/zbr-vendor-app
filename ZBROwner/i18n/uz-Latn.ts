@@ -54,7 +54,7 @@ export default {
     address: 'Manzil',
     minutes: 'daqiqa',
     km: 'km',
-    currency: '${{amount}}',
+    currency: '{{amount}}',
     removeItemConfirm: '"{{name}}" menyudan olib tashlansinmi?',
   },
 

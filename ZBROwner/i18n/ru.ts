@@ -54,7 +54,7 @@ export default {
     address: 'Адрес',
     minutes: 'минут',
     km: 'км',
-    currency: '${{amount}}',
+    currency: '{{amount}}',
     removeItemConfirm: 'Удалить "{{name}}" из меню?',
   },
 
