@@ -44,22 +44,6 @@ export default function AboutScreen() {
         ))}
       </Card>
 
-      {/* System Info */}
-      <Text style={styles.sectionTitle}>{t('aboutScreen.systemInfo')}</Text>
-      <Card style={styles.systemCard}>
-        {[
-          { label: t('aboutScreen.platform'), value: 'Expo SDK 55' },
-          { label: t('aboutScreen.runtime'), value: 'React Native 0.83' },
-          { label: t('aboutScreen.navigation'), value: 'Expo Router' },
-          { label: t('aboutScreen.stateManagement'), value: 'Zustand' },
-        ].map((info, index, arr) => (
-          <View key={info.label} style={[styles.sysRow, index < arr.length - 1 && styles.sysBorder]}>
-            <Text style={styles.sysLabel}>{info.label}</Text>
-            <Text style={styles.sysValue}>{info.value}</Text>
-          </View>
-        ))}
-      </Card>
-
       <Text style={styles.copyright}>{t('aboutScreen.copyright')}</Text>
     </ScrollView>
   );
@@ -80,10 +64,5 @@ const styles = StyleSheet.create({
   linkRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.base, gap: Spacing.md, minHeight: 48 },
   linkBorder: { borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
   linkLabel: { ...Typography.body, color: Colors.black, flex: 1 },
-  systemCard: { padding: 0, marginBottom: Spacing.xl },
-  sysRow: { flexDirection: 'row', justifyContent: 'space-between', padding: Spacing.base },
-  sysBorder: { borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
-  sysLabel: { ...Typography.subhead, color: Colors.gray500 },
-  sysValue: { ...Typography.subhead, color: Colors.black, fontWeight: '500' },
   copyright: { ...Typography.caption1, color: Colors.gray400, textAlign: 'center', marginTop: Spacing.md },
 });
