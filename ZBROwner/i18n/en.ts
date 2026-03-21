@@ -179,9 +179,10 @@ export default {
   soldItems: {
     totalUnits: 'Total Units',
     totalRevenue: 'Total Revenue',
-    filterByCategory: 'Category',
-    allCategories: 'All',
-    sortBy: 'Sort:',
+    today: 'Today',
+    thisWeek: 'Week',
+    thisMonth: 'Month',
+    allTime: 'All Time',
     byUnits: 'Units',
     byRevenue: 'Revenue',
     showingItems: '{{count}} items',

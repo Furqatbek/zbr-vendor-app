@@ -168,9 +168,10 @@ export default {
   soldItems: {
     totalUnits: 'Jami birliklar',
     totalRevenue: 'Jami daromad',
-    filterByCategory: 'Kategoriya',
-    allCategories: 'Barchasi',
-    sortBy: 'Saralash:',
+    today: 'Bugun',
+    thisWeek: 'Hafta',
+    thisMonth: 'Oy',
+    allTime: 'Barchasi',
     byUnits: 'Soni',
     byRevenue: 'Daromad',
     showingItems: '{{count}} ta mahsulot',

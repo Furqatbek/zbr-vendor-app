@@ -7,29 +7,47 @@ import Card from '../../components/Card';
 import { useT } from '../../i18n';
 import { useRefresh } from '../../hooks/useRefresh';
 
+type DateFilter = 'today' | 'week' | 'month' | 'all';
 type SortMode = 'units' | 'revenue';
+
+function getDateRange(filter: DateFilter): Date | null {
+  if (filter === 'all') return null;
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (filter === 'today') return start;
+  if (filter === 'week') {
+    start.setDate(start.getDate() - 7);
+    return start;
+  }
+  // month
+  start.setDate(start.getDate() - 30);
+  return start;
+}
 
 export default function SoldItemsScreen() {
   const { revenueData } = useStore();
   const t = useT();
   const { refreshing, handleRefresh } = useRefresh();
 
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [sortBy, setSortBy] = useState<SortMode>('units');
 
-  const categories = useMemo(() => {
-    const cats = [...new Set(revenueData.soldItems.map((i) => i.category))];
-    return cats.sort();
-  }, [revenueData.soldItems]);
+  const dateFilters: { key: DateFilter; label: string }[] = [
+    { key: 'today', label: t('soldItems.today' as any) },
+    { key: 'week', label: t('soldItems.thisWeek' as any) },
+    { key: 'month', label: t('soldItems.thisMonth' as any) },
+    { key: 'all', label: t('soldItems.allTime' as any) },
+  ];
 
   const filteredItems = useMemo(() => {
+    const cutoff = getDateRange(dateFilter);
     let items = [...revenueData.soldItems];
-    if (selectedCategory) {
-      items = items.filter((i) => i.category === selectedCategory);
+    if (cutoff) {
+      items = items.filter((i) => new Date(i.soldAt) >= cutoff);
     }
     items.sort((a, b) => (sortBy === 'units' ? b.unitsSold - a.unitsSold : b.revenue - a.revenue));
     return items;
-  }, [revenueData.soldItems, selectedCategory, sortBy]);
+  }, [revenueData.soldItems, dateFilter, sortBy]);
 
   const totals = useMemo(() => {
     const units = filteredItems.reduce((s, i) => s + i.unitsSold, 0);
@@ -39,6 +57,25 @@ export default function SoldItemsScreen() {
 
   const renderHeader = () => (
     <View>
+      {/* Date Filter */}
+      <View style={styles.filterRow}>
+        {dateFilters.map((f) => {
+          const isActive = f.key === dateFilter;
+          return (
+            <TouchableOpacity
+              key={f.key}
+              style={[styles.filterChip, isActive && styles.filterChipActive]}
+              onPress={() => setDateFilter(f.key)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
+                {f.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       {/* Summary */}
       <View style={styles.summaryRow}>
         <Card style={styles.summaryCard}>
@@ -51,59 +88,39 @@ export default function SoldItemsScreen() {
         </Card>
       </View>
 
-      {/* Category Filter */}
-      <Text style={styles.filterLabel}>{t('soldItems.filterByCategory' as any)}</Text>
-      <FlatList
-        data={[null, ...categories]}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item ?? 'all'}
-        contentContainerStyle={styles.filterList}
-        renderItem={({ item: cat }) => {
-          const isActive = cat === selectedCategory;
-          return (
-            <TouchableOpacity
-              style={[styles.filterChip, isActive && styles.filterChipActive]}
-              onPress={() => setSelectedCategory(cat)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
-                {cat ?? t('soldItems.allCategories' as any)}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-      />
-
-      {/* Sort */}
+      {/* Sort + Count */}
       <View style={styles.sortRow}>
-        <Text style={styles.sortLabel}>{t('soldItems.sortBy' as any)}</Text>
-        <TouchableOpacity
-          style={[styles.sortChip, sortBy === 'units' && styles.sortChipActive]}
-          onPress={() => setSortBy('units')}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.sortChipText, sortBy === 'units' && styles.sortChipTextActive]}>
-            {t('soldItems.byUnits' as any)}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.sortChip, sortBy === 'revenue' && styles.sortChipActive]}
-          onPress={() => setSortBy('revenue')}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.sortChipText, sortBy === 'revenue' && styles.sortChipTextActive]}>
-            {t('soldItems.byRevenue' as any)}
-          </Text>
-        </TouchableOpacity>
+        <Text style={styles.resultCount}>
+          {t('soldItems.showingItems' as any, { count: filteredItems.length })}
+        </Text>
+        <View style={styles.sortChips}>
+          <TouchableOpacity
+            style={[styles.sortChip, sortBy === 'units' && styles.sortChipActive]}
+            onPress={() => setSortBy('units')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.sortChipText, sortBy === 'units' && styles.sortChipTextActive]}>
+              {t('soldItems.byUnits' as any)}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sortChip, sortBy === 'revenue' && styles.sortChipActive]}
+            onPress={() => setSortBy('revenue')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.sortChipText, sortBy === 'revenue' && styles.sortChipTextActive]}>
+              {t('soldItems.byRevenue' as any)}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      {/* Count */}
-      <Text style={styles.resultCount}>
-        {t('soldItems.showingItems' as any, { count: filteredItems.length })}
-      </Text>
     </View>
   );
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
 
   const renderItem = ({ item, index }: { item: typeof filteredItems[0]; index: number }) => (
     <Card style={styles.itemCard}>
@@ -113,7 +130,7 @@ export default function SoldItemsScreen() {
         </View>
         <View style={styles.itemInfo}>
           <Text style={styles.itemName}>{item.name}</Text>
-          <Text style={styles.itemCategory}>{item.category}</Text>
+          <Text style={styles.itemMeta}>{item.category} · {formatDate(item.soldAt)}</Text>
         </View>
         <View style={styles.itemStats}>
           <Text style={styles.itemUnits}>{t('reports.sold' as any, { count: item.unitsSold })}</Text>
@@ -146,25 +163,26 @@ export default function SoldItemsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.gray50 },
   listContent: { padding: Spacing.base, paddingBottom: 100 },
-  summaryRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.base },
-  summaryCard: { flex: 1, alignItems: 'center', gap: 4 },
-  summaryLabel: { ...Typography.caption1, color: Colors.gray500 },
-  summaryValue: { ...Typography.title3, color: Colors.black },
-  filterLabel: { ...Typography.headline, color: Colors.black, marginBottom: Spacing.sm },
-  filterList: { gap: Spacing.sm, marginBottom: Spacing.base },
+  filterRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.base },
   filterChip: {
-    paddingHorizontal: Spacing.base,
+    flex: 1,
     paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.button,
     backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.gray200,
+    alignItems: 'center',
   },
   filterChipActive: { backgroundColor: Colors.accent, borderColor: Colors.accent },
   filterChipText: { ...Typography.subhead, color: Colors.gray600 },
   filterChipTextActive: { color: Colors.white, fontWeight: '600' },
-  sortRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.base },
-  sortLabel: { ...Typography.subhead, color: Colors.gray500 },
+  summaryRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.base },
+  summaryCard: { flex: 1, alignItems: 'center', gap: 4 },
+  summaryLabel: { ...Typography.caption1, color: Colors.gray500 },
+  summaryValue: { ...Typography.title3, color: Colors.black },
+  sortRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.sm },
+  resultCount: { ...Typography.footnote, color: Colors.gray400 },
+  sortChips: { flexDirection: 'row', gap: Spacing.sm },
   sortChip: {
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
@@ -174,7 +192,6 @@ const styles = StyleSheet.create({
   sortChipActive: { backgroundColor: Colors.accentLight },
   sortChipText: { ...Typography.caption1, color: Colors.gray500, fontWeight: '500' },
   sortChipTextActive: { color: Colors.accent },
-  resultCount: { ...Typography.footnote, color: Colors.gray400, marginBottom: Spacing.sm },
   itemCard: { marginBottom: Spacing.sm },
   itemRow: { flexDirection: 'row', alignItems: 'center' },
   rankCircle: {
@@ -189,7 +206,7 @@ const styles = StyleSheet.create({
   rankText: { ...Typography.subhead, color: Colors.accent, fontWeight: '600' },
   itemInfo: { flex: 1 },
   itemName: { ...Typography.body, color: Colors.black },
-  itemCategory: { ...Typography.caption1, color: Colors.gray500, marginTop: 2 },
+  itemMeta: { ...Typography.caption1, color: Colors.gray500, marginTop: 2 },
   itemStats: { alignItems: 'flex-end' },
   itemUnits: { ...Typography.subhead, color: Colors.gray600 },
   itemRevenue: { ...Typography.headline, color: Colors.black, marginTop: 2 },

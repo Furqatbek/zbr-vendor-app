@@ -168,9 +168,10 @@ export default {
   soldItems: {
     totalUnits: 'Всего единиц',
     totalRevenue: 'Общая выручка',
-    filterByCategory: 'Категория',
-    allCategories: 'Все',
-    sortBy: 'Сорт.:',
+    today: 'Сегодня',
+    thisWeek: 'Неделя',
+    thisMonth: 'Месяц',
+    allTime: 'Всё время',
     byUnits: 'Кол-во',
     byRevenue: 'Выручка',
     showingItems: '{{count}} товаров',

@@ -165,23 +165,28 @@ export const mockRevenueData: RevenueData = {
     { label: '7PM', value: 470 },
     { label: '8PM', value: 320 },
   ],
-  soldItems: [
-    { name: 'Classic Burger', unitsSold: 45, revenue: 584.55, category: 'Burgers' },
-    { name: 'Double Cheeseburger', unitsSold: 32, revenue: 511.68, category: 'Burgers' },
-    { name: 'Fries Large', unitsSold: 38, revenue: 189.62, category: 'Sides' },
-    { name: 'BBQ Bacon Burger', unitsSold: 28, revenue: 419.72, category: 'Burgers' },
-    { name: 'Cola', unitsSold: 52, revenue: 155.48, category: 'Drinks' },
-    { name: 'Chicken Wings (6pc)', unitsSold: 24, revenue: 287.76, category: 'Sides' },
-    { name: 'Veggie Wrap', unitsSold: 18, revenue: 179.82, category: 'Wraps' },
-    { name: 'Milkshake Vanilla', unitsSold: 22, revenue: 131.78, category: 'Drinks' },
-    { name: 'Onion Rings', unitsSold: 30, revenue: 119.70, category: 'Sides' },
-    { name: 'Spicy Chicken Burger', unitsSold: 20, revenue: 299.80, category: 'Burgers' },
-    { name: 'Iced Tea', unitsSold: 35, revenue: 104.65, category: 'Drinks' },
-    { name: 'Caesar Salad', unitsSold: 12, revenue: 107.88, category: 'Salads' },
-    { name: 'Mozzarella Sticks', unitsSold: 16, revenue: 111.84, category: 'Sides' },
-    { name: 'Fish Burger', unitsSold: 14, revenue: 195.86, category: 'Burgers' },
-    { name: 'Water Bottle', unitsSold: 40, revenue: 79.60, category: 'Drinks' },
-  ],
+  soldItems: (() => {
+    const now = new Date();
+    const today = now.toISOString();
+    const daysAgo = (d: number) => new Date(now.getTime() - d * 86400000).toISOString();
+    return [
+      { name: 'Classic Burger', unitsSold: 45, revenue: 584.55, category: 'Burgers', soldAt: today },
+      { name: 'Double Cheeseburger', unitsSold: 32, revenue: 511.68, category: 'Burgers', soldAt: today },
+      { name: 'Fries Large', unitsSold: 38, revenue: 189.62, category: 'Sides', soldAt: today },
+      { name: 'Cola', unitsSold: 52, revenue: 155.48, category: 'Drinks', soldAt: today },
+      { name: 'Onion Rings', unitsSold: 30, revenue: 119.70, category: 'Sides', soldAt: today },
+      { name: 'BBQ Bacon Burger', unitsSold: 28, revenue: 419.72, category: 'Burgers', soldAt: daysAgo(2) },
+      { name: 'Chicken Wings (6pc)', unitsSold: 24, revenue: 287.76, category: 'Sides', soldAt: daysAgo(3) },
+      { name: 'Milkshake Vanilla', unitsSold: 22, revenue: 131.78, category: 'Drinks', soldAt: daysAgo(4) },
+      { name: 'Iced Tea', unitsSold: 35, revenue: 104.65, category: 'Drinks', soldAt: daysAgo(5) },
+      { name: 'Spicy Chicken Burger', unitsSold: 20, revenue: 299.80, category: 'Burgers', soldAt: daysAgo(6) },
+      { name: 'Veggie Wrap', unitsSold: 18, revenue: 179.82, category: 'Wraps', soldAt: daysAgo(10) },
+      { name: 'Caesar Salad', unitsSold: 12, revenue: 107.88, category: 'Salads', soldAt: daysAgo(12) },
+      { name: 'Mozzarella Sticks', unitsSold: 16, revenue: 111.84, category: 'Sides', soldAt: daysAgo(18) },
+      { name: 'Fish Burger', unitsSold: 14, revenue: 195.86, category: 'Burgers', soldAt: daysAgo(22) },
+      { name: 'Water Bottle', unitsSold: 40, revenue: 79.60, category: 'Drinks', soldAt: daysAgo(25) },
+    ];
+  })(),
   refunds: 3,
   cancellations: 5,
 };

@@ -168,9 +168,10 @@ export default {
   soldItems: {
     totalUnits: 'Жами бирликлар',
     totalRevenue: 'Жами даромад',
-    filterByCategory: 'Категория',
-    allCategories: 'Барчаси',
-    sortBy: 'Саралаш:',
+    today: 'Бугун',
+    thisWeek: 'Ҳафта',
+    thisMonth: 'Ой',
+    allTime: 'Барчаси',
     byUnits: 'Сони',
     byRevenue: 'Даромад',
     showingItems: '{{count}} та маҳсулот',
