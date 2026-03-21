@@ -323,4 +323,18 @@ export default {
     stateManagement: 'Управление состоянием',
     copyright: '© 2026 ZBR. Все права защищены.',
   },
+
+  login: {
+    appName: 'ZBR Vendor',
+    tagline: 'Управляйте рестораном легко',
+    signIn: 'Войти',
+    email: 'Эл. почта',
+    emailPlaceholder: 'Введите эл. почту',
+    password: 'Пароль',
+    passwordPlaceholder: 'Введите пароль',
+    forgotPassword: 'Забыли пароль?',
+    emailRequired: 'Укажите эл. почту',
+    emailInvalid: 'Введите корректный адрес эл. почты',
+    passwordRequired: 'Укажите пароль',
+  },
 } as const;

@@ -323,4 +323,18 @@ export default {
     stateManagement: 'Ҳолат бошқаруви',
     copyright: '© 2026 ZBR. Барча ҳуқуқлар ҳимояланган.',
   },
+
+  login: {
+    appName: 'ZBR Vendor',
+    tagline: 'Ресторанингизни осон бошқаринг',
+    signIn: 'Кириш',
+    email: 'Электрон почта',
+    emailPlaceholder: 'Электрон поchtangizni киритинг',
+    password: 'Парол',
+    passwordPlaceholder: 'Паролни киритинг',
+    forgotPassword: 'Паролни унутдингизми?',
+    emailRequired: 'Электрон почта талаб қилинади',
+    emailInvalid: 'Тўғри электрон почта манзилини киритинг',
+    passwordRequired: 'Парол талаб қилинади',
+  },
 } as const;

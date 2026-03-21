@@ -344,4 +344,18 @@ export default {
     stateManagement: 'State Management',
     copyright: '© 2026 ZBR. All rights reserved.',
   },
+
+  login: {
+    appName: 'ZBR Vendor',
+    tagline: 'Manage your restaurant with ease',
+    signIn: 'Sign In',
+    email: 'Email',
+    emailPlaceholder: 'Enter your email',
+    password: 'Password',
+    passwordPlaceholder: 'Enter your password',
+    forgotPassword: 'Forgot password?',
+    emailRequired: 'Email is required',
+    emailInvalid: 'Please enter a valid email address',
+    passwordRequired: 'Password is required',
+  },
 } as const;

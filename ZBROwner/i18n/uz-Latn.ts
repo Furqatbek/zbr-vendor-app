@@ -323,4 +323,18 @@ export default {
     stateManagement: 'Holat boshqaruvi',
     copyright: '© 2026 ZBR. Barcha huquqlar himoyalangan.',
   },
+
+  login: {
+    appName: 'ZBR Vendor',
+    tagline: 'Restoratingizni oson boshqaring',
+    signIn: 'Kirish',
+    email: 'Elektron pochta',
+    emailPlaceholder: 'Elektron pochtangizni kiriting',
+    password: 'Parol',
+    passwordPlaceholder: 'Parolni kiriting',
+    forgotPassword: 'Parolni unutdingizmi?',
+    emailRequired: 'Elektron pochta talab qilinadi',
+    emailInvalid: "To'g'ri elektron pochta manzilini kiriting",
+    passwordRequired: 'Parol talab qilinadi',
+  },
 } as const;

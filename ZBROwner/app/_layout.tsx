@@ -12,6 +12,7 @@ function AppStack() {
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.white } }}>
+      <Stack.Screen name="login" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen
         name="order/[id]"
