@@ -63,7 +63,7 @@ export default function MoreScreen() {
         </Card>
         <Card style={styles.statCard}>
           <Ionicons name="cash" size={20} color={Colors.success} />
-          <Text style={styles.statValue}>${revenueData.totalRevenue.toFixed(0)}</Text>
+          <Text style={styles.statValue}>{t('common.currency', { amount: revenueData.totalRevenue.toFixed(0) })}</Text>
           <Text style={styles.statLabel}>{t('more.todaysRevenue')}</Text>
         </Card>
         <Card style={styles.statCard}>

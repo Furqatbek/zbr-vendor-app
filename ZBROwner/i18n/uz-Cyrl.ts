@@ -53,6 +53,8 @@ export default {
     address: 'Манзил',
     minutes: 'дақиқа',
     km: 'км',
+    currency: '${{amount}}',
+    removeItemConfirm: '"{{name}}" менюдан олиб ташлансинми?',
   },
 
   orderStatus: {

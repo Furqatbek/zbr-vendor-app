@@ -64,7 +64,7 @@ export default function ReportsScreen() {
       {/* Revenue Summary */}
       <Card style={styles.revenueCard}>
         <Text style={styles.revenueLabel}>{t('reports.totalRevenue' as any)}</Text>
-        <Text style={styles.revenueValue}>${revenueData.totalRevenue.toFixed(2)}</Text>
+        <Text style={styles.revenueValue}>{t('common.currency' as any, { amount: revenueData.totalRevenue.toFixed(2) })}</Text>
       </Card>
 
       <View style={styles.statsRow}>
@@ -74,7 +74,7 @@ export default function ReportsScreen() {
         </Card>
         <Card style={styles.statCard}>
           <Text style={styles.statLabel}>{t('reports.avgValue' as any)}</Text>
-          <Text style={styles.statValue}>${revenueData.avgOrderValue.toFixed(2)}</Text>
+          <Text style={styles.statValue}>{t('common.currency' as any, { amount: revenueData.avgOrderValue.toFixed(2) })}</Text>
         </Card>
       </View>
 
@@ -106,7 +106,7 @@ export default function ReportsScreen() {
               <Text style={styles.topItemName}>{item.name}</Text>
               <Text style={styles.topItemUnits}>{t('reports.sold' as any, { count: item.unitsSold })}</Text>
             </View>
-            <Text style={styles.topItemRevenue}>${item.revenue.toFixed(2)}</Text>
+            <Text style={styles.topItemRevenue}>{t('common.currency' as any, { amount: item.revenue.toFixed(2) })}</Text>
           </View>
         ))}
       </Card>

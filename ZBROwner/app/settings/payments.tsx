@@ -25,7 +25,7 @@ export default function PaymentSettingsScreen() {
       {/* Balance */}
       <Card style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>{t('payments.availableBalance')}</Text>
-        <Text style={styles.balanceValue}>$847.50</Text>
+        <Text style={styles.balanceValue}>{t('common.currency', { amount: '847.50' })}</Text>
         <Text style={styles.balanceNote}>{t('payments.nextPayout', { date: 'Mar 25, 2026' })}</Text>
       </Card>
 
@@ -59,7 +59,7 @@ export default function PaymentSettingsScreen() {
               <Text style={styles.payoutDate}>{payout.date}</Text>
               <Text style={styles.payoutStatus}>{t('payments.completed')}</Text>
             </View>
-            <Text style={styles.payoutAmount}>${payout.amount.toFixed(2)}</Text>
+            <Text style={styles.payoutAmount}>{t('common.currency', { amount: payout.amount.toFixed(2) })}</Text>
           </View>
         ))}
       </Card>

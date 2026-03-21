@@ -181,7 +181,7 @@ export default function OrderDetailScreen() {
           <View key={item.id} style={styles.itemRow}>
             <Text style={styles.itemQty}>{item.quantity}x</Text>
             <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.itemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
+            <Text style={styles.itemPrice}>{t('common.currency', { amount: (item.price * item.quantity).toFixed(2) })}</Text>
           </View>
         ))}
         {order.specialNotes && (
@@ -192,7 +192,7 @@ export default function OrderDetailScreen() {
         )}
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>{t('orderDetail.total')}</Text>
-          <Text style={styles.totalPrice}>${order.totalPrice.toFixed(2)}</Text>
+          <Text style={styles.totalPrice}>{t('common.currency', { amount: order.totalPrice.toFixed(2) })}</Text>
         </View>
       </Card>
 

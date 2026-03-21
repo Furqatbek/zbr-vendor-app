@@ -76,7 +76,7 @@ export default function OrdersScreen() {
       <View style={styles.revenueRow}>
         <Card style={styles.revenueCard}>
           <Text style={styles.revenueLabel}>{t('orders.revenue')}</Text>
-          <Text style={styles.revenueValue}>${todayRevenue.total.toFixed(2)}</Text>
+          <Text style={styles.revenueValue}>{t('common.currency', { amount: todayRevenue.total.toFixed(2) })}</Text>
         </Card>
         <Card style={styles.revenueCard}>
           <Text style={styles.revenueLabel}>{t('orders.ordersCount')}</Text>
@@ -84,7 +84,7 @@ export default function OrdersScreen() {
         </Card>
         <Card style={styles.revenueCard}>
           <Text style={styles.revenueLabel}>{t('orders.avgValue')}</Text>
-          <Text style={styles.revenueValue}>${todayRevenue.avg.toFixed(2)}</Text>
+          <Text style={styles.revenueValue}>{t('common.currency', { amount: todayRevenue.avg.toFixed(2) })}</Text>
         </Card>
       </View>
 
@@ -140,7 +140,7 @@ export default function OrdersScreen() {
             <Text style={styles.notesText} numberOfLines={1}>{order.specialNotes}</Text>
           </View>
         )}
-        <Text style={styles.totalPrice}>${order.totalPrice.toFixed(2)}</Text>
+        <Text style={styles.totalPrice}>{t('common.currency', { amount: order.totalPrice.toFixed(2) })}</Text>
       </TouchableOpacity>
       <SlideToAction
         onAccept={() => acceptOrder(order.id)}
@@ -162,7 +162,7 @@ export default function OrdersScreen() {
         <Text style={styles.itemsSummary} numberOfLines={2}>
           {order.items.map((i) => `${i.quantity}x ${i.name}`).join(', ')}
         </Text>
-        <Text style={styles.totalPrice}>${order.totalPrice.toFixed(2)}</Text>
+        <Text style={styles.totalPrice}>{t('common.currency', { amount: order.totalPrice.toFixed(2) })}</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.markReadyButton}
@@ -195,7 +195,7 @@ export default function OrdersScreen() {
             )}
           </View>
         )}
-        <Text style={styles.totalPrice}>${order.totalPrice.toFixed(2)}</Text>
+        <Text style={styles.totalPrice}>{t('common.currency', { amount: order.totalPrice.toFixed(2) })}</Text>
       </TouchableOpacity>
     </Card>
   );

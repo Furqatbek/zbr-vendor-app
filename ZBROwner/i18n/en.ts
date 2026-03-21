@@ -56,6 +56,8 @@ export default {
     address: 'Address',
     minutes: 'minutes',
     km: 'km',
+    currency: '${{amount}}',
+    removeItemConfirm: 'Remove "{{name}}" from the menu?',
   },
 
   // Order statuses

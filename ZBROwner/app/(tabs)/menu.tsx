@@ -32,7 +32,7 @@ export default function MenuScreen() {
     : menuItems;
 
   const handleDeleteItem = useCallback((item: MenuItem) => {
-    Alert.alert(t('common.delete'), `Remove "${item.name}" from the menu?`, [
+    Alert.alert(t('common.delete'), t('common.removeItemConfirm', { name: item.name }), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('common.delete'), style: 'destructive', onPress: () => deleteMenuItem(item.id) },
     ]);
@@ -79,7 +79,7 @@ export default function MenuScreen() {
         <View style={styles.menuItemInfo}>
           <Text style={styles.menuItemName}>{item.name}</Text>
           <Text style={styles.menuItemDesc} numberOfLines={1}>{item.description}</Text>
-          <Text style={styles.menuItemPrice}>${item.price.toFixed(2)}</Text>
+          <Text style={styles.menuItemPrice}>{t('common.currency', { amount: item.price.toFixed(2) })}</Text>
         </View>
         <View style={styles.menuItemActions}>
           {!item.inStock && (
@@ -211,7 +211,7 @@ export default function MenuScreen() {
                 <Text style={styles.fieldLabel}>{t('common.description')}</Text>
                 <TextInput style={[styles.input, styles.textArea]} value={editingItem.description} multiline editable={false} />
                 <Text style={styles.fieldLabel}>{t('common.price')}</Text>
-                <TextInput style={styles.input} value={`$${editingItem.price.toFixed(2)}`} editable={false} />
+                <TextInput style={styles.input} value={t('common.currency', { amount: editingItem.price.toFixed(2) })} editable={false} />
                 <Text style={styles.fieldLabel}>{t('common.category')}</Text>
                 <TextInput style={styles.input} value={categories.find((c) => c.id === editingItem.categoryId)?.name ?? ''} editable={false} />
                 <Text style={styles.hintText}>{t('menu.connectBackendHint')}</Text>

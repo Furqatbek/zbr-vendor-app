@@ -45,7 +45,7 @@ export default function OrderHistoryScreen() {
         </Text>
         <View style={styles.orderFooter}>
           <Text style={styles.orderTime}>{formatTime(item.receivedAt)}</Text>
-          <Text style={styles.orderTotal}>${item.totalPrice.toFixed(2)}</Text>
+          <Text style={styles.orderTotal}>{t('common.currency', { amount: item.totalPrice.toFixed(2) })}</Text>
         </View>
       </Card>
     </TouchableOpacity>
@@ -71,7 +71,7 @@ export default function OrderHistoryScreen() {
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={[styles.statNum, { color: Colors.accent }]}>${stats.total.toFixed(0)}</Text>
+              <Text style={[styles.statNum, { color: Colors.accent }]}>{t('common.currency', { amount: stats.total.toFixed(0) })}</Text>
               <Text style={styles.statLabel}>{t('orderHistoryScreen.revenue')}</Text>
             </View>
           </Card>
