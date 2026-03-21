@@ -1,16 +1,27 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, BorderRadius, Typography } from '../constants/theme';
+import { useT } from '../i18n';
 import type { OrderStatus } from '../types';
 
-const statusConfig: Record<OrderStatus, { label: string; bg: string; text: string }> = {
-  received: { label: 'New', bg: Colors.infoLight, text: Colors.info },
-  confirmed: { label: 'Confirmed', bg: Colors.infoLight, text: Colors.info },
-  preparing: { label: 'Preparing', bg: Colors.warningLight, text: Colors.warning },
-  ready: { label: 'Ready', bg: Colors.successLight, text: Colors.success },
-  picked_up: { label: 'Picked Up', bg: Colors.accentLight, text: Colors.accent },
-  delivered: { label: 'Delivered', bg: Colors.successLight, text: Colors.success },
-  cancelled: { label: 'Cancelled', bg: Colors.dangerLight, text: Colors.danger },
+const statusColors: Record<OrderStatus, { bg: string; text: string }> = {
+  received: { bg: Colors.infoLight, text: Colors.info },
+  confirmed: { bg: Colors.infoLight, text: Colors.info },
+  preparing: { bg: Colors.warningLight, text: Colors.warning },
+  ready: { bg: Colors.successLight, text: Colors.success },
+  picked_up: { bg: Colors.accentLight, text: Colors.accent },
+  delivered: { bg: Colors.successLight, text: Colors.success },
+  cancelled: { bg: Colors.dangerLight, text: Colors.danger },
+};
+
+const statusKeys: Record<OrderStatus, string> = {
+  received: 'statusBadge.new',
+  confirmed: 'statusBadge.confirmed',
+  preparing: 'statusBadge.preparing',
+  ready: 'statusBadge.ready',
+  picked_up: 'statusBadge.pickedUp',
+  delivered: 'statusBadge.delivered',
+  cancelled: 'statusBadge.cancelled',
 };
 
 interface Props {
@@ -18,10 +29,13 @@ interface Props {
 }
 
 export default function StatusBadge({ status }: Props) {
-  const config = statusConfig[status];
+  const t = useT();
+  const colors = statusColors[status];
+  const label = t(statusKeys[status] as any);
+
   return (
-    <View style={[styles.badge, { backgroundColor: config.bg }]}>
-      <Text style={[styles.text, { color: config.text }]}>{config.label}</Text>
+    <View style={[styles.badge, { backgroundColor: colors.bg }]}>
+      <Text style={[styles.text, { color: colors.text }]}>{label}</Text>
     </View>
   );
 }

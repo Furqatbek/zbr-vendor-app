@@ -5,13 +5,21 @@ import { LineChart } from 'react-native-chart-kit';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
 import { useStore } from '../../store';
 import Card from '../../components/Card';
+import { useT } from '../../i18n';
 
 type Period = 'day' | 'week' | 'month';
 
 const screenWidth = Dimensions.get('window').width;
 
+const periodKeys: Record<Period, string> = {
+  day: 'reports.day',
+  week: 'reports.week',
+  month: 'reports.month',
+};
+
 export default function ReportsScreen() {
   const { revenueData, selectedPeriod, setSelectedPeriod } = useStore();
+  const t = useT();
 
   const chartConfig = {
     backgroundGradientFrom: Colors.white,
@@ -41,7 +49,7 @@ export default function ReportsScreen() {
             accessibilityRole="tab"
           >
             <Text style={[styles.segmentText, selectedPeriod === p && styles.segmentTextActive]}>
-              {p.charAt(0).toUpperCase() + p.slice(1)}
+              {t(periodKeys[p] as any)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -50,29 +58,29 @@ export default function ReportsScreen() {
       {/* Export Button */}
       <TouchableOpacity style={styles.exportButton} activeOpacity={0.7}>
         <Ionicons name="download-outline" size={18} color={Colors.accent} />
-        <Text style={styles.exportText}>Export PDF</Text>
+        <Text style={styles.exportText}>{t('reports.exportPdf' as any)}</Text>
       </TouchableOpacity>
 
       {/* Revenue Summary */}
       <Card style={styles.revenueCard}>
-        <Text style={styles.revenueLabel}>Total Revenue</Text>
+        <Text style={styles.revenueLabel}>{t('reports.totalRevenue' as any)}</Text>
         <Text style={styles.revenueValue}>${revenueData.totalRevenue.toFixed(2)}</Text>
       </Card>
 
       <View style={styles.statsRow}>
         <Card style={styles.statCard}>
-          <Text style={styles.statLabel}>Orders</Text>
+          <Text style={styles.statLabel}>{t('reports.orders' as any)}</Text>
           <Text style={styles.statValue}>{revenueData.ordersCount}</Text>
         </Card>
         <Card style={styles.statCard}>
-          <Text style={styles.statLabel}>Avg Value</Text>
+          <Text style={styles.statLabel}>{t('reports.avgValue' as any)}</Text>
           <Text style={styles.statValue}>${revenueData.avgOrderValue.toFixed(2)}</Text>
         </Card>
       </View>
 
       {/* Chart */}
       <Card style={styles.chartCard}>
-        <Text style={styles.chartTitle}>Earnings Over Time</Text>
+        <Text style={styles.chartTitle}>{t('reports.earningsOverTime' as any)}</Text>
         <LineChart
           data={chartData}
           width={screenWidth - Spacing.base * 2 - Spacing.base * 2}
@@ -90,13 +98,13 @@ export default function ReportsScreen() {
 
       {/* Top Selling Items */}
       <Card style={styles.topItemsCard}>
-        <Text style={styles.sectionTitle}>Top Selling Items</Text>
+        <Text style={styles.sectionTitle}>{t('reports.topSellingItems' as any)}</Text>
         {revenueData.topItems.map((item) => (
           <View key={item.rank} style={styles.topItemRow}>
             <Text style={styles.topItemRank}>#{item.rank}</Text>
             <View style={styles.topItemInfo}>
               <Text style={styles.topItemName}>{item.name}</Text>
-              <Text style={styles.topItemUnits}>{item.unitsSold} sold</Text>
+              <Text style={styles.topItemUnits}>{t('reports.sold' as any, { count: item.unitsSold })}</Text>
             </View>
             <Text style={styles.topItemRevenue}>${item.revenue.toFixed(2)}</Text>
           </View>
@@ -107,12 +115,12 @@ export default function ReportsScreen() {
       <View style={styles.statsRow}>
         <Card style={styles.statCard}>
           <Ionicons name="arrow-undo-outline" size={20} color={Colors.warning} />
-          <Text style={styles.statLabel}>Refunds</Text>
+          <Text style={styles.statLabel}>{t('reports.refunds' as any)}</Text>
           <Text style={styles.statValue}>{revenueData.refunds}</Text>
         </Card>
         <Card style={styles.statCard}>
           <Ionicons name="close-circle-outline" size={20} color={Colors.danger} />
-          <Text style={styles.statLabel}>Cancellations</Text>
+          <Text style={styles.statLabel}>{t('reports.cancellations' as any)}</Text>
           <Text style={styles.statValue}>{revenueData.cancellations}</Text>
         </Card>
       </View>

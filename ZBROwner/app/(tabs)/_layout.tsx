@@ -5,10 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography, Spacing } from '../../constants/theme';
 import { useStore } from '../../store';
-
-type IconName = React.ComponentProps<typeof Ionicons>['name'];
+import { useT } from '../../i18n';
 
 export default function TabLayout() {
+  const t = useT();
   const orders = useStore((s) => s.orders);
   const newOrderCount = orders.filter((o) => o.status === 'received').length;
   const insets = useSafeAreaInsets();
@@ -51,7 +51,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Orders',
+          title: t('tabs.orders'),
           tabBarIcon: ({ color, size }) => <Ionicons name="receipt-outline" size={size} color={color} />,
           tabBarBadge: newOrderCount > 0 ? newOrderCount : undefined,
           tabBarBadgeStyle: { backgroundColor: Colors.accent, color: Colors.white },
@@ -60,28 +60,28 @@ export default function TabLayout() {
       <Tabs.Screen
         name="menu"
         options={{
-          title: 'Menu',
+          title: t('tabs.menu'),
           tabBarIcon: ({ color, size }) => <Ionicons name="restaurant-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="reports"
         options={{
-          title: 'Reports',
+          title: t('tabs.reports'),
           tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="reviews"
         options={{
-          title: 'Reviews',
+          title: t('tabs.reviews'),
           tabBarIcon: ({ color, size }) => <Ionicons name="star-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
-          title: 'More',
+          title: t('tabs.more'),
           tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal" size={size} color={color} />,
         }}
       />

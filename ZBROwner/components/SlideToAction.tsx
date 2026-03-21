@@ -1,8 +1,9 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Animated, PanResponder, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Animated, PanResponder } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors, BorderRadius, Typography, Spacing } from '../constants/theme';
+import { useT } from '../i18n';
 
 const SLIDER_HEIGHT = 56;
 const THUMB_SIZE = 48;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function SlideToAction({ onAccept, onDecline }: Props) {
+  const t = useT();
   const pan = useRef(new Animated.Value(0)).current;
   const containerWidth = useRef(0);
 
@@ -46,34 +48,18 @@ export default function SlideToAction({ onAccept, onDecline }: Props) {
     })
   ).current;
 
-  const acceptOpacity = pan.interpolate({
-    inputRange: [0, 100],
-    outputRange: [0.3, 1],
-    extrapolate: 'clamp',
-  });
-
-  const declineOpacity = pan.interpolate({
-    inputRange: [-100, 0],
-    outputRange: [1, 0.3],
-    extrapolate: 'clamp',
-  });
+  const acceptOpacity = pan.interpolate({ inputRange: [0, 100], outputRange: [0.3, 1], extrapolate: 'clamp' });
+  const declineOpacity = pan.interpolate({ inputRange: [-100, 0], outputRange: [1, 0.3], extrapolate: 'clamp' });
 
   return (
-    <View
-      style={styles.container}
-      onLayout={(e) => { containerWidth.current = e.nativeEvent.layout.width; }}
-    >
+    <View style={styles.container} onLayout={(e) => { containerWidth.current = e.nativeEvent.layout.width; }}>
       <Animated.Text style={[styles.labelLeft, { opacity: declineOpacity }]}>
-        Decline
+        {t('slideToAction.decline')}
       </Animated.Text>
       <Animated.Text style={[styles.labelRight, { opacity: acceptOpacity }]}>
-        Accept
+        {t('slideToAction.accept')}
       </Animated.Text>
-
-      <Animated.View
-        style={[styles.thumb, { transform: [{ translateX: pan }] }]}
-        {...panResponder.panHandlers}
-      >
+      <Animated.View style={[styles.thumb, { transform: [{ translateX: pan }] }]} {...panResponder.panHandlers}>
         <Ionicons name="swap-horizontal" size={24} color={Colors.white} />
       </Animated.View>
     </View>
@@ -81,36 +67,8 @@ export default function SlideToAction({ onAccept, onDecline }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    height: SLIDER_HEIGHT,
-    backgroundColor: Colors.gray100,
-    borderRadius: BorderRadius.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-    marginTop: Spacing.sm,
-  },
-  thumb: {
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
-    borderRadius: BorderRadius.button,
-    backgroundColor: Colors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
-  },
-  labelLeft: {
-    position: 'absolute',
-    left: Spacing.base,
-    ...Typography.subhead,
-    fontWeight: '600',
-    color: Colors.danger,
-  },
-  labelRight: {
-    position: 'absolute',
-    right: Spacing.base,
-    ...Typography.subhead,
-    fontWeight: '600',
-    color: Colors.success,
-  },
+  container: { height: SLIDER_HEIGHT, backgroundColor: Colors.gray100, borderRadius: BorderRadius.card, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginTop: Spacing.sm },
+  thumb: { width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: BorderRadius.button, backgroundColor: Colors.accent, justifyContent: 'center', alignItems: 'center', position: 'absolute' },
+  labelLeft: { position: 'absolute', left: Spacing.base, ...Typography.subhead, fontWeight: '600', color: Colors.danger },
+  labelRight: { position: 'absolute', right: Spacing.base, ...Typography.subhead, fontWeight: '600', color: Colors.success },
 });
