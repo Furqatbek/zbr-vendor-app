@@ -50,6 +50,10 @@ function AppStack() {
         options={{ headerShown: true, title: t('screenTitles.orderHistory'), headerTintColor: Colors.accent }}
       />
       <Stack.Screen
+        name="settings/sold-items"
+        options={{ headerShown: true, title: t('screenTitles.soldItems'), headerTintColor: Colors.accent }}
+      />
+      <Stack.Screen
         name="settings/help"
         options={{ headerShown: true, title: t('screenTitles.helpCenter'), headerTintColor: Colors.accent }}
       />

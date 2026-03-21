@@ -15,6 +15,7 @@ export default {
     notifications: 'Билдиришномалар',
     staffAccounts: 'Ходимлар',
     orderHistory: 'Буюртмалар тарихи',
+    soldItems: 'Сотилган маҳсулотлар',
     helpCenter: 'Ёрдам маркази',
     about: 'Илова ҳақида',
   },
@@ -157,10 +158,23 @@ export default {
     orders: 'Буюртмалар',
     avgValue: 'Ўртача чек',
     earningsOverTime: 'Вақт бўйича даромад',
-    topSellingItems: 'Энг кўп сотилганлар',
+    soldItems: 'Сотилган маҳсулотлар',
     sold: '{{count}} та сотилди',
+    viewAllItems: 'Барча {{count}} та маҳсулот',
     refunds: 'Қайтаришлар',
     cancellations: 'Бекор қилишлар',
+  },
+
+  soldItems: {
+    totalUnits: 'Жами бирликлар',
+    totalRevenue: 'Жами даромад',
+    filterByCategory: 'Категория',
+    allCategories: 'Барчаси',
+    sortBy: 'Саралаш:',
+    byUnits: 'Сони',
+    byRevenue: 'Даромад',
+    showingItems: '{{count}} та маҳсулот',
+    noItems: 'Сотилган маҳсулотлар топилмади',
   },
 
   reviews: {

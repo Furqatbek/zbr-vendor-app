@@ -15,6 +15,7 @@ export default {
     notifications: 'Уведомления',
     staffAccounts: 'Сотрудники',
     orderHistory: 'История заказов',
+    soldItems: 'Проданные товары',
     helpCenter: 'Центр помощи',
     about: 'О приложении',
   },
@@ -157,10 +158,23 @@ export default {
     orders: 'Заказы',
     avgValue: 'Средний чек',
     earningsOverTime: 'Выручка по времени',
-    topSellingItems: 'Самые продаваемые',
+    soldItems: 'Проданные товары',
     sold: '{{count}} продано',
+    viewAllItems: 'Все {{count}} товаров',
     refunds: 'Возвраты',
     cancellations: 'Отмены',
+  },
+
+  soldItems: {
+    totalUnits: 'Всего единиц',
+    totalRevenue: 'Общая выручка',
+    filterByCategory: 'Категория',
+    allCategories: 'Все',
+    sortBy: 'Сорт.:',
+    byUnits: 'Кол-во',
+    byRevenue: 'Выручка',
+    showingItems: '{{count}} товаров',
+    noItems: 'Проданных товаров не найдено',
   },
 
   reviews: {

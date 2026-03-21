@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { LineChart } from 'react-native-chart-kit';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
 import { useStore } from '../../store';
@@ -21,7 +22,9 @@ const periodKeys: Record<Period, string> = {
 export default function ReportsScreen() {
   const { revenueData, selectedPeriod, setSelectedPeriod } = useStore();
   const t = useT();
+  const router = useRouter();
   const { refreshing, handleRefresh } = useRefresh();
+  const previewItems = revenueData.soldItems.slice(0, 5);
 
   const chartConfig = {
     backgroundGradientFrom: Colors.white,
@@ -98,19 +101,25 @@ export default function ReportsScreen() {
         />
       </Card>
 
-      {/* Top Selling Items */}
-      <Card style={styles.topItemsCard}>
-        <Text style={styles.sectionTitle}>{t('reports.topSellingItems' as any)}</Text>
-        {revenueData.topItems.map((item) => (
-          <View key={item.rank} style={styles.topItemRow}>
-            <Text style={styles.topItemRank}>#{item.rank}</Text>
-            <View style={styles.topItemInfo}>
-              <Text style={styles.topItemName}>{item.name}</Text>
-              <Text style={styles.topItemUnits}>{t('reports.sold' as any, { count: item.unitsSold })}</Text>
+      {/* Sold Items Preview */}
+      <Card style={styles.soldItemsCard}>
+        <Text style={styles.sectionTitle}>{t('reports.soldItems' as any)}</Text>
+        {previewItems.map((item, index) => (
+          <View key={item.name} style={[styles.soldItemRow, index < previewItems.length - 1 && styles.soldItemBorder]}>
+            <View style={styles.soldItemInfo}>
+              <Text style={styles.soldItemName}>{item.name}</Text>
+              <Text style={styles.soldItemCategory}>{item.category}</Text>
             </View>
-            <Text style={styles.topItemRevenue}>{t('common.currency' as any, { amount: item.revenue.toFixed(2) })}</Text>
+            <View style={styles.soldItemStats}>
+              <Text style={styles.soldItemUnits}>{t('reports.sold' as any, { count: item.unitsSold })}</Text>
+              <Text style={styles.soldItemRevenue}>{t('common.currency' as any, { amount: item.revenue.toFixed(2) })}</Text>
+            </View>
           </View>
         ))}
+        <TouchableOpacity style={styles.viewAllButton} activeOpacity={0.7} onPress={() => router.push('/settings/sold-items' as any)}>
+          <Text style={styles.viewAllText}>{t('reports.viewAllItems' as any, { count: revenueData.soldItems.length })}</Text>
+          <Ionicons name="chevron-forward" size={16} color={Colors.accent} />
+        </TouchableOpacity>
       </Card>
 
       {/* Refunds & Cancellations */}
@@ -156,12 +165,16 @@ const styles = StyleSheet.create({
   chartCard: { marginBottom: Spacing.base },
   chartTitle: { ...Typography.headline, color: Colors.black, marginBottom: Spacing.md },
   chart: { borderRadius: BorderRadius.card, marginLeft: -Spacing.base },
-  topItemsCard: { marginBottom: Spacing.base },
-  sectionTitle: { ...Typography.headline, color: Colors.black, marginBottom: Spacing.md },
-  topItemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
-  topItemRank: { ...Typography.headline, color: Colors.accent, width: 36 },
-  topItemInfo: { flex: 1 },
-  topItemName: { ...Typography.subhead, color: Colors.black },
-  topItemUnits: { ...Typography.caption1, color: Colors.gray500 },
-  topItemRevenue: { ...Typography.headline, color: Colors.black },
+  soldItemsCard: { marginBottom: Spacing.base, padding: 0 },
+  sectionTitle: { ...Typography.headline, color: Colors.black, padding: Spacing.base, paddingBottom: Spacing.sm },
+  soldItemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md, paddingHorizontal: Spacing.base },
+  soldItemBorder: { borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  soldItemInfo: { flex: 1 },
+  soldItemName: { ...Typography.body, color: Colors.black },
+  soldItemCategory: { ...Typography.caption1, color: Colors.gray500, marginTop: 2 },
+  soldItemStats: { alignItems: 'flex-end' },
+  soldItemUnits: { ...Typography.subhead, color: Colors.gray600 },
+  soldItemRevenue: { ...Typography.headline, color: Colors.black, marginTop: 2 },
+  viewAllButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.base, borderTopWidth: 1, borderTopColor: Colors.gray100, gap: Spacing.xs },
+  viewAllText: { ...Typography.subhead, color: Colors.accent, fontWeight: '600' },
 });

@@ -93,7 +93,7 @@ export interface RevenueData {
   ordersCount: number;
   avgOrderValue: number;
   chartData: { label: string; value: number }[];
-  topItems: { rank: number; name: string; unitsSold: number; revenue: number }[];
+  soldItems: { name: string; unitsSold: number; revenue: number; category: string }[];
   refunds: number;
   cancellations: number;
 }

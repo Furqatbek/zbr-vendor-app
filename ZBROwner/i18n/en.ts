@@ -17,6 +17,7 @@ export default {
     notifications: 'Notifications',
     staffAccounts: 'Staff Accounts',
     orderHistory: 'Order History',
+    soldItems: 'Sold Items',
     helpCenter: 'Help Center',
     about: 'About',
   },
@@ -168,10 +169,23 @@ export default {
     orders: 'Orders',
     avgValue: 'Avg Value',
     earningsOverTime: 'Earnings Over Time',
-    topSellingItems: 'Top Selling Items',
+    soldItems: 'Sold Items',
     sold: '{{count}} sold',
+    viewAllItems: 'View all {{count}} items',
     refunds: 'Refunds',
     cancellations: 'Cancellations',
+  },
+
+  soldItems: {
+    totalUnits: 'Total Units',
+    totalRevenue: 'Total Revenue',
+    filterByCategory: 'Category',
+    allCategories: 'All',
+    sortBy: 'Sort:',
+    byUnits: 'Units',
+    byRevenue: 'Revenue',
+    showingItems: '{{count}} items',
+    noItems: 'No sold items found',
   },
 
   // Reviews

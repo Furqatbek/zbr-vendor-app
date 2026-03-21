@@ -15,6 +15,7 @@ export default {
     notifications: 'Bildirishnomalar',
     staffAccounts: 'Xodimlar',
     orderHistory: 'Buyurtmalar tarixi',
+    soldItems: 'Sotilgan mahsulotlar',
     helpCenter: 'Yordam markazi',
     about: 'Ilova haqida',
   },
@@ -157,10 +158,23 @@ export default {
     orders: 'Buyurtmalar',
     avgValue: 'O\'rtacha chek',
     earningsOverTime: 'Vaqt bo\'yicha daromad',
-    topSellingItems: 'Eng ko\'p sotilganlar',
+    soldItems: 'Sotilgan mahsulotlar',
     sold: '{{count}} ta sotildi',
+    viewAllItems: 'Barcha {{count}} ta mahsulot',
     refunds: 'Qaytarishlar',
     cancellations: 'Bekor qilishlar',
+  },
+
+  soldItems: {
+    totalUnits: 'Jami birliklar',
+    totalRevenue: 'Jami daromad',
+    filterByCategory: 'Kategoriya',
+    allCategories: 'Barchasi',
+    sortBy: 'Saralash:',
+    byUnits: 'Soni',
+    byRevenue: 'Daromad',
+    showingItems: '{{count}} ta mahsulot',
+    noItems: 'Sotilgan mahsulotlar topilmadi',
   },
 
   reviews: {
