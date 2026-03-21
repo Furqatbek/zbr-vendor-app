@@ -65,7 +65,7 @@ export default function OrdersScreen() {
   const renderHeader = () => (
     <View>
       {/* Top Bar */}
-      <View style={[styles.topBar, { paddingTop: insets.top + Spacing.sm }]}>
+      <View style={styles.topBar}>
         <View>
           <Text style={styles.restaurantName}>{restaurantName}</Text>
           <Text style={styles.dateText}>
