@@ -4,9 +4,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 import { useStore } from '../../store';
 import Card from '../../components/Card';
+import { useT } from '../../i18n';
+
+const DAY_KEYS: Record<string, string> = {
+  Monday: 'workingHoursScreen.monday',
+  Tuesday: 'workingHoursScreen.tuesday',
+  Wednesday: 'workingHoursScreen.wednesday',
+  Thursday: 'workingHoursScreen.thursday',
+  Friday: 'workingHoursScreen.friday',
+  Saturday: 'workingHoursScreen.saturday',
+  Sunday: 'workingHoursScreen.sunday',
+};
 
 export default function WorkingHoursScreen() {
   const { workingHours, toggleWorkingDay } = useStore();
+  const t = useT();
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
@@ -17,7 +29,7 @@ export default function WorkingHoursScreen() {
         keyExtractor={(item) => item.day}
         contentContainerStyle={styles.content}
         ListHeaderComponent={
-          <Text style={styles.subtitle}>Set your restaurant's operating hours for each day</Text>
+          <Text style={styles.subtitle}>{t('workingHoursScreen.subtitle')}</Text>
         }
         renderItem={({ item, index }) => {
           const isToday = item.day === today;
@@ -26,17 +38,19 @@ export default function WorkingHoursScreen() {
               <View style={styles.dayRow}>
                 <View style={styles.dayInfo}>
                   <View style={styles.dayHeader}>
-                    <Text style={[styles.dayName, isToday && styles.todayText]}>{item.day}</Text>
+                    <Text style={[styles.dayName, isToday && styles.todayText]}>
+                      {DAY_KEYS[item.day] ? t(DAY_KEYS[item.day] as any) : item.day}
+                    </Text>
                     {isToday && (
                       <View style={styles.todayBadge}>
-                        <Text style={styles.todayBadgeText}>Today</Text>
+                        <Text style={styles.todayBadgeText}>{t('workingHoursScreen.today')}</Text>
                       </View>
                     )}
                   </View>
                   {item.isOpen ? (
                     <Text style={styles.hours}>{item.openTime} — {item.closeTime}</Text>
                   ) : (
-                    <Text style={styles.closedText}>Closed</Text>
+                    <Text style={styles.closedText}>{t('workingHoursScreen.closed')}</Text>
                   )}
                 </View>
                 <Switch

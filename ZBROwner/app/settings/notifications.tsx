@@ -4,18 +4,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 import { useStore } from '../../store';
 import Card from '../../components/Card';
-
-const NOTIFICATION_CONFIG = [
-  { key: 'newOrder', label: 'New Orders', description: 'Alert when a new order is received', icon: 'receipt-outline' as const, important: true },
-  { key: 'orderTimeout', label: 'Order Timeout Warning', description: 'Urgent alert when order is about to expire', icon: 'alarm-outline' as const, important: true },
-  { key: 'courierAssigned', label: 'Courier Assigned', description: 'Notification when a courier is assigned', icon: 'bicycle-outline' as const, important: false },
-  { key: 'reviewReceived', label: 'New Reviews', description: 'Alert when a customer leaves a review', icon: 'star-outline' as const, important: false },
-  { key: 'promotions', label: 'Promotions & Updates', description: 'Platform news and promotional offers', icon: 'megaphone-outline' as const, important: false },
-  { key: 'weeklyReport', label: 'Weekly Report', description: 'Weekly summary of revenue and performance', icon: 'bar-chart-outline' as const, important: false },
-];
+import { useT } from '../../i18n';
 
 export default function NotificationsScreen() {
   const { notificationPrefs, toggleNotificationPref } = useStore();
+  const t = useT();
+
+  const NOTIFICATION_CONFIG = [
+    { key: 'newOrder', label: t('notificationsScreen.newOrders'), description: t('notificationsScreen.newOrdersDesc'), icon: 'receipt-outline' as const, important: true },
+    { key: 'orderTimeout', label: t('notificationsScreen.orderTimeout'), description: t('notificationsScreen.orderTimeoutDesc'), icon: 'alarm-outline' as const, important: true },
+    { key: 'courierAssigned', label: t('notificationsScreen.courierAssigned'), description: t('notificationsScreen.courierAssignedDesc'), icon: 'bicycle-outline' as const, important: false },
+    { key: 'reviewReceived', label: t('notificationsScreen.newReviews'), description: t('notificationsScreen.newReviewsDesc'), icon: 'star-outline' as const, important: false },
+    { key: 'promotions', label: t('notificationsScreen.promotions'), description: t('notificationsScreen.promotionsDesc'), icon: 'megaphone-outline' as const, important: false },
+    { key: 'weeklyReport', label: t('notificationsScreen.weeklyReport'), description: t('notificationsScreen.weeklyReportDesc'), icon: 'bar-chart-outline' as const, important: false },
+  ];
 
   const criticalNotifs = NOTIFICATION_CONFIG.filter((n) => n.important);
   const otherNotifs = NOTIFICATION_CONFIG.filter((n) => !n.important);
@@ -40,13 +42,13 @@ export default function NotificationsScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.sectionTitle}>Critical Alerts</Text>
-      <Text style={styles.sectionDesc}>These notifications are essential for order management</Text>
+      <Text style={styles.sectionTitle}>{t('notificationsScreen.criticalAlerts')}</Text>
+      <Text style={styles.sectionDesc}>{t('notificationsScreen.criticalDescription')}</Text>
       <Card style={styles.notifCard}>
         {criticalNotifs.map((item, i) => renderNotifItem(item, i, criticalNotifs))}
       </Card>
 
-      <Text style={styles.sectionTitle}>Other Notifications</Text>
+      <Text style={styles.sectionTitle}>{t('notificationsScreen.otherNotifications')}</Text>
       <Card style={styles.notifCard}>
         {otherNotifs.map((item, i) => renderNotifItem(item, i, otherNotifs))}
       </Card>
@@ -54,7 +56,7 @@ export default function NotificationsScreen() {
       <Card style={styles.infoCard}>
         <Ionicons name="information-circle-outline" size={20} color={Colors.info} />
         <Text style={styles.infoText}>
-          Push notifications require device permission. Go to your device settings to manage app notification permissions.
+          {t('notificationsScreen.permissionNote')}
         </Text>
       </Card>
     </ScrollView>

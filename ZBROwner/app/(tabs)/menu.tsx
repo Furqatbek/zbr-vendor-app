@@ -8,6 +8,7 @@ import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../consta
 import { useStore } from '../../store';
 import type { MenuCategory, MenuItem } from '../../types';
 import Card from '../../components/Card';
+import { useT } from '../../i18n';
 
 type ViewMode = 'categories' | 'items';
 
@@ -16,6 +17,8 @@ export default function MenuScreen() {
     categories, menuItems,
     toggleCategoryActive, toggleItemStock, addCategory, deleteMenuItem,
   } = useStore();
+
+  const t = useT();
 
   const [viewMode, setViewMode] = useState<ViewMode>('categories');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -29,11 +32,11 @@ export default function MenuScreen() {
     : menuItems;
 
   const handleDeleteItem = useCallback((item: MenuItem) => {
-    Alert.alert('Delete Item', `Remove "${item.name}" from the menu?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteMenuItem(item.id) },
+    Alert.alert(t('common.delete'), `Remove "${item.name}" from the menu?`, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: () => deleteMenuItem(item.id) },
     ]);
-  }, [deleteMenuItem]);
+  }, [deleteMenuItem, t]);
 
   const handleAddCategory = () => {
     if (newCategoryName.trim()) {
@@ -55,7 +58,7 @@ export default function MenuScreen() {
         </View>
         <View style={styles.categoryInfo}>
           <Text style={styles.categoryName}>{item.name}</Text>
-          <Text style={styles.categoryCount}>{item.itemCount} items</Text>
+          <Text style={styles.categoryCount}>{t('menu.itemsCount', { count: item.itemCount })}</Text>
         </View>
         <Switch
           value={item.isActive}
@@ -81,7 +84,7 @@ export default function MenuScreen() {
         <View style={styles.menuItemActions}>
           {!item.inStock && (
             <View style={styles.outOfStockBadge}>
-              <Text style={styles.outOfStockText}>Out</Text>
+              <Text style={styles.outOfStockText}>{t('menu.outOfStock')}</Text>
             </View>
           )}
           <Switch
@@ -93,7 +96,7 @@ export default function MenuScreen() {
           <TouchableOpacity
             onPress={() => { setEditingItem(item); setShowEditItem(true); }}
             style={styles.editButton}
-            accessibilityLabel="Edit item"
+            accessibilityLabel={t('menu.editItem')}
           >
             <Ionicons name="pencil" size={18} color={Colors.accent} />
           </TouchableOpacity>
@@ -102,10 +105,10 @@ export default function MenuScreen() {
       <TouchableOpacity
         style={styles.deleteSwipe}
         onPress={() => handleDeleteItem(item)}
-        accessibilityLabel="Delete item"
+        accessibilityLabel={t('common.delete')}
       >
         <Ionicons name="trash-outline" size={16} color={Colors.danger} />
-        <Text style={styles.deleteText}>Delete</Text>
+        <Text style={styles.deleteText}>{t('common.delete')}</Text>
       </TouchableOpacity>
     </Card>
   );
@@ -124,8 +127,8 @@ export default function MenuScreen() {
         )}
         <Text style={styles.headerTitle}>
           {viewMode === 'categories'
-            ? 'Menu Categories'
-            : categories.find((c) => c.id === selectedCategoryId)?.name ?? 'All Items'}
+            ? t('menu.menuCategories')
+            : categories.find((c) => c.id === selectedCategoryId)?.name ?? t('menu.menuCategories')}
         </Text>
       </View>
 
@@ -138,7 +141,7 @@ export default function MenuScreen() {
           ListFooterComponent={
             <TouchableOpacity style={styles.addButton} onPress={() => setShowAddCategory(true)}>
               <Ionicons name="add-circle" size={20} color={Colors.accent} />
-              <Text style={styles.addButtonText}>Add Category</Text>
+              <Text style={styles.addButtonText}>{t('menu.addCategory')}</Text>
             </TouchableOpacity>
           }
         />
@@ -151,7 +154,7 @@ export default function MenuScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="fast-food-outline" size={48} color={Colors.gray300} />
-              <Text style={styles.emptyText}>No items in this category</Text>
+              <Text style={styles.emptyText}>{t('menu.noItemsInCategory')}</Text>
             </View>
           }
         />
@@ -168,10 +171,10 @@ export default function MenuScreen() {
       <Modal visible={showAddCategory} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>New Category</Text>
+            <Text style={styles.modalTitle}>{t('menu.newCategory')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Category name"
+              placeholder={t('menu.categoryName')}
               value={newCategoryName}
               onChangeText={setNewCategoryName}
               autoFocus
@@ -181,10 +184,10 @@ export default function MenuScreen() {
                 style={styles.modalCancelButton}
                 onPress={() => { setShowAddCategory(false); setNewCategoryName(''); }}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalConfirmButton} onPress={handleAddCategory}>
-                <Text style={styles.modalConfirmText}>Add</Text>
+                <Text style={styles.modalConfirmText}>{t('common.add')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -196,22 +199,22 @@ export default function MenuScreen() {
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.editModalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Item</Text>
+              <Text style={styles.modalTitle}>{t('menu.editItem')}</Text>
               <TouchableOpacity onPress={() => setShowEditItem(false)}>
                 <Ionicons name="close" size={24} color={Colors.gray600} />
               </TouchableOpacity>
             </View>
             {editingItem && (
               <ScrollView>
-                <Text style={styles.fieldLabel}>Name</Text>
+                <Text style={styles.fieldLabel}>{t('common.name')}</Text>
                 <TextInput style={styles.input} value={editingItem.name} editable={false} />
-                <Text style={styles.fieldLabel}>Description</Text>
+                <Text style={styles.fieldLabel}>{t('common.description')}</Text>
                 <TextInput style={[styles.input, styles.textArea]} value={editingItem.description} multiline editable={false} />
-                <Text style={styles.fieldLabel}>Price</Text>
+                <Text style={styles.fieldLabel}>{t('common.price')}</Text>
                 <TextInput style={styles.input} value={`$${editingItem.price.toFixed(2)}`} editable={false} />
-                <Text style={styles.fieldLabel}>Category</Text>
+                <Text style={styles.fieldLabel}>{t('common.category')}</Text>
                 <TextInput style={styles.input} value={categories.find((c) => c.id === editingItem.categoryId)?.name ?? ''} editable={false} />
-                <Text style={styles.hintText}>Connect to backend API to enable editing</Text>
+                <Text style={styles.hintText}>{t('menu.connectBackendHint')}</Text>
               </ScrollView>
             )}
           </View>

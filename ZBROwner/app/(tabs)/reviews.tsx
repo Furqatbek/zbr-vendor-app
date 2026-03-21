@@ -9,11 +9,20 @@ import type { Review } from '../../types';
 import Card from '../../components/Card';
 import RatingStars from '../../components/RatingStars';
 import Chip from '../../components/Chip';
+import { useT } from '../../i18n';
 
 type Filter = 'all' | 'positive' | 'negative' | 'unresponded';
 
+const filterKeys: Record<Filter, string> = {
+  all: 'common.all',
+  positive: 'reviews.positive',
+  negative: 'reviews.negative',
+  unresponded: 'reviews.unresponded',
+};
+
 export default function ReviewsScreen() {
   const { reviews, replyToReview } = useStore();
+  const t = useT();
   const [filter, setFilter] = useState<Filter>('all');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
@@ -66,7 +75,7 @@ export default function ReviewsScreen() {
       </Text>
       {item.replied && item.replyText && (
         <View style={styles.replyBox}>
-          <Text style={styles.replyLabel}>Your reply</Text>
+          <Text style={styles.replyLabel}>{t('reviews.yourReply')}</Text>
           <Text style={styles.replyText}>{item.replyText}</Text>
         </View>
       )}
@@ -74,12 +83,12 @@ export default function ReviewsScreen() {
         {!item.replied && (
           <TouchableOpacity style={styles.replyButton} onPress={() => setReplyingTo(item.id)}>
             <Ionicons name="chatbubble-outline" size={16} color={Colors.accent} />
-            <Text style={styles.replyButtonText}>Reply</Text>
+            <Text style={styles.replyButtonText}>{t('reviews.reply')}</Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity
           style={styles.flagButton}
-          onPress={() => Alert.alert('Report', 'Review flagged for review.')}
+          onPress={() => Alert.alert(t('reviews.report'), t('reviews.reviewFlagged'))}
         >
           <Ionicons name="flag-outline" size={16} color={Colors.gray400} />
         </TouchableOpacity>
@@ -95,7 +104,7 @@ export default function ReviewsScreen() {
       <Card style={styles.overallCard}>
         <Text style={styles.overallRating}>{overallRating.toFixed(1)}</Text>
         <RatingStars rating={Math.round(overallRating)} size={24} />
-        <Text style={styles.overallCount}>{reviews.length} reviews</Text>
+        <Text style={styles.overallCount}>{t('reviews.reviewsCount', { count: reviews.length })}</Text>
       </Card>
 
       {/* Rating Distribution */}
@@ -120,7 +129,7 @@ export default function ReviewsScreen() {
         {(['all', 'positive', 'negative', 'unresponded'] as Filter[]).map((f) => (
           <Chip
             key={f}
-            label={f.charAt(0).toUpperCase() + f.slice(1)}
+            label={t(filterKeys[f] as any)}
             selected={filter === f}
             onPress={() => setFilter(f)}
           />
@@ -145,14 +154,14 @@ export default function ReviewsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Reply to Review</Text>
+              <Text style={styles.modalTitle}>{t('reviews.replyToReview')}</Text>
               <TouchableOpacity onPress={() => { setReplyingTo(null); setReplyText(''); }}>
                 <Ionicons name="close" size={24} color={Colors.gray600} />
               </TouchableOpacity>
             </View>
             <TextInput
               style={styles.replyInput}
-              placeholder="Write your reply..."
+              placeholder={t('reviews.writeReply')}
               value={replyText}
               onChangeText={setReplyText}
               multiline
@@ -163,7 +172,7 @@ export default function ReviewsScreen() {
               onPress={handleReply}
               disabled={!replyText.trim()}
             >
-              <Text style={styles.submitText}>Submit Reply</Text>
+              <Text style={styles.submitText}>{t('reviews.submitReply')}</Text>
             </TouchableOpacity>
           </View>
         </View>

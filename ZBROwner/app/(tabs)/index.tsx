@@ -14,6 +14,7 @@ import StatusBadge from '../../components/StatusBadge';
 import SlideToAction from '../../components/SlideToAction';
 import CountdownTimer from '../../components/CountdownTimer';
 import PillSwitch from '../../components/PillSwitch';
+import { useT } from '../../i18n';
 
 type Segment = 'new' | 'preparing' | 'waiting';
 
@@ -21,6 +22,7 @@ export default function OrdersScreen() {
   const [segment, setSegment] = useState<Segment>('new');
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const t = useT();
 
   const {
     restaurantName, isOpen, toggleOpen,
@@ -41,16 +43,16 @@ export default function OrdersScreen() {
 
   const handleDecline = useCallback((orderId: string) => {
     const reasons: { label: string; value: DeclineReason }[] = [
-      { label: 'Out of Stock', value: 'out_of_stock' },
-      { label: 'Too Busy', value: 'too_busy' },
-      { label: 'Closing Soon', value: 'closing_soon' },
-      { label: 'Other', value: 'other' },
+      { label: t('orders.reasonOutOfStock'), value: 'out_of_stock' },
+      { label: t('orders.reasonTooBusy'), value: 'too_busy' },
+      { label: t('orders.reasonClosingSoon'), value: 'closing_soon' },
+      { label: t('orders.reasonOther'), value: 'other' },
     ];
-    Alert.alert('Decline Order', 'Select a reason:', [
+    Alert.alert(t('orders.declineOrder'), t('orders.selectReason'), [
       ...reasons.map((r) => ({ text: r.label, onPress: () => declineOrder(orderId, r.value) })),
-      { text: 'Cancel', style: 'cancel' as const },
+      { text: t('common.cancel'), style: 'cancel' as const },
     ]);
-  }, [declineOrder]);
+  }, [declineOrder, t]);
 
   const formatTime = (iso: string) => {
     const d = new Date(iso);
@@ -73,15 +75,15 @@ export default function OrdersScreen() {
       {/* Revenue Snapshot */}
       <View style={styles.revenueRow}>
         <Card style={styles.revenueCard}>
-          <Text style={styles.revenueLabel}>Revenue</Text>
+          <Text style={styles.revenueLabel}>{t('orders.revenue')}</Text>
           <Text style={styles.revenueValue}>${todayRevenue.total.toFixed(2)}</Text>
         </Card>
         <Card style={styles.revenueCard}>
-          <Text style={styles.revenueLabel}>Orders</Text>
+          <Text style={styles.revenueLabel}>{t('orders.ordersCount')}</Text>
           <Text style={styles.revenueValue}>{todayRevenue.count}</Text>
         </Card>
         <Card style={styles.revenueCard}>
-          <Text style={styles.revenueLabel}>Avg Value</Text>
+          <Text style={styles.revenueLabel}>{t('orders.avgValue')}</Text>
           <Text style={styles.revenueValue}>${todayRevenue.avg.toFixed(2)}</Text>
         </Card>
       </View>
@@ -90,15 +92,15 @@ export default function OrdersScreen() {
       <View style={styles.counterRow}>
         <View style={[styles.counterBadge, { backgroundColor: Colors.infoLight }]}>
           <Text style={[styles.counterNum, { color: Colors.info }]}>{newOrders.length}</Text>
-          <Text style={[styles.counterLabel, { color: Colors.info }]}>New</Text>
+          <Text style={[styles.counterLabel, { color: Colors.info }]}>{t('orders.newLabel')}</Text>
         </View>
         <View style={[styles.counterBadge, { backgroundColor: Colors.warningLight }]}>
           <Text style={[styles.counterNum, { color: Colors.warning }]}>{preparingOrders.length}</Text>
-          <Text style={[styles.counterLabel, { color: Colors.warning }]}>Cooking</Text>
+          <Text style={[styles.counterLabel, { color: Colors.warning }]}>{t('orders.cooking')}</Text>
         </View>
         <View style={[styles.counterBadge, { backgroundColor: Colors.successLight }]}>
           <Text style={[styles.counterNum, { color: Colors.success }]}>{waitingOrders.length}</Text>
-          <Text style={[styles.counterLabel, { color: Colors.success }]}>Ready</Text>
+          <Text style={[styles.counterLabel, { color: Colors.success }]}>{t('orders.readyLabel')}</Text>
         </View>
       </View>
 
@@ -113,7 +115,7 @@ export default function OrdersScreen() {
             accessibilityState={{ selected: segment === s }}
           >
             <Text style={[styles.segmentText, segment === s && styles.segmentTextActive]}>
-              {s === 'new' ? 'New Orders' : s === 'preparing' ? 'Preparing' : 'Waiting'}
+              {s === 'new' ? t('orders.newOrders') : s === 'preparing' ? t('orders.preparingOrders') : t('orders.waitingOrders')}
             </Text>
           </TouchableOpacity>
         ))}
@@ -168,7 +170,7 @@ export default function OrdersScreen() {
         activeOpacity={0.8}
       >
         <Ionicons name="checkmark-circle" size={20} color={Colors.white} />
-        <Text style={styles.markReadyText}>Mark Ready</Text>
+        <Text style={styles.markReadyText}>{t('orders.markReady')}</Text>
       </TouchableOpacity>
     </Card>
   );
@@ -189,7 +191,7 @@ export default function OrdersScreen() {
             <Ionicons name="bicycle-outline" size={16} color={Colors.accent} />
             <Text style={styles.courierName}>{order.courierName}</Text>
             {order.courierETA && (
-              <Text style={styles.courierEta}>ETA {order.courierETA} min</Text>
+              <Text style={styles.courierEta}>{t('orders.etaMin', { minutes: order.courierETA })}</Text>
             )}
           </View>
         )}
@@ -219,7 +221,7 @@ export default function OrdersScreen() {
               color={Colors.gray300}
             />
             <Text style={styles.emptyText}>
-              {segment === 'new' ? 'No new orders' : segment === 'preparing' ? 'Nothing cooking' : 'No orders waiting'}
+              {segment === 'new' ? t('orders.noNewOrders') : segment === 'preparing' ? t('orders.nothingCooking') : t('orders.noOrdersWaiting')}
             </Text>
           </View>
         }

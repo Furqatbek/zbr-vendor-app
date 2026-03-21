@@ -12,24 +12,32 @@ import Card from '../../components/Card';
 import StatusBadge from '../../components/StatusBadge';
 import RatingStars from '../../components/RatingStars';
 import Chip from '../../components/Chip';
+import { useT } from '../../i18n';
 
 const STATUS_STEPS: OrderStatus[] = ['received', 'confirmed', 'preparing', 'ready', 'picked_up', 'delivered'];
-const STATUS_LABELS: Record<string, string> = {
-  received: 'Received',
-  confirmed: 'Confirmed',
-  preparing: 'Preparing',
-  ready: 'Ready',
-  picked_up: 'Picked Up',
-  delivered: 'Delivered',
+
+const STATUS_LABEL_KEYS: Record<string, string> = {
+  received: 'orderStatus.received',
+  confirmed: 'orderStatus.confirmed',
+  preparing: 'orderStatus.preparing',
+  ready: 'orderStatus.ready',
+  picked_up: 'orderStatus.picked_up',
+  delivered: 'orderStatus.delivered',
 };
 
-const CRITERIA = ['Behavior', 'Punctuality', 'Communication', 'Appearance'];
+const CRITERIA_KEYS = [
+  'orderDetail.criteriaBehavior',
+  'orderDetail.criteriaPunctuality',
+  'orderDetail.criteriaCommunication',
+  'orderDetail.criteriaAppearance',
+];
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { orders, updateOrderStatus, submitCourierRating } = useStore();
   const order = orders.find((o) => o.id === id);
+  const t = useT();
 
   const [showRatingSheet, setShowRatingSheet] = useState(false);
   const [courierStars, setCourierStars] = useState(0);
@@ -39,7 +47,7 @@ export default function OrderDetailScreen() {
   if (!order) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Order not found</Text>
+        <Text style={styles.errorText}>{t('orderDetail.orderNotFound')}</Text>
       </View>
     );
   }
@@ -47,10 +55,10 @@ export default function OrderDetailScreen() {
   const currentStepIndex = STATUS_STEPS.indexOf(order.status);
 
   const handleStatusChange = (newStatus: OrderStatus) => {
-    Alert.alert('Update Status', `Change status to "${STATUS_LABELS[newStatus]}"?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('orderDetail.updateStatus'), t('orderDetail.changeStatusTo', { status: t(STATUS_LABEL_KEYS[newStatus] as any) }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Confirm',
+        text: t('common.confirm'),
         onPress: () => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           updateOrderStatus(order.id, newStatus);
@@ -95,14 +103,14 @@ export default function OrderDetailScreen() {
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.orderNumber}>{order.orderNumber}</Text>
-          <Text style={styles.timeText}>Received {formatTime(order.receivedAt)}</Text>
+          <Text style={styles.timeText}>{t('orderDetail.receivedAt', { time: formatTime(order.receivedAt) })}</Text>
         </View>
         <StatusBadge status={order.status} />
       </View>
 
       {/* Status Stepper */}
       <Card style={styles.stepperCard}>
-        <Text style={styles.sectionTitle}>Order Progress</Text>
+        <Text style={styles.sectionTitle}>{t('orderDetail.orderProgress')}</Text>
         {STATUS_STEPS.map((step, index) => {
           const isCompleted = index <= currentStepIndex;
           const isCurrent = index === currentStepIndex;
@@ -123,7 +131,7 @@ export default function OrderDetailScreen() {
                 <View style={[styles.stepLine, isCompleted && styles.stepLineActive]} />
               )}
               <Text style={[styles.stepLabel, isCompleted && styles.stepLabelActive, isCurrent && styles.stepLabelCurrent]}>
-                {STATUS_LABELS[step]}
+                {t(STATUS_LABEL_KEYS[step] as any)}
               </Text>
               {index === currentStepIndex + 1 && (
                 <Ionicons name="chevron-forward" size={16} color={Colors.accent} style={{ marginLeft: 'auto' }} />
@@ -135,7 +143,7 @@ export default function OrderDetailScreen() {
 
       {/* Customer Info */}
       <Card style={styles.infoCard}>
-        <Text style={styles.sectionTitle}>Customer</Text>
+        <Text style={styles.sectionTitle}>{t('orderDetail.customer')}</Text>
         <View style={styles.infoRow}>
           <Ionicons name="person-outline" size={18} color={Colors.gray500} />
           <Text style={styles.infoText}>{order.customerName}</Text>
@@ -151,11 +159,11 @@ export default function OrderDetailScreen() {
       {/* Courier Info */}
       {order.courierName && (
         <Card style={styles.infoCard}>
-          <Text style={styles.sectionTitle}>Courier</Text>
+          <Text style={styles.sectionTitle}>{t('orderDetail.courier')}</Text>
           <View style={styles.infoRow}>
             <Ionicons name="bicycle-outline" size={18} color={Colors.gray500} />
             <Text style={styles.infoText}>{order.courierName}</Text>
-            {order.courierETA && <Text style={styles.etaText}>ETA {order.courierETA} min</Text>}
+            {order.courierETA && <Text style={styles.etaText}>{t('orders.etaMin', { minutes: order.courierETA })}</Text>}
           </View>
           {order.courierPhone && (
             <TouchableOpacity style={styles.infoRow} onPress={() => Linking.openURL(`tel:${order.courierPhone}`)}>
@@ -168,7 +176,7 @@ export default function OrderDetailScreen() {
 
       {/* Items */}
       <Card style={styles.infoCard}>
-        <Text style={styles.sectionTitle}>Items</Text>
+        <Text style={styles.sectionTitle}>{t('orderDetail.items')}</Text>
         {order.items.map((item) => (
           <View key={item.id} style={styles.itemRow}>
             <Text style={styles.itemQty}>{item.quantity}x</Text>
@@ -183,14 +191,14 @@ export default function OrderDetailScreen() {
           </View>
         )}
         <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total</Text>
+          <Text style={styles.totalLabel}>{t('orderDetail.total')}</Text>
           <Text style={styles.totalPrice}>${order.totalPrice.toFixed(2)}</Text>
         </View>
       </Card>
 
       {/* Quick Contact */}
       <Card style={styles.contactSection}>
-        <Text style={styles.sectionTitle}>Quick Contact</Text>
+        <Text style={styles.sectionTitle}>{t('orderDetail.quickContact')}</Text>
         {order.customerPhone && (
           <TouchableOpacity
             style={styles.contactCard}
@@ -201,7 +209,7 @@ export default function OrderDetailScreen() {
               <Ionicons name="person-outline" size={22} color={Colors.info} />
             </View>
             <View style={styles.contactInfo}>
-              <Text style={styles.contactTitle}>Customer</Text>
+              <Text style={styles.contactTitle}>{t('orderDetail.customer')}</Text>
               <Text style={styles.contactSubtitle}>{order.customerName}</Text>
             </View>
             <View style={styles.contactActions}>
@@ -227,9 +235,9 @@ export default function OrderDetailScreen() {
               <Ionicons name="bicycle-outline" size={22} color={Colors.accent} />
             </View>
             <View style={styles.contactInfo}>
-              <Text style={styles.contactTitle}>Courier</Text>
+              <Text style={styles.contactTitle}>{t('orderDetail.courier')}</Text>
               <Text style={styles.contactSubtitle}>
-                {order.courierName}{order.courierETA ? ` · ETA ${order.courierETA} min` : ''}
+                {order.courierName}{order.courierETA ? ` · ${t('orders.etaMin', { minutes: order.courierETA })}` : ''}
               </Text>
             </View>
             {order.courierPhone && (
@@ -249,8 +257,8 @@ export default function OrderDetailScreen() {
             <Ionicons name="headset-outline" size={22} color={Colors.success} />
           </View>
           <View style={styles.contactInfo}>
-            <Text style={styles.contactTitle}>Platform Support</Text>
-            <Text style={styles.contactSubtitle}>Live chat or hotline</Text>
+            <Text style={styles.contactTitle}>{t('orderDetail.platformSupport')}</Text>
+            <Text style={styles.contactSubtitle}>{t('orderDetail.liveChatOrHotline')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={Colors.gray400} />
         </TouchableOpacity>
@@ -261,7 +269,7 @@ export default function OrderDetailScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.ratingSheet}>
             <View style={styles.sheetHandle} />
-            <Text style={styles.ratingTitle}>Rate This Courier</Text>
+            <Text style={styles.ratingTitle}>{t('orderDetail.rateThisCourier')}</Text>
             <Text style={styles.ratingSubtitle}>{order.courierName}</Text>
 
             <RatingStars
@@ -271,21 +279,21 @@ export default function OrderDetailScreen() {
               onRate={setCourierStars}
             />
 
-            <Text style={styles.criteriaLabel}>What went well?</Text>
+            <Text style={styles.criteriaLabel}>{t('orderDetail.whatWentWell')}</Text>
             <View style={styles.criteriaRow}>
-              {CRITERIA.map((c) => (
+              {CRITERIA_KEYS.map((key) => (
                 <Chip
-                  key={c}
-                  label={c}
-                  selected={selectedCriteria.includes(c)}
-                  onPress={() => toggleCriterion(c)}
+                  key={key}
+                  label={t(key as any)}
+                  selected={selectedCriteria.includes(key)}
+                  onPress={() => toggleCriterion(key)}
                 />
               ))}
             </View>
 
             <TextInput
               style={styles.noteInput}
-              placeholder="Optional note..."
+              placeholder={t('orderDetail.optionalNote')}
               value={courierNote}
               onChangeText={setCourierNote}
               multiline
@@ -296,14 +304,14 @@ export default function OrderDetailScreen() {
               onPress={handleSubmitRating}
               disabled={courierStars === 0}
             >
-              <Text style={styles.submitText}>Submit Review</Text>
+              <Text style={styles.submitText}>{t('orderDetail.submitReview')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.skipButton}
               onPress={() => setShowRatingSheet(false)}
             >
-              <Text style={styles.skipText}>Skip</Text>
+              <Text style={styles.skipText}>{t('common.skip')}</Text>
             </TouchableOpacity>
           </View>
         </View>

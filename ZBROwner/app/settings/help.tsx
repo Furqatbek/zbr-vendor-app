@@ -3,47 +3,50 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'r
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 import Card from '../../components/Card';
-
-const FAQ_ITEMS = [
-  { q: 'How do I update my menu?', a: 'Go to the Menu tab, tap a category, then edit items individually. You can toggle stock status, change prices, and update descriptions.' },
-  { q: 'How do I accept an order?', a: 'On the Orders tab, slide the order card to the right to accept. Slide left to decline with a reason.' },
-  { q: 'How do I contact a courier?', a: 'Open the order detail page and use the Quick Contact section at the bottom to call or message the courier.' },
-  { q: 'When do I receive payouts?', a: 'Payouts are processed weekly on Tuesdays. Go to Payment Settings to view your payout history and schedule.' },
-  { q: 'How do I change working hours?', a: 'Go to More > Working Hours. Toggle days on/off and set opening and closing times.' },
-  { q: 'Can I temporarily close my restaurant?', a: 'Yes! Use the Open/Closed toggle on the home screen or in the More tab to temporarily pause orders.' },
-];
+import { useT } from '../../i18n';
 
 export default function HelpCenterScreen() {
+  const t = useT();
+
+  const FAQ_ITEMS = [
+    { q: t('help.faqUpdateMenu'), a: t('help.faqUpdateMenuAnswer') },
+    { q: t('help.faqAcceptOrder'), a: t('help.faqAcceptOrderAnswer') },
+    { q: t('help.faqContactCourier'), a: t('help.faqContactCourierAnswer') },
+    { q: t('help.faqPayouts'), a: t('help.faqPayoutsAnswer') },
+    { q: t('help.faqWorkingHours'), a: t('help.faqWorkingHoursAnswer') },
+    { q: t('help.faqCloseRestaurant'), a: t('help.faqCloseRestaurantAnswer') },
+  ];
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {/* Quick Actions */}
-      <Text style={styles.sectionTitle}>Get Help</Text>
+      <Text style={styles.sectionTitle}>{t('help.getHelp')}</Text>
       <View style={styles.helpActions}>
         <TouchableOpacity style={styles.helpCard} activeOpacity={0.7}>
           <View style={[styles.helpIcon, { backgroundColor: Colors.infoLight }]}>
             <Ionicons name="chatbubbles-outline" size={24} color={Colors.info} />
           </View>
-          <Text style={styles.helpLabel}>Live Chat</Text>
-          <Text style={styles.helpDesc}>Chat with support</Text>
+          <Text style={styles.helpLabel}>{t('help.liveChat')}</Text>
+          <Text style={styles.helpDesc}>{t('help.chatWithSupport')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.helpCard} activeOpacity={0.7}>
           <View style={[styles.helpIcon, { backgroundColor: Colors.successLight }]}>
             <Ionicons name="call-outline" size={24} color={Colors.success} />
           </View>
-          <Text style={styles.helpLabel}>Call Us</Text>
+          <Text style={styles.helpLabel}>{t('help.callUs')}</Text>
           <Text style={styles.helpDesc}>1-800-ZBR-HELP</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.helpCard} activeOpacity={0.7}>
           <View style={[styles.helpIcon, { backgroundColor: Colors.accentLight }]}>
             <Ionicons name="mail-outline" size={24} color={Colors.accent} />
           </View>
-          <Text style={styles.helpLabel}>Email</Text>
+          <Text style={styles.helpLabel}>{t('help.emailUs')}</Text>
           <Text style={styles.helpDesc}>support@zbr.com</Text>
         </TouchableOpacity>
       </View>
 
       {/* FAQ */}
-      <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+      <Text style={styles.sectionTitle}>{t('help.faq')}</Text>
       {FAQ_ITEMS.map((item, index) => (
         <Card key={index} style={styles.faqCard}>
           <View style={styles.faqHeader}>
@@ -55,13 +58,13 @@ export default function HelpCenterScreen() {
       ))}
 
       {/* Guides */}
-      <Text style={styles.sectionTitle}>Guides</Text>
+      <Text style={styles.sectionTitle}>{t('help.guides')}</Text>
       <Card style={styles.guidesCard}>
         {[
-          { label: 'Getting Started Guide', icon: 'rocket-outline' as const },
-          { label: 'Menu Management Tips', icon: 'restaurant-outline' as const },
-          { label: 'Maximizing Your Revenue', icon: 'trending-up-outline' as const },
-          { label: 'Handling Peak Hours', icon: 'flash-outline' as const },
+          { label: t('help.guideGettingStarted'), icon: 'rocket-outline' as const },
+          { label: t('help.guideMenuManagement'), icon: 'restaurant-outline' as const },
+          { label: t('help.guideRevenue'), icon: 'trending-up-outline' as const },
+          { label: t('help.guidePeakHours'), icon: 'flash-outline' as const },
         ].map((guide, index, arr) => (
           <TouchableOpacity key={guide.label} style={[styles.guideRow, index < arr.length - 1 && styles.guideBorder]} activeOpacity={0.7}>
             <Ionicons name={guide.icon} size={20} color={Colors.accent} />

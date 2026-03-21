@@ -6,11 +6,13 @@ import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme
 import { useStore } from '../../store';
 import Card from '../../components/Card';
 import StatusBadge from '../../components/StatusBadge';
+import { useT } from '../../i18n';
 import type { Order } from '../../types';
 
 export default function OrderHistoryScreen() {
   const { orders } = useStore();
   const router = useRouter();
+  const t = useT();
 
   const allOrders = useMemo(() =>
     [...orders].sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()),
@@ -60,24 +62,24 @@ export default function OrderHistoryScreen() {
           <Card style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={[styles.statNum, { color: Colors.success }]}>{stats.delivered}</Text>
-              <Text style={styles.statLabel}>Delivered</Text>
+              <Text style={styles.statLabel}>{t('orderHistoryScreen.delivered')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={[styles.statNum, { color: Colors.danger }]}>{stats.cancelled}</Text>
-              <Text style={styles.statLabel}>Cancelled</Text>
+              <Text style={styles.statLabel}>{t('orderHistoryScreen.cancelled')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={[styles.statNum, { color: Colors.accent }]}>${stats.total.toFixed(0)}</Text>
-              <Text style={styles.statLabel}>Revenue</Text>
+              <Text style={styles.statLabel}>{t('orderHistoryScreen.revenue')}</Text>
             </View>
           </Card>
         }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="receipt-outline" size={48} color={Colors.gray300} />
-            <Text style={styles.emptyText}>No order history yet</Text>
+            <Text style={styles.emptyText}>{t('orderHistoryScreen.noHistory')}</Text>
           </View>
         }
       />

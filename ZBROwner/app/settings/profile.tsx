@@ -6,18 +6,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 import { useStore } from '../../store';
 import Card from '../../components/Card';
+import { useT } from '../../i18n';
 
 export default function RestaurantProfileScreen() {
   const { restaurantProfile } = useStore();
+  const t = useT();
 
   const fields = [
-    { label: 'Restaurant Name', value: restaurantProfile.name, icon: 'storefront-outline' as const },
-    { label: 'Address', value: restaurantProfile.address, icon: 'location-outline' as const },
-    { label: 'Phone', value: restaurantProfile.phone, icon: 'call-outline' as const },
-    { label: 'Email', value: restaurantProfile.email, icon: 'mail-outline' as const },
-    { label: 'Cuisine Type', value: restaurantProfile.cuisine, icon: 'restaurant-outline' as const },
-    { label: 'Avg Prep Time', value: `${restaurantProfile.avgPrepTime} minutes`, icon: 'time-outline' as const },
-    { label: 'Delivery Radius', value: `${restaurantProfile.deliveryRadius} km`, icon: 'navigate-outline' as const },
+    { label: t('profile.restaurantName'), value: restaurantProfile.name, icon: 'storefront-outline' as const },
+    { label: t('profile.address'), value: restaurantProfile.address, icon: 'location-outline' as const },
+    { label: t('profile.phone'), value: restaurantProfile.phone, icon: 'call-outline' as const },
+    { label: t('profile.email'), value: restaurantProfile.email, icon: 'mail-outline' as const },
+    { label: t('profile.cuisineType'), value: restaurantProfile.cuisine, icon: 'restaurant-outline' as const },
+    { label: t('profile.avgPrepTime'), value: t('profile.minutesUnit', { count: restaurantProfile.avgPrepTime }), icon: 'time-outline' as const },
+    { label: t('profile.deliveryRadius'), value: t('profile.kmUnit', { count: restaurantProfile.deliveryRadius }), icon: 'navigate-outline' as const },
   ];
 
   return (
@@ -33,7 +35,7 @@ export default function RestaurantProfileScreen() {
 
       {/* Description */}
       <Card style={styles.descCard}>
-        <Text style={styles.fieldLabel}>About</Text>
+        <Text style={styles.fieldLabel}>{t('profile.aboutSection')}</Text>
         <Text style={styles.description}>{restaurantProfile.description}</Text>
       </Card>
 
@@ -52,7 +54,7 @@ export default function RestaurantProfileScreen() {
         ))}
       </Card>
 
-      <Text style={styles.hint}>Connect to backend API to enable editing</Text>
+      <Text style={styles.hint}>{t('profile.connectHint')}</Text>
     </ScrollView>
   );
 }

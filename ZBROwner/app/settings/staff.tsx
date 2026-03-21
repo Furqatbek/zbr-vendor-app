@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 import { useStore } from '../../store';
 import Card from '../../components/Card';
+import { useT } from '../../i18n';
 
 const ROLE_COLORS = {
   owner: Colors.accent,
@@ -11,14 +12,15 @@ const ROLE_COLORS = {
   staff: Colors.gray500,
 };
 
-const ROLE_LABELS = {
-  owner: 'Owner',
-  manager: 'Manager',
-  staff: 'Staff',
-};
-
 export default function StaffAccountsScreen() {
   const { staffMembers, toggleStaffActive } = useStore();
+  const t = useT();
+
+  const ROLE_LABELS: Record<string, string> = {
+    owner: t('staff.roleOwner'),
+    manager: t('staff.roleManager'),
+    staff: t('staff.roleStaff'),
+  };
 
   const activeCount = staffMembers.filter((s) => s.isActive).length;
 
@@ -34,17 +36,17 @@ export default function StaffAccountsScreen() {
               <View style={styles.statRow}>
                 <View style={styles.stat}>
                   <Text style={styles.statNum}>{staffMembers.length}</Text>
-                  <Text style={styles.statLabel}>Total</Text>
+                  <Text style={styles.statLabel}>{t('staff.total')}</Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.stat}>
                   <Text style={[styles.statNum, { color: Colors.success }]}>{activeCount}</Text>
-                  <Text style={styles.statLabel}>Active</Text>
+                  <Text style={styles.statLabel}>{t('staff.active')}</Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.stat}>
                   <Text style={[styles.statNum, { color: Colors.gray400 }]}>{staffMembers.length - activeCount}</Text>
-                  <Text style={styles.statLabel}>Inactive</Text>
+                  <Text style={styles.statLabel}>{t('staff.inactive')}</Text>
                 </View>
               </View>
             </Card>
@@ -80,7 +82,7 @@ export default function StaffAccountsScreen() {
         ListFooterComponent={
           <TouchableOpacity style={styles.addButton} activeOpacity={0.7}>
             <Ionicons name="person-add-outline" size={20} color={Colors.accent} />
-            <Text style={styles.addButtonText}>Invite Staff Member</Text>
+            <Text style={styles.addButtonText}>{t('staff.inviteStaff')}</Text>
           </TouchableOpacity>
         }
       />
