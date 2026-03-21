@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing } from '../../constants/theme';
+import { Colors, Typography } from '../../constants/theme';
 import { useStore } from '../../store';
 import { useT } from '../../i18n';
 
@@ -19,6 +19,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        headerShown: false,
         tabBarActiveTintColor: Colors.accent,
         tabBarInactiveTintColor: Colors.gray400,
         tabBarStyle: {
@@ -34,17 +35,6 @@ export default function TabLayout() {
         },
         tabBarItemStyle: {
           paddingTop: 6,
-        },
-        headerStyle: {
-          backgroundColor: Colors.white,
-          shadowColor: 'transparent',
-          elevation: 0,
-          borderBottomWidth: 1,
-          borderBottomColor: Colors.gray200,
-        },
-        headerTitleStyle: {
-          ...Typography.headline,
-          color: Colors.black,
         },
       }}
     >
