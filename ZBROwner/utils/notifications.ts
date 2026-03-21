@@ -39,13 +39,13 @@ export async function registerForPushNotifications(): Promise<string | null> {
       name: 'Orders',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
-      sound: 'default',
+      sound: true,
     });
 
     await Notifications.setNotificationChannelAsync('updates', {
       name: 'Updates',
       importance: Notifications.AndroidImportance.DEFAULT,
-      sound: 'default',
+      sound: true,
     });
   }
 
@@ -75,7 +75,7 @@ export async function sendLocalNotification(title: string, body: string, channel
     content: {
       title,
       body,
-      sound: 'default',
+      sound: true,
       ...(Platform.OS === 'android' ? { channelId } : {}),
     },
     trigger: null,
