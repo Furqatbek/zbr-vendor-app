@@ -6,9 +6,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Colors } from '../constants/theme';
 import I18nProvider from '../i18n/I18nProvider';
 import { useI18n } from '../i18n';
+import { useNotifications } from '../hooks/useNotifications';
 
 function AppStack() {
   const { t } = useI18n();
+  useNotifications();
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.white } }}>

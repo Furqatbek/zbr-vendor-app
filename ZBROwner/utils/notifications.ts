@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 // Configure notification behavior when app is foregrounded
@@ -12,7 +13,14 @@ Notifications.setNotificationHandler({
   }),
 });
 
+/**
+ * Request notification permissions, set up Android channels,
+ * and return a push token (Expo or FCM depending on config).
+ */
 export async function registerForPushNotifications(): Promise<string | null> {
+  // Web doesn't support mobile push
+  if (Platform.OS === 'web') return null;
+
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
 
@@ -25,6 +33,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     return null;
   }
 
+  // Android notification channels
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('orders', {
       name: 'Orders',
@@ -40,7 +49,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
     });
   }
 
-  const token = await Notifications.getExpoPushTokenAsync();
+  // Get the push token – uses FCM on Android if google-services.json is present,
+  // APNs on iOS if entitlements are configured, otherwise falls back to Expo push.
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+  const token = await Notifications.getExpoPushTokenAsync(
+    projectId ? { projectId } : undefined
+  );
   return token.data;
 }
 
@@ -56,14 +70,14 @@ export function addNotificationResponseListener(
   return Notifications.addNotificationResponseReceivedListener(callback);
 }
 
-// Simulate a local notification for demo purposes
 export async function sendLocalNotification(title: string, body: string, channelId = 'orders') {
   await Notifications.scheduleNotificationAsync({
     content: {
       title,
       body,
       sound: 'default',
+      ...(Platform.OS === 'android' ? { channelId } : {}),
     },
-    trigger: null, // Immediately
+    trigger: null,
   });
 }

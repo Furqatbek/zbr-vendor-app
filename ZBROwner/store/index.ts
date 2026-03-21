@@ -44,6 +44,10 @@ interface AppStore {
   toggleWorkingDay: (day: string) => void;
   toggleStaffActive: (staffId: string) => void;
 
+  // Push Notifications
+  pushToken: string | null;
+  setPushToken: (token: string | null) => void;
+
   // Notification Preferences
   notificationPrefs: Record<string, boolean>;
   toggleNotificationPref: (key: string) => void;
@@ -136,6 +140,9 @@ export const useStore = create<AppStore>((set, get) => ({
         m.id === staffId ? { ...m, isActive: !m.isActive } : m
       ),
     })),
+
+  pushToken: null,
+  setPushToken: (token) => set({ pushToken: token }),
 
   notificationPrefs: {
     newOrder: true,
