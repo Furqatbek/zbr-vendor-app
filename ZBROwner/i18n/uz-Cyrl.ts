@@ -199,6 +199,7 @@ export default {
     logOut: 'Чиқиш',
     logOutConfirm: 'Ҳақиқатан ҳам чиқмоқчимисиз?',
     appVersion: 'ZBR Owner v1.0.0',
+    language: 'Тил',
   },
 
   profile: {

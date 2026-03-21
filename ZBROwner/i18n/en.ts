@@ -212,6 +212,7 @@ export default {
     logOut: 'Log Out',
     logOutConfirm: 'Are you sure you want to log out?',
     appVersion: 'ZBR Owner v1.0.0',
+    language: 'Language',
   },
 
   // Restaurant profile

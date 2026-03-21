@@ -8,13 +8,16 @@ import { useStore } from '../../store';
 import Card from '../../components/Card';
 import PillSwitch from '../../components/PillSwitch';
 import RatingStars from '../../components/RatingStars';
-import { useI18n } from '../../i18n';
+import { useI18n, LOCALE_NAMES } from '../../i18n';
+import type { Locale } from '../../i18n';
 
 export default function MoreScreen() {
   const { restaurantName, isOpen, toggleOpen, orders, reviews, revenueData, restaurantProfile, staffMembers } = useStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useI18n();
+  const { t, locale, setLocale } = useI18n();
+
+  const locales: Locale[] = ['en', 'ru', 'uz-Latn', 'uz-Cyrl'];
 
   const stats = useMemo(() => {
     const todayOrders = orders.filter((o) => o.status !== 'cancelled');
@@ -97,12 +100,38 @@ export default function MoreScreen() {
         ))}
       </Card>
 
+      {/* Language Selector */}
+      <Text style={styles.sectionTitle}>{t('more.language')}</Text>
+      <Card style={styles.menuCard}>
+        {locales.map((loc, index) => {
+          const isSelected = loc === locale;
+          return (
+            <TouchableOpacity
+              key={loc}
+              style={[styles.menuRow, index < locales.length - 1 && styles.menuRowBorder]}
+              onPress={() => setLocale(loc)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.menuIconWrap, isSelected && styles.langIconActive]}>
+                <Ionicons name="language-outline" size={20} color={isSelected ? Colors.white : Colors.accent} />
+              </View>
+              <View style={styles.menuInfo}>
+                <Text style={[styles.menuLabel, isSelected && styles.langLabelActive]}>{LOCALE_NAMES[loc]}</Text>
+              </View>
+              {isSelected && (
+                <Ionicons name="checkmark-circle" size={22} color={Colors.accent} />
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </Card>
+
       {/* Logout */}
       <TouchableOpacity
         style={styles.logoutButton}
         activeOpacity={0.7}
         onPress={() => Alert.alert(t('more.logOut'), t('more.logOutConfirm'), [
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           { text: t('more.logOut'), style: 'destructive' },
         ])}
       >
@@ -135,6 +164,8 @@ const styles = StyleSheet.create({
   menuInfo: { flex: 1 },
   menuLabel: { ...Typography.body, color: Colors.black },
   menuSubtitle: { ...Typography.caption1, color: Colors.gray500, marginTop: 2 },
+  langIconActive: { backgroundColor: Colors.accent },
+  langLabelActive: { fontWeight: '600', color: Colors.accent },
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.base, marginTop: Spacing.base, gap: Spacing.sm, minHeight: 48 },
   logoutText: { ...Typography.headline, color: Colors.danger },
   versionText: { ...Typography.caption1, color: Colors.gray400, textAlign: 'center', marginTop: Spacing.md },

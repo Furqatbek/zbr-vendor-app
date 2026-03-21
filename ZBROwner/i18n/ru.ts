@@ -199,6 +199,7 @@ export default {
     logOut: 'Выйти',
     logOutConfirm: 'Вы уверены, что хотите выйти?',
     appVersion: 'ZBR Owner v1.0.0',
+    language: 'Язык',
   },
 
   profile: {
