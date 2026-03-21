@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { Order, MenuCategory, MenuItem, Review, RevenueData, OrderStatus, DeclineReason, CourierRating } from '../types';
-import { mockOrders, mockCategories, mockMenuItems, mockReviews, mockRevenueData } from './mockData';
+import type { Order, MenuCategory, MenuItem, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, WorkingHoursDay, StaffMember, RestaurantProfile } from '../types';
+import { mockOrders, mockCategories, mockMenuItems, mockReviews, mockRevenueData, mockRestaurantProfile, mockWorkingHours, mockStaffMembers } from './mockData';
 
 interface AppStore {
   // Restaurant
@@ -36,6 +36,17 @@ interface AppStore {
   // Courier Ratings
   courierRatings: CourierRating[];
   submitCourierRating: (rating: CourierRating) => void;
+
+  // Restaurant Profile
+  restaurantProfile: RestaurantProfile;
+  workingHours: WorkingHoursDay[];
+  staffMembers: StaffMember[];
+  toggleWorkingDay: (day: string) => void;
+  toggleStaffActive: (staffId: string) => void;
+
+  // Notification Preferences
+  notificationPrefs: Record<string, boolean>;
+  toggleNotificationPref: (key: string) => void;
 }
 
 export const useStore = create<AppStore>((set, get) => ({
@@ -109,4 +120,33 @@ export const useStore = create<AppStore>((set, get) => ({
   courierRatings: [],
   submitCourierRating: (rating) =>
     set((s) => ({ courierRatings: [...s.courierRatings, rating] })),
+
+  restaurantProfile: mockRestaurantProfile,
+  workingHours: mockWorkingHours,
+  staffMembers: mockStaffMembers,
+  toggleWorkingDay: (day) =>
+    set((s) => ({
+      workingHours: s.workingHours.map((h) =>
+        h.day === day ? { ...h, isOpen: !h.isOpen } : h
+      ),
+    })),
+  toggleStaffActive: (staffId) =>
+    set((s) => ({
+      staffMembers: s.staffMembers.map((m) =>
+        m.id === staffId ? { ...m, isActive: !m.isActive } : m
+      ),
+    })),
+
+  notificationPrefs: {
+    newOrder: true,
+    orderTimeout: true,
+    courierAssigned: true,
+    reviewReceived: true,
+    promotions: false,
+    weeklyReport: true,
+  },
+  toggleNotificationPref: (key) =>
+    set((s) => ({
+      notificationPrefs: { ...s.notificationPrefs, [key]: !s.notificationPrefs[key] },
+    })),
 }));

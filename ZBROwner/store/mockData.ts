@@ -1,4 +1,4 @@
-import type { Order, MenuCategory, MenuItem, Review, RevenueData } from '../types';
+import type { Order, MenuCategory, MenuItem, Review, RevenueData, WorkingHoursDay, StaffMember, RestaurantProfile } from '../types';
 
 const now = new Date();
 const minutesAgo = (min: number) => new Date(now.getTime() - min * 60000).toISOString();
@@ -175,3 +175,31 @@ export const mockRevenueData: RevenueData = {
   refunds: 3,
   cancellations: 5,
 };
+
+export const mockRestaurantProfile: RestaurantProfile = {
+  name: 'Burger Palace',
+  address: '123 Main Street, Suite 4, New York, NY 10001',
+  phone: '+1 (212) 555-0123',
+  email: 'hello@burgerpalace.com',
+  description: 'Premium handcrafted burgers made with locally sourced ingredients. Serving the community since 2019.',
+  cuisine: 'American, Burgers, Fast Casual',
+  avgPrepTime: 15,
+  deliveryRadius: 5,
+};
+
+export const mockWorkingHours: WorkingHoursDay[] = [
+  { day: 'Monday', isOpen: true, openTime: '10:00', closeTime: '22:00' },
+  { day: 'Tuesday', isOpen: true, openTime: '10:00', closeTime: '22:00' },
+  { day: 'Wednesday', isOpen: true, openTime: '10:00', closeTime: '22:00' },
+  { day: 'Thursday', isOpen: true, openTime: '10:00', closeTime: '23:00' },
+  { day: 'Friday', isOpen: true, openTime: '10:00', closeTime: '23:30' },
+  { day: 'Saturday', isOpen: true, openTime: '11:00', closeTime: '23:30' },
+  { day: 'Sunday', isOpen: false, openTime: '00:00', closeTime: '00:00' },
+];
+
+export const mockStaffMembers: StaffMember[] = [
+  { id: 's1', name: 'Alex Johnson', role: 'owner', email: 'alex@burgerpalace.com', isActive: true },
+  { id: 's2', name: 'Maria Garcia', role: 'manager', email: 'maria@burgerpalace.com', isActive: true },
+  { id: 's3', name: 'James Lee', role: 'staff', email: 'james@burgerpalace.com', isActive: true },
+  { id: 's4', name: 'Sophie Brown', role: 'staff', email: 'sophie@burgerpalace.com', isActive: false },
+];

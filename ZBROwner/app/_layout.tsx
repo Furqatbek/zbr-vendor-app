@@ -21,6 +21,38 @@ export default function RootLayout() {
               headerTintColor: Colors.accent,
             }}
           />
+          <Stack.Screen
+            name="settings/profile"
+            options={{ headerShown: true, title: 'Restaurant Profile', headerTintColor: Colors.accent }}
+          />
+          <Stack.Screen
+            name="settings/working-hours"
+            options={{ headerShown: true, title: 'Working Hours', headerTintColor: Colors.accent }}
+          />
+          <Stack.Screen
+            name="settings/payments"
+            options={{ headerShown: true, title: 'Payment Settings', headerTintColor: Colors.accent }}
+          />
+          <Stack.Screen
+            name="settings/notifications"
+            options={{ headerShown: true, title: 'Notifications', headerTintColor: Colors.accent }}
+          />
+          <Stack.Screen
+            name="settings/staff"
+            options={{ headerShown: true, title: 'Staff Accounts', headerTintColor: Colors.accent }}
+          />
+          <Stack.Screen
+            name="settings/order-history"
+            options={{ headerShown: true, title: 'Order History', headerTintColor: Colors.accent }}
+          />
+          <Stack.Screen
+            name="settings/help"
+            options={{ headerShown: true, title: 'Help Center', headerTintColor: Colors.accent }}
+          />
+          <Stack.Screen
+            name="settings/about"
+            options={{ headerShown: true, title: 'About', headerTintColor: Colors.accent }}
+          />
         </Stack>
       </SafeAreaProvider>
     </GestureHandlerRootView>

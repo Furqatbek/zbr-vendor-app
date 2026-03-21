@@ -98,6 +98,32 @@ export interface RevenueData {
   cancellations: number;
 }
 
+export interface WorkingHoursDay {
+  day: string;
+  isOpen: boolean;
+  openTime: string;
+  closeTime: string;
+}
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  role: 'owner' | 'manager' | 'staff';
+  email: string;
+  isActive: boolean;
+}
+
+export interface RestaurantProfile {
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  description: string;
+  cuisine: string;
+  avgPrepTime: number;
+  deliveryRadius: number;
+}
+
 export interface ContactCard {
   type: 'customer' | 'courier' | 'support';
   name: string;
