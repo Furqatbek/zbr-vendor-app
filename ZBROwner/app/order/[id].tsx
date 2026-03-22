@@ -53,6 +53,7 @@ export default function OrderDetailScreen() {
   const t = useT();
 
   const [showRatingSheet, setShowRatingSheet] = useState(false);
+  const [showDeclineSheet, setShowDeclineSheet] = useState(false);
   const [courierStars, setCourierStars] = useState(0);
   const [selectedCriteria, setSelectedCriteria] = useState<string[]>([]);
   const [courierNote, setCourierNote] = useState('');
@@ -97,31 +98,29 @@ export default function OrderDetailScreen() {
     }
   };
 
+  const declineReasons = [
+    { label: t('orders.reasonOutOfStock'), value: 'Out of stock' },
+    { label: t('orders.reasonTooBusy'), value: 'Too busy' },
+    { label: t('orders.reasonClosingSoon'), value: 'Closing soon' },
+    { label: t('orders.reasonOther'), value: 'Other' },
+  ];
+
   const handleDecline = () => {
     console.log('[OrderDetail.handleDecline] called for order:', order.id);
-    const reasons = [
-      { label: t('orders.reasonOutOfStock'), value: 'Out of stock' },
-      { label: t('orders.reasonTooBusy'), value: 'Too busy' },
-      { label: t('orders.reasonClosingSoon'), value: 'Closing soon' },
-      { label: t('orders.reasonOther'), value: 'Other' },
-    ];
-    Alert.alert(t('orders.declineOrder'), t('orders.selectReason'), [
-      ...reasons.map((r) => ({
-        text: r.label,
-        onPress: async () => {
-          console.log('[OrderDetail.handleDecline] reason selected:', r.value);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          try {
-            await declineOrder(order.id, r.value);
-            console.log('[OrderDetail.handleDecline] declineOrder resolved');
-          } catch (e) {
-            console.error('[OrderDetail.handleDecline] declineOrder failed:', e);
-            Alert.alert(t('common.error'), t('orders.declineFailed'));
-          }
-        },
-      })),
-      { text: t('common.cancel'), style: 'cancel' as const },
-    ]);
+    setShowDeclineSheet(true);
+  };
+
+  const handleDeclineReason = async (reason: string) => {
+    setShowDeclineSheet(false);
+    console.log('[OrderDetail.handleDecline] reason selected:', reason);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    try {
+      await declineOrder(order.id, reason);
+      console.log('[OrderDetail.handleDecline] declineOrder resolved');
+    } catch (e) {
+      console.error('[OrderDetail.handleDecline] declineOrder failed:', e);
+      Alert.alert(t('common.error'), t('orders.declineFailed'));
+    }
   };
 
   const handleSubmitRating = () => {
@@ -422,6 +421,24 @@ export default function OrderDetailScreen() {
         </TouchableOpacity>
       </Card>
 
+      {/* Decline Reason Modal */}
+      <Modal visible={showDeclineSheet} transparent animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowDeclineSheet(false)}>
+          <View style={styles.reasonSheet}>
+            <Text style={styles.reasonTitle}>{t('orders.declineOrder')}</Text>
+            <Text style={styles.reasonSubtitle}>{t('orders.selectReason')}</Text>
+            {declineReasons.map((r) => (
+              <TouchableOpacity key={r.value} style={styles.reasonOption} onPress={() => handleDeclineReason(r.value)}>
+                <Text style={styles.reasonOptionText}>{r.label}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.reasonCancel} onPress={() => setShowDeclineSheet(false)}>
+              <Text style={styles.reasonCancelText}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       {/* Courier Rating Modal */}
       <Modal visible={showRatingSheet} transparent animationType="slide">
         <View style={styles.modalOverlay}>
@@ -543,4 +560,11 @@ const styles = StyleSheet.create({
   submitText: { ...Typography.headline, color: Colors.white },
   skipButton: { marginTop: Spacing.md, minHeight: 44, justifyContent: 'center' },
   skipText: { ...Typography.subhead, color: Colors.gray500 },
+  reasonSheet: { backgroundColor: Colors.white, borderRadius: BorderRadius.card, padding: Spacing.xl, width: '85%', maxWidth: 360 },
+  reasonTitle: { ...Typography.headline, color: Colors.black, textAlign: 'center' },
+  reasonSubtitle: { ...Typography.footnote, color: Colors.gray500, textAlign: 'center', marginTop: 4, marginBottom: Spacing.base },
+  reasonOption: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.gray100, minHeight: 48, justifyContent: 'center' },
+  reasonOptionText: { ...Typography.body, color: Colors.gray700 },
+  reasonCancel: { paddingVertical: 14, marginTop: Spacing.sm, alignItems: 'center', minHeight: 48, justifyContent: 'center' },
+  reasonCancelText: { ...Typography.headline, color: Colors.gray500 },
 });
