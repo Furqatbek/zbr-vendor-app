@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import type { Order, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, StaffMember } from '../types';
+import type { Order, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, StaffMember, RatingDistribution } from '../types';
+import { fetchRatings } from '../services/api';
+import { useAuthStore } from './authStore';
 
 interface AppStore {
   // Restaurant
@@ -15,6 +17,11 @@ interface AppStore {
 
   // Reviews
   reviews: Review[];
+  averageRating: number;
+  totalRatings: number;
+  ratingDistribution: RatingDistribution[];
+  reviewsLoading: boolean;
+  loadReviews: () => Promise<void>;
   replyToReview: (reviewId: string, text: string) => void;
 
   // Revenue
@@ -80,6 +87,31 @@ export const useStore = create<AppStore>((set, get) => ({
     })),
 
   reviews: [],
+  averageRating: 0,
+  totalRatings: 0,
+  ratingDistribution: [],
+  reviewsLoading: false,
+  loadReviews: async () => {
+    const restaurant = useAuthStore.getState().restaurant;
+    if (!restaurant) return;
+    set({ reviewsLoading: true });
+    try {
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString();
+      const endDate = now.toISOString();
+      const res = await fetchRatings(restaurant.id, startDate, endDate, { includeDistribution: true });
+      set({
+        reviews: res.data.reviews,
+        averageRating: res.data.averageRating,
+        totalRatings: res.data.totalRatings,
+        ratingDistribution: res.data.distribution ?? [],
+      });
+    } catch {
+      // Non-fatal – keep existing data
+    } finally {
+      set({ reviewsLoading: false });
+    }
+  },
   replyToReview: (reviewId, text) =>
     set((s) => ({
       reviews: s.reviews.map((r) =>

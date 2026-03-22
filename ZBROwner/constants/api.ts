@@ -25,6 +25,9 @@ export const ENDPOINTS = {
   menuItemStock: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}/stock`,
   menuItemImage: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}/image`,
 
+  // Analytics
+  ratings: (restaurantId: number) => `/api/v1/analytics/cx/ratings/restaurant/${restaurantId}`,
+
   // WebSocket
   ws: `${WS_BASE_URL}/ws/vendor`,
 } as const;

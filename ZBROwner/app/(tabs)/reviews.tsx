@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal, Alert, RefreshControl,
+  View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal, Alert, RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
@@ -22,23 +22,27 @@ const filterKeys: Record<Filter, string> = {
 };
 
 export default function ReviewsScreen() {
-  const { reviews, replyToReview } = useStore();
+  const { reviews, averageRating, totalRatings, ratingDistribution, reviewsLoading, loadReviews, replyToReview } = useStore();
   const t = useT();
-  const { refreshing, handleRefresh } = useRefresh();
+  const { refreshing, handleRefresh } = useRefresh(loadReviews);
   const [filter, setFilter] = useState<Filter>('all');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
 
-  const overallRating = useMemo(() => {
-    if (reviews.length === 0) return 0;
-    return reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-  }, [reviews]);
+  useEffect(() => { loadReviews(); }, []);
 
-  const ratingDistribution = useMemo(() => {
+  // Build distribution array [5-star count, 4-star, 3-star, 2-star, 1-star]
+  const distCounts = useMemo(() => {
+    if (ratingDistribution.length > 0) {
+      const arr = [0, 0, 0, 0, 0];
+      ratingDistribution.forEach((d) => { if (d.rating >= 1 && d.rating <= 5) arr[d.rating - 1] = d.count; });
+      return arr.reverse(); // 5-star first
+    }
+    // Fallback: compute from reviews locally
     const dist = [0, 0, 0, 0, 0];
     reviews.forEach((r) => dist[r.rating - 1]++);
-    return dist.reverse(); // 5 star first
-  }, [reviews]);
+    return dist.reverse();
+  }, [ratingDistribution, reviews]);
 
   const filteredReviews = useMemo(() => {
     switch (filter) {
@@ -98,20 +102,20 @@ export default function ReviewsScreen() {
     </Card>
   );
 
-  const maxCount = Math.max(...ratingDistribution, 1);
+  const maxCount = Math.max(...distCounts, 1);
 
   const renderHeader = () => (
     <View>
       {/* Overall Rating */}
       <Card style={styles.overallCard}>
-        <Text style={styles.overallRating}>{overallRating.toFixed(1)}</Text>
-        <RatingStars rating={Math.round(overallRating)} size={24} />
-        <Text style={styles.overallCount}>{t('reviews.reviewsCount', { count: reviews.length })}</Text>
+        <Text style={styles.overallRating}>{averageRating.toFixed(1)}</Text>
+        <RatingStars rating={Math.round(averageRating)} size={24} />
+        <Text style={styles.overallCount}>{t('reviews.reviewsCount', { count: totalRatings })}</Text>
       </Card>
 
       {/* Rating Distribution */}
       <Card style={styles.distributionCard}>
-        {ratingDistribution.map((count, index) => {
+        {distCounts.map((count, index) => {
           const starNum = 5 - index;
           return (
             <View key={starNum} style={styles.distRow}>
@@ -139,6 +143,14 @@ export default function ReviewsScreen() {
       </View>
     </View>
   );
+
+  if (reviewsLoading && reviews.length === 0) {
+    return (
+      <View style={[styles.screen, styles.centered]}>
+        <ActivityIndicator size="large" color={Colors.accent} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screen}>
@@ -186,6 +198,7 @@ export default function ReviewsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.gray50 },
+  centered: { justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: Spacing.base, paddingBottom: 100 },
   overallCard: { alignItems: 'center', marginBottom: Spacing.base, gap: Spacing.sm },
   overallRating: { ...Typography.largeTitle, color: Colors.black, fontSize: 48 },

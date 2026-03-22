@@ -1,5 +1,5 @@
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
-import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest } from '../types';
+import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse } from '../types';
 
 let getAccessToken: () => string | null = () => null;
 let getRefreshToken: () => string | null = () => null;
@@ -274,6 +274,24 @@ export async function uploadMenuItemImage(restaurantId: number, itemId: number, 
     throw new Error(body?.message ?? `Upload failed: ${res.status}`);
   }
   return res.json();
+}
+
+// ── Ratings / Reviews API ──
+
+export function fetchRatings(
+  restaurantId: number,
+  startDate: string,
+  endDate: string,
+  options?: { includeDistribution?: boolean; includeTrend?: boolean; includeTopRestaurants?: boolean },
+): Promise<RatingsResponse> {
+  const params = new URLSearchParams({
+    startDate,
+    endDate,
+    includeDistribution: String(options?.includeDistribution ?? true),
+    includeTrend: String(options?.includeTrend ?? false),
+    includeTopRestaurants: String(options?.includeTopRestaurants ?? false),
+  });
+  return apiFetch<RatingsResponse>(ENDPOINTS.ratings(restaurantId) + `?${params}`);
 }
 
 export function deleteMenuItemImage(restaurantId: number, itemId: number): Promise<ApiResponse> {

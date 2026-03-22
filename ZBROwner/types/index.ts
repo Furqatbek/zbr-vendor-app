@@ -284,6 +284,24 @@ export interface Review {
   replyText?: string;
 }
 
+export interface RatingDistribution {
+  rating: number;
+  count: number;
+  percentage: number;
+}
+
+export interface RatingsData {
+  averageRating: number;
+  totalRatings: number;
+  distribution?: RatingDistribution[];
+  reviews: Review[];
+}
+
+export interface RatingsResponse {
+  success: boolean;
+  data: RatingsData;
+}
+
 export interface CourierRating {
   courierName: string;
   orderId: string;
