@@ -47,6 +47,7 @@ export default function MenuScreen() {
   const [itemForm, setItemForm] = useState<CreateMenuItemRequest>({ categoryId: 0, name: '', price: 0 });
   const [savingItem, setSavingItem] = useState(false);
   const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
+  const [pendingImageMime, setPendingImageMime] = useState<string | undefined>(undefined);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // ── Data loading ──
@@ -179,11 +180,12 @@ export default function MenuScreen() {
         // Upload pending image for newly created item
         if (pendingImageUri && created.data?.id) {
           try {
-            await uploadMenuItemImage(restaurant.id, created.data.id, pendingImageUri);
+            await uploadMenuItemImage(restaurant.id, created.data.id, pendingImageUri, pendingImageMime);
           } catch (e: any) { setToastMessage(e?.message ?? t('menu.imageUploadFailed')); }
         }
       }
       setPendingImageUri(null);
+      setPendingImageMime(undefined);
       setShowItemForm(false);
       await loadData();
     } catch { /* */ } finally { setSavingItem(false); }
@@ -214,11 +216,12 @@ export default function MenuScreen() {
       quality: 0.8,
     });
     if (result.canceled || !result.assets[0]) return;
-    const uri = result.assets[0].uri;
+    const asset = result.assets[0];
+    const uri = asset.uri;
     if (editingItem) {
       // Upload immediately for existing items
       try {
-        await uploadMenuItemImage(restaurant.id, editingItem.id, uri);
+        await uploadMenuItemImage(restaurant.id, editingItem.id, uri, asset.mimeType ?? undefined);
         await loadData();
         const res = await fetchMenuItem(restaurant.id, editingItem.id);
         if (res.data) setEditingItem(res.data);
@@ -228,6 +231,7 @@ export default function MenuScreen() {
     } else {
       // Store locally for new items — will upload after creation
       setPendingImageUri(uri);
+      setPendingImageMime(asset.mimeType ?? undefined);
     }
   };
 

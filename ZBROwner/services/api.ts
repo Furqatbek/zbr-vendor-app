@@ -219,11 +219,17 @@ export function deleteMenuItem(restaurantId: number, itemId: number): Promise<Ap
   });
 }
 
-export async function uploadMenuItemImage(restaurantId: number, itemId: number, imageUri: string): Promise<MenuItemResponse> {
+export async function uploadMenuItemImage(restaurantId: number, itemId: number, imageUri: string, assetMimeType?: string): Promise<MenuItemResponse> {
   const token = getAccessToken();
-  const filename = imageUri.split('/').pop() ?? 'image.jpg';
-  const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg';
-  const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+
+  // Derive extension from the asset's actual MIME type (provided by ImagePicker)
+  // rather than parsing the URI, which may contain no extension or a mangled one.
+  const mimeToExt: Record<string, string> = {
+    'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
+  };
+  const ext = (assetMimeType && mimeToExt[assetMimeType]) ?? 'jpg';
+  const mimeType = assetMimeType ?? 'image/jpeg';
+  const filename = `image.${ext}`;
 
   // Convert the local URI to an actual Blob/File so FormData sends real file
   // bytes instead of "[object Object]"
