@@ -39,7 +39,8 @@
           "color": "#FF5A1F",
           "defaultChannel": "orders"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }
