@@ -324,25 +324,46 @@ export type NotificationRole = 'CUSTOMER' | 'COURIER' | 'RESTAURANT' | 'ADMIN' |
 export type NotificationCategory = 'ORDER' | 'FINANCE' | 'SUPPORT' | 'SYSTEM' | 'PROMOTION' | 'ACCOUNT' | 'DELIVERY' | 'RESTAURANT_OPS' | 'ALERT';
 export type NotificationRelatedEntityType = 'ORDER' | 'RESTAURANT' | 'COURIER' | 'CUSTOMER' | 'SUPPORT_TICKET' | 'PAYMENT' | 'PAYOUT';
 
+export type NotificationPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+
 export interface AppNotification {
   id: number;
+  userId: number;
   title: string;
   message: string;
   category: NotificationCategory;
+  categoryDisplayName?: string;
   role: NotificationRole;
+  roleDisplayName?: string;
+  notificationType?: string;
+  notificationTypeDisplayName?: string;
+  priority?: NotificationPriority;
+  priorityDisplayName?: string;
+  orderId?: number;
+  relatedEntityId?: number;
+  relatedEntityType?: NotificationRelatedEntityType;
   isRead: boolean;
   readAt?: string;
   createdAt: string;
-  relatedEntityId?: number;
-  relatedEntityType?: NotificationRelatedEntityType;
+  metadata?: Record<string, string>;
+  actionUrl?: string;
+  icon?: string;
+  dismissed?: boolean;
+  isExpired?: boolean;
+  timeAgo?: string;
 }
 
 export interface NotificationsPageResponse {
-  content: AppNotification[];
+  notifications: AppNotification[];
+  page: number;
+  pageSize: number;
   totalElements: number;
   totalPages: number;
-  number: number;
-  size: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+  unreadCount: number;
+  categoryBreakdown?: Record<string, number>;
+  priorityBreakdown?: Record<string, number>;
 }
 
 export interface NotificationCounts {

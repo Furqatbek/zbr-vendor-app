@@ -12,7 +12,6 @@ import Chip from '../components/Chip';
 import type { AppNotification, NotificationCategory } from '../types';
 import {
   fetchMyNotifications,
-  fetchUnreadCount,
   markNotificationRead,
   markAllNotificationsRead,
 } from '../services/api';
@@ -65,41 +64,30 @@ export default function NotificationsScreen() {
         page: pageNum,
         pageSize: 20,
       });
-      const items = res.content ?? [];
+      const items = res.notifications ?? [];
       if (reset) {
         setNotifications(items);
+        setUnreadCount(res.unreadCount ?? 0);
         setPage(1);
       } else {
         setNotifications((prev) => [...prev, ...items]);
         setPage((p) => p + 1);
       }
-      setHasMore(items.length === 20);
+      setHasMore(res.hasNext ?? false);
     } catch {
       // Non-fatal
     }
   }, [user, filter, page]);
 
-  const loadUnreadCount = useCallback(async () => {
-    if (!user) return;
-    try {
-      const res = await fetchUnreadCount(user.id);
-      setUnreadCount(res.unreadCount);
-    } catch {
-      // Non-fatal
-    }
-  }, [user]);
-
   const initialLoad = useCallback(async () => {
     setLoading(true);
-    await Promise.all([loadNotifications(true), loadUnreadCount()]);
+    await loadNotifications(true);
     setLoading(false);
-  }, [loadNotifications, loadUnreadCount]);
+  }, [loadNotifications]);
 
   useEffect(() => { initialLoad(); }, [filter]);
 
-  const { refreshing, handleRefresh } = useRefresh(async () => {
-    await Promise.all([loadNotifications(true), loadUnreadCount()]);
-  });
+  const { refreshing, handleRefresh } = useRefresh(() => loadNotifications(true));
 
   const handleLoadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -179,7 +167,7 @@ export default function NotificationsScreen() {
               </View>
               <Text style={styles.notifMessage} numberOfLines={2}>{item.message}</Text>
               <View style={styles.notifMeta}>
-                <Text style={styles.notifTime}>{formatTime(item.createdAt)}</Text>
+                <Text style={styles.notifTime}>{item.timeAgo ?? formatTime(item.createdAt)}</Text>
                 <View style={[styles.categoryBadge, { backgroundColor: iconColor + '15' }]}>
                   <Text style={[styles.categoryBadgeText, { color: iconColor }]}>
                     {t(filterKeys[item.category] as any)}
