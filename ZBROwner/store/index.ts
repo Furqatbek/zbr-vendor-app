@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Order, Review, RevenueData, OrderStatus, CourierRating, StaffMember } from '../types';
-import { fetchRatings, updateOrderStatus as apiUpdateOrderStatus, cancelOrder as apiCancelOrder } from '../services/api';
+import { fetchRatings, fetchRestaurantOrders, updateOrderStatus as apiUpdateOrderStatus, cancelOrder as apiCancelOrder } from '../services/api';
 import { useAuthStore } from './authStore';
 
 interface AppStore {
@@ -10,6 +10,8 @@ interface AppStore {
 
   // Orders
   orders: Order[];
+  ordersLoading: boolean;
+  loadOrders: () => Promise<void>;
   getOrdersByStatus: (statuses: OrderStatus[]) => Order[];
   acceptOrder: (orderId: string, estimatedPrepTimeMinutes?: number) => Promise<void>;
   declineOrder: (orderId: string, reason: string) => Promise<void>;
@@ -65,6 +67,20 @@ export const useStore = create<AppStore>((set, get) => ({
   setOpen: (isOpen) => set({ isOpen }),
 
   orders: [],
+  ordersLoading: false,
+  loadOrders: async () => {
+    const restaurant = useAuthStore.getState().restaurant;
+    if (!restaurant) return;
+    set({ ordersLoading: true });
+    try {
+      const res = await fetchRestaurantOrders(restaurant.id, { page: 0, size: 100 });
+      set({ orders: res.content });
+    } catch {
+      // Non-fatal – keep existing data
+    } finally {
+      set({ ordersLoading: false });
+    }
+  },
   getOrdersByStatus: (statuses) => get().orders.filter((o) => statuses.includes(o.status)),
   acceptOrder: async (orderId, estimatedPrepTimeMinutes) => {
     await apiUpdateOrderStatus(orderId, {

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Animated,
   ScrollView, RefreshControl,
@@ -30,9 +30,11 @@ export default function OrdersScreen() {
 
   const {
     isOpen, setOpen,
-    orders, acceptOrder, declineOrder, updateOrderStatus,
+    orders, loadOrders, acceptOrder, declineOrder, updateOrderStatus,
   } = useStore();
   const restaurant = useAuthStore((s) => s.restaurant);
+
+  useEffect(() => { loadOrders(); }, [restaurant?.id]);
 
   const handleToggleOpen = useCallback(async () => {
     const newStatus = !isOpen;
@@ -45,7 +47,7 @@ export default function OrdersScreen() {
     }
   }, [isOpen, restaurant?.id, setOpen]);
 
-  const { refreshing, handleRefresh } = useRefresh();
+  const { refreshing, handleRefresh } = useRefresh(loadOrders);
 
   const newOrders = useMemo(() => orders.filter((o) => o.status === 'created'), [orders]);
   const preparingOrders = useMemo(() => orders.filter((o) => o.status === 'accepted' || o.status === 'preparing'), [orders]);

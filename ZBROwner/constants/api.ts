@@ -26,6 +26,7 @@ export const ENDPOINTS = {
   menuItemImage: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}/image`,
 
   // Orders
+  restaurantOrders: (restaurantId: number) => `/api/v1/orders/restaurant/${restaurantId}`,
   orderStatus: (orderId: string) => `/api/v1/orders/${orderId}/status`,
   orderCancel: (orderId: string) => `/api/v1/orders/${orderId}/cancel`,
 

@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
@@ -7,12 +7,17 @@ import { useStore } from '../../store';
 import Card from '../../components/Card';
 import StatusBadge from '../../components/StatusBadge';
 import { useT } from '../../i18n';
+import { useRefresh } from '../../hooks/useRefresh';
 import type { Order } from '../../types';
 
 export default function OrderHistoryScreen() {
-  const { orders } = useStore();
+  const { orders, loadOrders } = useStore();
   const router = useRouter();
   const t = useT();
+
+  useEffect(() => { loadOrders(); }, []);
+
+  const { refreshing, handleRefresh } = useRefresh(loadOrders);
 
   const allOrders = useMemo(() =>
     [...orders].sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()),
@@ -81,6 +86,9 @@ export default function OrderHistoryScreen() {
             <Ionicons name="receipt-outline" size={48} color={Colors.gray300} />
             <Text style={styles.emptyText}>{t('orderHistoryScreen.noHistory')}</Text>
           </View>
+        }
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />
         }
       />
     </View>

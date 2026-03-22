@@ -79,9 +79,12 @@ export function useNotifications() {
             'You have a new order waiting to be accepted.',
             'orders',
           );
+          // Refresh orders list to include the new order
+          useStore.getState().loadOrders();
           break;
         case 'order_update':
-          // store updates will come via a future REST sync or direct WS payload
+          // Refresh orders to reflect the status change
+          useStore.getState().loadOrders();
           break;
         case 'notification':
           // Bump unread badge when a new notification arrives via WS

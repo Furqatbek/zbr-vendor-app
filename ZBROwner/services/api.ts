@@ -1,5 +1,5 @@
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
-import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, CancelOrderRequest } from '../types';
+import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, RestaurantOrdersResponse, CancelOrderRequest } from '../types';
 
 let getAccessToken: () => string | null = () => null;
 let getRefreshToken: () => string | null = () => null;
@@ -171,6 +171,19 @@ export function cancelOrder(orderId: string, data: CancelOrderRequest): Promise<
     method: 'POST',
     body: JSON.stringify(data),
   });
+}
+
+export function fetchRestaurantOrders(
+  restaurantId: number,
+  params: { page?: number; size?: number } = {},
+): Promise<RestaurantOrdersResponse> {
+  const query = new URLSearchParams();
+  if (params.page != null) query.set('page', String(params.page));
+  if (params.size != null) query.set('size', String(params.size));
+  const qs = query.toString();
+  return apiFetch<RestaurantOrdersResponse>(
+    ENDPOINTS.restaurantOrders(restaurantId) + (qs ? `?${qs}` : ''),
+  );
 }
 
 // ── Menu Categories API ──

@@ -176,6 +176,15 @@ export interface OrderResponse {
   data: Order;
 }
 
+export interface RestaurantOrdersResponse {
+  content: Order[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+  last: boolean;
+}
+
 export interface CancelOrderRequest {
   reason: string;
   requestRefund?: boolean;
