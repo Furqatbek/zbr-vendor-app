@@ -464,6 +464,24 @@ export interface MarkAllReadResponse {
   markedCount: number;
 }
 
+// Payouts
+export interface Payout {
+  id: number;
+  restaurantId: number;
+  amount: number;
+  currency: string;
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  periodStart: string;
+  periodEnd: string;
+  paidAt?: string;
+  createdAt: string;
+}
+
+export interface PayoutsResponse {
+  success: boolean;
+  data: Payout[];
+}
+
 export interface CourierRating {
   courierName: string;
   orderId: string;

@@ -41,6 +41,7 @@ export const ENDPOINTS = {
 
   // Analytics
   ratings: (restaurantId: number) => `/api/v1/analytics/cx/ratings/restaurant/${restaurantId}`,
+  payouts: (restaurantId: number) => `/api/v1/analytics/financial/restaurants/${restaurantId}/payouts`,
 
   // WebSocket
   ws: '/ws',
