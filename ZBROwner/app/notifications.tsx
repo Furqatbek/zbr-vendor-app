@@ -5,6 +5,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius } from '../constants/theme';
 import { useAuthStore } from '../store/authStore';
+import { useStore } from '../store';
 import { useT } from '../i18n';
 import { useRefresh } from '../hooks/useRefresh';
 import Card from '../components/Card';
@@ -47,9 +48,10 @@ const FILTER_CATEGORIES: Filter[] = ['all', 'ORDER', 'FINANCE', 'DELIVERY', 'RES
 export default function NotificationsScreen() {
   const t = useT();
   const user = useAuthStore((s) => s.user);
+  const unreadCount = useStore((s) => s.unreadNotifCount);
+  const setUnreadCount = useStore((s) => s.setUnreadNotifCount);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [filter, setFilter] = useState<Filter>('all');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -103,7 +105,7 @@ export default function NotificationsScreen() {
       setNotifications((prev) =>
         prev.map((n) => (n.id === item.id ? { ...n, isRead: true, readAt: new Date().toISOString() } : n)),
       );
-      setUnreadCount((c) => Math.max(0, c - 1));
+      setUnreadCount(Math.max(0, unreadCount - 1));
     } catch {
       // Non-fatal
     }
@@ -112,7 +114,7 @@ export default function NotificationsScreen() {
   const handleMarkAllRead = async () => {
     if (!user || unreadCount === 0) return;
     try {
-      await markAllNotificationsRead(user.id);
+      const res = await markAllNotificationsRead(user.id);
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, readAt: n.readAt ?? new Date().toISOString() })));
       setUnreadCount(0);
     } catch {

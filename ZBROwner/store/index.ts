@@ -44,6 +44,10 @@ interface AppStore {
   // Notification Preferences
   notificationPrefs: Record<string, boolean>;
   toggleNotificationPref: (key: string) => void;
+
+  // Notification unread badge
+  unreadNotifCount: number;
+  setUnreadNotifCount: (count: number) => void;
 }
 
 const emptyRevenueData: RevenueData = {
@@ -175,4 +179,7 @@ export const useStore = create<AppStore>((set, get) => ({
     set((s) => ({
       notificationPrefs: { ...s.notificationPrefs, [key]: !s.notificationPrefs[key] },
     })),
+
+  unreadNotifCount: 0,
+  setUnreadNotifCount: (count) => set({ unreadNotifCount: count }),
 }));

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { Platform, TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,23 +12,16 @@ import { fetchUnreadCount } from '../../services/api';
 function NotificationBell() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const [unread, setUnread] = useState(0);
+  const unread = useStore((s) => s.unreadNotifCount);
+  const setUnreadNotifCount = useStore((s) => s.setUnreadNotifCount);
 
-  const loadCount = useCallback(async () => {
-    if (!user) return;
-    try {
-      const res = await fetchUnreadCount(user.id);
-      setUnread(res.unreadCount);
-    } catch { /* ignore */ }
-  }, [user]);
-
-  useEffect(() => { loadCount(); }, [loadCount]);
-
-  // Poll every 30s for unread count
+  // Fetch once on mount
   useEffect(() => {
-    const interval = setInterval(loadCount, 30000);
-    return () => clearInterval(interval);
-  }, [loadCount]);
+    if (!user) return;
+    fetchUnreadCount(user.id)
+      .then((res) => setUnreadNotifCount(res.unreadCount))
+      .catch(() => {});
+  }, [user]);
 
   return (
     <TouchableOpacity
