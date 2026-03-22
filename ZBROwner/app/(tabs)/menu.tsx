@@ -15,6 +15,7 @@ import {
 } from '../../services/api';
 import type { MenuCategory, MenuItem, CreateMenuCategoryRequest, CreateMenuItemRequest } from '../../types';
 import Card from '../../components/Card';
+import InAppToast from '../../components/InAppToast';
 import { useT } from '../../i18n';
 
 type ViewMode = 'categories' | 'items';
@@ -46,6 +47,7 @@ export default function MenuScreen() {
   const [itemForm, setItemForm] = useState<CreateMenuItemRequest>({ categoryId: 0, name: '', price: 0 });
   const [savingItem, setSavingItem] = useState(false);
   const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // ── Data loading ──
 
@@ -178,7 +180,7 @@ export default function MenuScreen() {
         if (pendingImageUri && created.data?.id) {
           try {
             await uploadMenuItemImage(restaurant.id, created.data.id, pendingImageUri);
-          } catch (e: any) { Alert.alert(t('menu.imageUploadFailed'), e?.message); }
+          } catch (e: any) { setToastMessage(e?.message ?? t('menu.imageUploadFailed')); }
         }
       }
       setPendingImageUri(null);
@@ -221,7 +223,7 @@ export default function MenuScreen() {
         const res = await fetchMenuItem(restaurant.id, editingItem.id);
         if (res.data) setEditingItem(res.data);
       } catch (e: any) {
-        Alert.alert(t('menu.imageUploadFailed'), e?.message);
+        setToastMessage(e?.message ?? t('menu.imageUploadFailed'));
       }
     } else {
       // Store locally for new items — will upload after creation
@@ -630,6 +632,13 @@ export default function MenuScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <InAppToast
+        message={toastMessage ?? ''}
+        type="error"
+        visible={!!toastMessage}
+        onDismiss={() => setToastMessage(null)}
+      />
     </View>
   );
 }
