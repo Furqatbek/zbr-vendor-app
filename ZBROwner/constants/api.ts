@@ -16,6 +16,7 @@ export const ENDPOINTS = {
 
   // Restaurant
   myRestaurants: '/api/v1/restaurants/my',
+  restaurant: (id: number) => `/api/v1/restaurants/${id}`,
   restaurantToggleOpen: (id: number) => `/api/v1/restaurants/${id}/toggle-open`,
 
   // WebSocket

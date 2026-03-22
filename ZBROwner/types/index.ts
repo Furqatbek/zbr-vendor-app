@@ -69,6 +69,8 @@ export interface Restaurant {
   averagePrepTimeMinutes: number;
   isOpen: boolean;
   isCurrentlyOpen: boolean;
+  opensAt?: string;
+  closesAt?: string;
   averageRating: number;
   totalRatings: number;
   totalOrders: number;
@@ -78,6 +80,35 @@ export interface Restaurant {
 export interface MyRestaurantsResponse {
   success: boolean;
   data: Restaurant[];
+}
+
+export interface UpdateRestaurantRequest {
+  name?: string;
+  description?: string;
+  phone?: string;
+  email?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
+  acceptsDelivery?: boolean;
+  acceptsTakeaway?: boolean;
+  acceptsDineIn?: boolean;
+  minimumOrder?: number;
+  deliveryFee?: number;
+  deliveryRadiusKm?: number;
+  averagePrepTimeMinutes?: number;
+  opensAt?: string;
+  closesAt?: string;
+}
+
+export interface UpdateRestaurantResponse {
+  success: boolean;
+  data: Restaurant;
 }
 
 export type OrderStatus =
