@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Order, MenuItem, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, WorkingHoursDay, StaffMember } from '../types';
+import type { Order, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, WorkingHoursDay, StaffMember } from '../types';
 
 interface AppStore {
   // Restaurant
@@ -12,11 +12,6 @@ interface AppStore {
   acceptOrder: (orderId: string) => void;
   declineOrder: (orderId: string, reason: DeclineReason) => void;
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
-
-  // Menu (items only — categories managed via API)
-  menuItems: MenuItem[];
-  toggleItemStock: (itemId: string) => void;
-  deleteMenuItem: (itemId: string) => void;
 
   // Reviews
   reviews: Review[];
@@ -85,16 +80,6 @@ export const useStore = create<AppStore>((set, get) => ({
         return { ...o, ...updates };
       }),
     })),
-
-  menuItems: [],
-  toggleItemStock: (itemId) =>
-    set((s) => ({
-      menuItems: s.menuItems.map((i) =>
-        i.id === itemId ? { ...i, inStock: !i.inStock } : i
-      ),
-    })),
-  deleteMenuItem: (itemId) =>
-    set((s) => ({ menuItems: s.menuItems.filter((i) => i.id !== itemId) })),
 
   reviews: [],
   replyToReview: (reviewId, text) =>

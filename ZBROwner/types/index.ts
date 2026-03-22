@@ -183,21 +183,87 @@ export interface CreateMenuCategoryRequest {
   sortOrder?: number;
 }
 
-export interface MenuItem {
-  id: string;
-  categoryId: string;
+export interface MenuItemVariant {
+  id: number;
   name: string;
-  description: string;
-  price: number;
-  imageUrl?: string;
+  priceDelta: number;
+  totalPrice: number;
   inStock: boolean;
-  modifiers?: MenuModifier[];
+  sortOrder?: number;
 }
 
-export interface MenuModifier {
-  id: string;
+export interface MenuItemOption {
+  id: number;
+  groupName: string;
   name: string;
-  options: { name: string; priceAdded: number }[];
+  priceDelta: number;
+  isDefault: boolean;
+  maxSelections: number;
+  required: boolean;
+  inStock: boolean;
+}
+
+export interface MenuItem {
+  id: number;
+  categoryId: number;
+  categoryName?: string;
+  name: string;
+  description?: string;
+  price: number;
+  priceWithMargin?: number;
+  originalPrice?: number;
+  effectivePrice?: number;
+  onSale?: boolean;
+  discountPercentage?: number;
+  imageUrl?: string;
+  inStock: boolean;
+  featured?: boolean;
+  prepTimeMinutes?: number;
+  calories?: number;
+  vegetarian?: boolean;
+  vegan?: boolean;
+  glutenFree?: boolean;
+  spicy?: boolean;
+  allergens?: string;
+  sortOrder?: number;
+  variants?: MenuItemVariant[];
+  options?: MenuItemOption[];
+}
+
+export interface MenuItemsResponse {
+  success: boolean;
+  data: {
+    content: MenuItem[];
+    totalElements: number;
+    totalPages: number;
+    number: number;
+    size: number;
+  };
+}
+
+export interface MenuItemResponse {
+  success: boolean;
+  data: MenuItem;
+}
+
+export interface CreateMenuItemRequest {
+  categoryId: number;
+  name: string;
+  description?: string;
+  price: number;
+  originalPrice?: number;
+  imageUrl?: string;
+  prepTimeMinutes?: number;
+  calories?: number;
+  vegetarian?: boolean;
+  vegan?: boolean;
+  glutenFree?: boolean;
+  spicy?: boolean;
+  allergens?: string;
+  featured?: boolean;
+  sortOrder?: number;
+  variants?: { name: string; priceDelta: number; sortOrder?: number }[];
+  options?: { groupName: string; name: string; priceDelta: number; isDefault?: boolean; maxSelections?: number; required?: boolean }[];
 }
 
 export interface Review {

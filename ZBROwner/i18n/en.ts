@@ -159,7 +159,17 @@ export default {
     noCategories: 'No categories yet',
     deleteCategoryConfirm: 'Delete "{{name}}"? This cannot be undone.',
     editItem: 'Edit Item',
+    deleteItemConfirm: 'Delete "{{name}}"? This cannot be undone.',
     itemsCount: '{{count}} items',
+    originalPrice: 'Original Price',
+    prepTime: 'Prep Time (min)',
+    calories: 'Calories',
+    allergens: 'Allergens',
+    vegetarian: 'Vegetarian',
+    vegan: 'Vegan',
+    glutenFree: 'Gluten-Free',
+    spicy: 'Spicy',
+    featured: 'Featured',
   },
 
   // Reports

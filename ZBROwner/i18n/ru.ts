@@ -149,7 +149,17 @@ export default {
     noCategories: 'Пока нет категорий',
     deleteCategoryConfirm: 'Удалить "{{name}}"? Это нельзя отменить.',
     editItem: 'Редактировать позицию',
+    deleteItemConfirm: 'Удалить "{{name}}"? Это нельзя отменить.',
     itemsCount: '{{count}} позиций',
+    originalPrice: 'Исходная цена',
+    prepTime: 'Время готовки (мин)',
+    calories: 'Калории',
+    allergens: 'Аллергены',
+    vegetarian: 'Вегетарианское',
+    vegan: 'Веганское',
+    glutenFree: 'Без глютена',
+    spicy: 'Острое',
+    featured: 'Избранное',
   },
 
   reports: {

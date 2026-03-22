@@ -149,7 +149,17 @@ export default {
     noCategories: 'Ҳали категория йўқ',
     deleteCategoryConfirm: '"{{name}}" ўчирилсинми? Буни қайтариб бўлмайди.',
     editItem: 'Маҳсулотни таҳрирлаш',
+    deleteItemConfirm: '"{{name}}" ўчирилсинми? Буни қайтариб бўлмайди.',
     itemsCount: '{{count}} та маҳсулот',
+    originalPrice: 'Асл нарх',
+    prepTime: 'Тайёрлаш вақти (дақ)',
+    calories: 'Калория',
+    allergens: 'Аллергенлар',
+    vegetarian: 'Вегетариан',
+    vegan: 'Веган',
+    glutenFree: 'Глутенсиз',
+    spicy: 'Аччиқ',
+    featured: 'Танланган',
   },
 
   reports: {

@@ -20,6 +20,9 @@ export const ENDPOINTS = {
   restaurantToggleOpen: (id: number) => `/api/v1/restaurants/${id}/toggle-open`,
   menuCategories: (restaurantId: number) => `/api/v1/restaurants/${restaurantId}/menu/categories`,
   menuCategory: (restaurantId: number, categoryId: number) => `/api/v1/restaurants/${restaurantId}/menu/categories/${categoryId}`,
+  menuItems: (restaurantId: number) => `/api/v1/restaurants/${restaurantId}/menu/items`,
+  menuItem: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}`,
+  menuItemStock: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}/stock`,
 
   // WebSocket
   ws: `${WS_BASE_URL}/ws/vendor`,

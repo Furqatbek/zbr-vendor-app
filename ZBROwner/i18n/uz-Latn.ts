@@ -149,7 +149,17 @@ export default {
     noCategories: 'Hali kategoriya yo\'q',
     deleteCategoryConfirm: '"{{name}}" o\'chirilsinmi? Buni qaytarib bo\'lmaydi.',
     editItem: 'Mahsulotni tahrirlash',
+    deleteItemConfirm: '"{{name}}" o\'chirilsinmi? Buni qaytarib bo\'lmaydi.',
     itemsCount: '{{count}} ta mahsulot',
+    originalPrice: 'Asl narx',
+    prepTime: 'Tayyorlash vaqti (daq)',
+    calories: 'Kaloriya',
+    allergens: 'Allergenlar',
+    vegetarian: 'Vegetarian',
+    vegan: 'Vegan',
+    glutenFree: 'Glutensiz',
+    spicy: 'Achchiq',
+    featured: 'Tanlangan',
   },
 
   reports: {
