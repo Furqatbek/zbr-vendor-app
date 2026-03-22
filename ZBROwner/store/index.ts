@@ -31,8 +31,11 @@ interface AppStore {
   revenueData: RevenueData;
   financialReport: FinancialReportData | null;
   financialReportLoading: boolean;
-  selectedPeriod: 'day' | 'week' | 'month';
-  setSelectedPeriod: (period: 'day' | 'week' | 'month') => void;
+  selectedPeriod: 'day' | 'week' | 'month' | 'custom';
+  customStartDate: Date | null;
+  customEndDate: Date | null;
+  setSelectedPeriod: (period: 'day' | 'week' | 'month' | 'custom') => void;
+  setCustomDateRange: (start: Date, end: Date) => void;
   loadFinancialReport: () => Promise<void>;
 
   // Courier Ratings
@@ -211,9 +214,16 @@ export const useStore = create<AppStore>((set, get) => ({
   financialReport: null,
   financialReportLoading: false,
   selectedPeriod: 'day',
+  customStartDate: null,
+  customEndDate: null,
   setSelectedPeriod: (period) => {
     set({ selectedPeriod: period });
-    // Reload report when period changes
+    if (period !== 'custom') {
+      get().loadFinancialReport();
+    }
+  },
+  setCustomDateRange: (start, end) => {
+    set({ selectedPeriod: 'custom', customStartDate: start, customEndDate: end });
     get().loadFinancialReport();
   },
   loadFinancialReport: async () => {
@@ -224,17 +234,25 @@ export const useStore = create<AppStore>((set, get) => ({
       const now = new Date();
       const period = get().selectedPeriod;
       let startDate: Date;
-      if (period === 'day') {
+      let endDate: Date = now;
+      if (period === 'custom') {
+        startDate = get().customStartDate ?? new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        endDate = get().customEndDate ?? now;
+      } else if (period === 'day') {
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       } else if (period === 'week') {
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+        // Monday of the current week
+        const day = now.getDay(); // 0=Sun, 1=Mon, ...
+        const diff = day === 0 ? 6 : day - 1; // days since Monday
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
       } else {
+        // First day of current month
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
       }
       const res = await fetchFinancialReport(
         restaurant.id,
         startDate.toISOString(),
-        now.toISOString(),
+        endDate.toISOString(),
       );
       const d = res.data;
       // Also populate revenueData for backward compatibility

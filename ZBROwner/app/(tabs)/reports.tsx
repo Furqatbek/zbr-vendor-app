@@ -1,15 +1,16 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, RefreshControl, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, RefreshControl, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { LineChart } from 'react-native-chart-kit';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
 import { useStore } from '../../store';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
 import { useRefresh } from '../../hooks/useRefresh';
 
-type Period = 'day' | 'week' | 'month';
+type Period = 'day' | 'week' | 'month' | 'custom';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -17,16 +18,50 @@ const periodKeys: Record<Period, string> = {
   day: 'reports.day',
   week: 'reports.week',
   month: 'reports.month',
+  custom: 'reports.custom',
 };
 
+function formatDateShort(date: Date): string {
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 export default function ReportsScreen() {
-  const { financialReport, financialReportLoading, revenueData, selectedPeriod, setSelectedPeriod, loadFinancialReport } = useStore();
+  const {
+    financialReport, financialReportLoading, revenueData,
+    selectedPeriod, setSelectedPeriod, loadFinancialReport,
+    customStartDate, customEndDate, setCustomDateRange,
+  } = useStore();
   const t = useT();
   const router = useRouter();
   const { refreshing, handleRefresh } = useRefresh(loadFinancialReport);
   const report = financialReport;
 
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [tempStart, setTempStart] = useState<Date>(customStartDate ?? new Date());
+  const [tempEnd, setTempEnd] = useState<Date>(customEndDate ?? new Date());
+
   useEffect(() => { loadFinancialReport(); }, []);
+
+  const onStartChange = (_: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') setShowStartPicker(false);
+    if (date) {
+      setTempStart(date);
+      const end = date > tempEnd ? date : tempEnd;
+      setTempEnd(end);
+      setCustomDateRange(date, end);
+    }
+  };
+
+  const onEndChange = (_: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') setShowEndPicker(false);
+    if (date) {
+      setTempEnd(date);
+      const start = date < tempStart ? date : tempStart;
+      setTempStart(start);
+      setCustomDateRange(start, date);
+    }
+  };
 
   const previewItems = revenueData.soldItems.slice(0, 5);
 
@@ -67,7 +102,7 @@ export default function ReportsScreen() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}>
       {/* Period Selector */}
       <View style={styles.segmentContainer}>
-        {(['day', 'week', 'month'] as Period[]).map((p) => (
+        {(['day', 'week', 'month', 'custom'] as Period[]).map((p) => (
           <TouchableOpacity
             key={p}
             style={[styles.segmentButton, selectedPeriod === p && styles.segmentActive]}
@@ -80,6 +115,49 @@ export default function ReportsScreen() {
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* Custom Date Range Pickers */}
+      {selectedPeriod === 'custom' && (
+        <Card style={styles.dateRangeCard}>
+          <View style={styles.dateRow}>
+            <View style={styles.dateField}>
+              <Text style={styles.dateLabel}>{t('reports.from' as any)}</Text>
+              <TouchableOpacity style={styles.dateButton} onPress={() => setShowStartPicker(true)}>
+                <Ionicons name="calendar-outline" size={16} color={Colors.accent} />
+                <Text style={styles.dateButtonText}>{formatDateShort(tempStart)}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.dateDash}>
+              <Text style={styles.dateDashText}>–</Text>
+            </View>
+            <View style={styles.dateField}>
+              <Text style={styles.dateLabel}>{t('reports.to' as any)}</Text>
+              <TouchableOpacity style={styles.dateButton} onPress={() => setShowEndPicker(true)}>
+                <Ionicons name="calendar-outline" size={16} color={Colors.accent} />
+                <Text style={styles.dateButtonText}>{formatDateShort(tempEnd)}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          {showStartPicker && (
+            <DateTimePicker
+              value={tempStart}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'inline' : 'default'}
+              onChange={onStartChange}
+              maximumDate={new Date()}
+            />
+          )}
+          {showEndPicker && (
+            <DateTimePicker
+              value={tempEnd}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'inline' : 'default'}
+              onChange={onEndChange}
+              maximumDate={new Date()}
+            />
+          )}
+        </Card>
+      )}
 
       {/* Export Button */}
       <TouchableOpacity style={styles.exportButton} activeOpacity={0.7}>
@@ -276,6 +354,14 @@ const styles = StyleSheet.create({
   segmentActive: { backgroundColor: Colors.white, ...Shadows.card },
   segmentText: { ...Typography.subhead, color: Colors.gray500 },
   segmentTextActive: { color: Colors.black, fontWeight: '600' },
+  dateRangeCard: { marginBottom: Spacing.base },
+  dateRow: { flexDirection: 'row', alignItems: 'center' },
+  dateField: { flex: 1 },
+  dateLabel: { ...Typography.caption1, color: Colors.gray500, marginBottom: 4 },
+  dateButton: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.gray100, borderRadius: BorderRadius.button, paddingVertical: 10, paddingHorizontal: 12, minHeight: 44 },
+  dateButtonText: { ...Typography.subhead, color: Colors.black },
+  dateDash: { paddingHorizontal: Spacing.sm, paddingTop: 16 },
+  dateDashText: { ...Typography.body, color: Colors.gray400 },
   exportButton: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-end', gap: 4, marginBottom: Spacing.sm, minHeight: 44, paddingHorizontal: Spacing.sm },
   exportText: { ...Typography.subhead, color: Colors.accent, fontWeight: '600' },
   revenueCard: { alignItems: 'center', marginBottom: Spacing.base },
