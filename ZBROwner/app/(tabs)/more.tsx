@@ -15,7 +15,8 @@ import type { Locale } from '../../i18n';
 import { useRefresh } from '../../hooks/useRefresh';
 
 export default function MoreScreen() {
-  const { isOpen, setOpen, orders, reviews, revenueData, staffMembers } = useStore();
+  const { isOpen, setOpen, orders: _orders, reviews, revenueData, staffMembers } = useStore();
+  const orders = _orders ?? [];
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, locale, setLocale } = useI18n();

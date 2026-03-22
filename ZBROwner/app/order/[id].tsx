@@ -47,7 +47,8 @@ const CRITERIA_KEYS = [
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { orders, updateOrderStatus, submitCourierRating } = useStore();
+  const { orders: _orders, updateOrderStatus, submitCourierRating } = useStore();
+  const orders = _orders ?? [];
   const order = orders.find((o) => o.id === id);
   const t = useT();
 

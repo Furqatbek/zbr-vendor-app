@@ -11,7 +11,8 @@ import { useRefresh } from '../../hooks/useRefresh';
 import type { Order } from '../../types';
 
 export default function OrderHistoryScreen() {
-  const { orders, loadOrders } = useStore();
+  const { orders: _orders, loadOrders } = useStore();
+  const orders = _orders ?? [];
   const router = useRouter();
   const t = useT();
 
