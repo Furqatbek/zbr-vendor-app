@@ -22,6 +22,8 @@ export default function MoreScreen() {
   const { refreshing, handleRefresh } = useRefresh();
   const authLogout = useAuthStore((s) => s.logout);
   const restaurant = useAuthStore((s) => s.restaurant);
+  const restaurants = useAuthStore((s) => s.restaurants);
+  const selectRestaurant = useAuthStore((s) => s.selectRestaurant);
   const [showLogout, setShowLogout] = useState(false);
 
   const handleToggleOpen = async () => {
@@ -71,6 +73,37 @@ export default function MoreScreen() {
         </View>
         <PillSwitch isOn={isOpen} onToggle={handleToggleOpen} />
       </View>
+
+      {/* Restaurant Switcher */}
+      {restaurants.length > 1 && (
+        <>
+          <Text style={styles.sectionTitle}>{t('more.myRestaurants')}</Text>
+          <Card style={styles.menuCard}>
+            {restaurants.map((r, index) => {
+              const isSelected = r.id === restaurant?.id;
+              return (
+                <TouchableOpacity
+                  key={r.id}
+                  style={[styles.menuRow, index < restaurants.length - 1 && styles.menuRowBorder]}
+                  onPress={() => selectRestaurant(r.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.menuIconWrap, isSelected && styles.switcherIconActive]}>
+                    <Ionicons name="storefront-outline" size={20} color={isSelected ? Colors.white : Colors.accent} />
+                  </View>
+                  <View style={styles.menuInfo}>
+                    <Text style={[styles.menuLabel, isSelected && styles.switcherLabelActive]}>{r.name}</Text>
+                    <Text style={styles.menuSubtitle} numberOfLines={1}>{r.address}</Text>
+                  </View>
+                  {isSelected && (
+                    <Ionicons name="checkmark-circle" size={22} color={Colors.accent} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </Card>
+        </>
+      )}
 
       {/* Quick Stats */}
       <View style={styles.statsGrid}>
@@ -208,6 +241,8 @@ const styles = StyleSheet.create({
   menuInfo: { flex: 1 },
   menuLabel: { ...Typography.body, color: Colors.black },
   menuSubtitle: { ...Typography.caption1, color: Colors.gray500, marginTop: 2 },
+  switcherIconActive: { backgroundColor: Colors.accent },
+  switcherLabelActive: { fontWeight: '600', color: Colors.accent },
   langIconActive: { backgroundColor: Colors.accent },
   langLabelActive: { fontWeight: '600', color: Colors.accent },
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.base, marginTop: Spacing.base, gap: Spacing.sm, minHeight: 48 },
