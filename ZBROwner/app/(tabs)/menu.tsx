@@ -229,15 +229,16 @@ export default function MenuScreen() {
     }
   };
 
-  const handleDeleteImage = () => {
-    if (!restaurant || !editingItem) return;
+  const handleDeleteImage = (item?: MenuItem) => {
+    const target = item ?? editingItem;
+    if (!restaurant || !target) return;
     Alert.alert(t('menu.removeImage'), t('menu.removeImageConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('common.delete'), style: 'destructive', onPress: async () => {
         try {
-          await deleteMenuItemImage(restaurant.id, editingItem.id);
+          await deleteMenuItemImage(restaurant.id, target.id);
           await loadData();
-          setEditingItem((prev) => prev ? { ...prev, imageUrl: undefined } : prev);
+          setEditingItem((prev) => prev?.id === target.id ? { ...prev, imageUrl: undefined } : prev);
         } catch { /* */ }
       }},
     ]);
@@ -274,7 +275,18 @@ export default function MenuScreen() {
       <View style={styles.itemRow}>
         <Pressable style={styles.itemPressable} onPress={() => openEditItem(item)}>
           <View style={styles.itemImagePlaceholder}>
-            {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.itemThumb} /> : <Ionicons name="image-outline" size={24} color={Colors.gray400} />}
+            {item.imageUrl ? (
+              <>
+                <Image source={{ uri: item.imageUrl }} style={styles.itemThumb} />
+                <Pressable
+                  style={styles.deleteImageBadge}
+                  onPress={(e) => { e.stopPropagation(); handleDeleteImage(item); }}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <Ionicons name="close-circle" size={18} color={Colors.danger} />
+                </Pressable>
+              </>
+            ) : <Ionicons name="image-outline" size={24} color={Colors.gray400} />}
           </View>
           <View style={styles.infoFlex}>
             <Text style={styles.titleText}>{item.name}</Text>
@@ -646,6 +658,7 @@ const styles = StyleSheet.create({
   itemPressable: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   itemImagePlaceholder: { width: 56, height: 56, borderRadius: BorderRadius.chip, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md, overflow: 'hidden' },
   itemThumb: { width: 56, height: 56, borderRadius: BorderRadius.chip },
+  deleteImageBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: Colors.white, borderRadius: 9 },
   priceRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: Spacing.sm },
   priceText: { ...Typography.subhead, color: Colors.accent, fontWeight: '600' },
   originalPrice: { ...Typography.caption1, color: Colors.gray400, textDecorationLine: 'line-through' },
