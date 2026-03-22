@@ -97,10 +97,8 @@ export const useStore = create<AppStore>((set, get) => ({
   },
   getOrdersByStatus: (statuses) => get().orders.filter((o) => statuses.includes(o.status)),
   acceptOrder: async (orderId, estimatedPrepTimeMinutes) => {
-    await apiUpdateOrderStatus(orderId, {
-      status: 'ACCEPTED',
-      estimatedPrepTimeMinutes,
-    });
+    // Optimistic update — move the card out of "new" immediately
+    const prev = get().orders;
     set((s) => ({
       orders: s.orders.map((o) =>
         o.id === orderId ? {
@@ -111,17 +109,33 @@ export const useStore = create<AppStore>((set, get) => ({
         } : o
       ),
     }));
+    try {
+      await apiUpdateOrderStatus(orderId, {
+        status: 'ACCEPTED',
+        estimatedPrepTimeMinutes,
+      });
+    } catch (e) {
+      // Rollback on failure
+      set({ orders: prev });
+      throw e;
+    }
   },
   declineOrder: async (orderId, reason) => {
-    await apiCancelOrder(orderId, { reason, requestRefund: true });
+    const prev = get().orders;
     set((s) => ({
       orders: s.orders.map((o) =>
         o.id === orderId ? { ...o, status: 'cancelled' as const, cancellationReason: reason, cancelledAt: new Date().toISOString() } : o
       ),
     }));
+    try {
+      await apiCancelOrder(orderId, { reason, requestRefund: true });
+    } catch (e) {
+      set({ orders: prev });
+      throw e;
+    }
   },
   updateOrderStatus: async (orderId, status) => {
-    await apiUpdateOrderStatus(orderId, { status: status.toUpperCase() });
+    const prev = get().orders;
     set((s) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
@@ -136,6 +150,12 @@ export const useStore = create<AppStore>((set, get) => ({
         return { ...o, ...updates };
       }),
     }));
+    try {
+      await apiUpdateOrderStatus(orderId, { status: status.toUpperCase() });
+    } catch (e) {
+      set({ orders: prev });
+      throw e;
+    }
   },
 
   reviews: [],
