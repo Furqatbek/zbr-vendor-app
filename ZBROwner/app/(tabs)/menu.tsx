@@ -280,19 +280,22 @@ export default function MenuScreen() {
     <Card style={styles.itemCard}>
       <View style={styles.itemRow}>
         <Pressable style={styles.itemPressable} onPress={() => openEditItem(item)}>
-          <View style={styles.itemImagePlaceholder}>
-            {item.imageUrl ? (
-              <>
+          <View style={styles.itemImageWrap}>
+            <View style={styles.itemImagePlaceholder}>
+              {item.imageUrl ? (
                 <Image source={{ uri: item.imageUrl }} style={styles.itemThumb} />
-                <Pressable
-                  style={styles.deleteImageBadge}
-                  onPress={(e) => { e.stopPropagation(); handleDeleteImage(item); }}
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                >
-                  <Ionicons name="close-circle" size={18} color={Colors.danger} />
-                </Pressable>
-              </>
-            ) : <Ionicons name="image-outline" size={24} color={Colors.gray400} />}
+              ) : <Ionicons name="image-outline" size={24} color={Colors.gray400} />}
+            </View>
+            {item.imageUrl ? (
+              <TouchableOpacity
+                style={styles.deleteImageBadge}
+                onPress={() => handleDeleteImage(item)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                activeOpacity={0.6}
+              >
+                <Ionicons name="close-circle" size={18} color={Colors.danger} />
+              </TouchableOpacity>
+            ) : null}
           </View>
           <View style={styles.infoFlex}>
             <Text style={styles.titleText}>{item.name}</Text>
@@ -669,9 +672,10 @@ const styles = StyleSheet.create({
   itemCard: { marginBottom: Spacing.sm },
   itemRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   itemPressable: { flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
-  itemImagePlaceholder: { width: 56, height: 56, borderRadius: BorderRadius.chip, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md, overflow: 'hidden' },
+  itemImageWrap: { width: 56, height: 56, marginRight: Spacing.md },
+  itemImagePlaceholder: { width: 56, height: 56, borderRadius: BorderRadius.chip, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   itemThumb: { width: 56, height: 56, borderRadius: BorderRadius.chip },
-  deleteImageBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: Colors.white, borderRadius: 9 },
+  deleteImageBadge: { position: 'absolute', top: -6, right: -6, backgroundColor: Colors.white, borderRadius: 9, zIndex: 10 },
   priceRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: Spacing.sm },
   priceText: { ...Typography.subhead, color: Colors.accent, fontWeight: '600' },
   originalPrice: { ...Typography.caption1, color: Colors.gray400, textDecorationLine: 'line-through' },
