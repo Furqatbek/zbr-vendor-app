@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Animated,
-  ScrollView, RefreshControl, Modal,
+  ScrollView, RefreshControl,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,7 +24,6 @@ type Segment = 'new' | 'preparing' | 'waiting';
 
 export default function OrdersScreen() {
   const [segment, setSegment] = useState<Segment>('new');
-  const [declineOrderId, setDeclineOrderId] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const t = useT();
@@ -72,31 +71,16 @@ export default function OrdersScreen() {
     }
   }, [acceptOrder, t]);
 
-  const declineReasons: { label: string; value: string }[] = useMemo(() => [
-    { label: t('orders.reasonOutOfStock'), value: 'Out of stock' },
-    { label: t('orders.reasonTooBusy'), value: 'Too busy' },
-    { label: t('orders.reasonClosingSoon'), value: 'Closing soon' },
-    { label: t('orders.reasonOther'), value: 'Other' },
-  ], [t]);
-
-  const handleDecline = useCallback((orderId: string) => {
+  const handleDecline = useCallback(async (orderId: string) => {
     console.log('[handleDecline] called with orderId:', orderId);
-    setDeclineOrderId(orderId);
-  }, []);
-
-  const handleDeclineReason = useCallback(async (reason: string) => {
-    if (!declineOrderId) return;
-    const orderId = declineOrderId;
-    setDeclineOrderId(null);
-    console.log('[handleDecline] reason selected:', reason, 'for orderId:', orderId);
     try {
-      await declineOrder(orderId, reason);
+      await declineOrder(orderId, 'Declined by vendor');
       console.log('[handleDecline] declineOrder resolved successfully');
     } catch (e) {
       console.error('[handleDecline] declineOrder failed:', e);
       Alert.alert(t('common.error'), t('orders.declineFailed'));
     }
-  }, [declineOrderId, declineOrder, t]);
+  }, [declineOrder, t]);
 
   const handleMarkReady = useCallback(async (orderId: string) => {
     try {
@@ -295,23 +279,6 @@ export default function OrdersScreen() {
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       />
-      {/* Decline Reason Modal */}
-      <Modal visible={declineOrderId !== null} transparent animationType="fade">
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setDeclineOrderId(null)}>
-          <View style={styles.reasonSheet}>
-            <Text style={styles.reasonTitle}>{t('orders.declineOrder')}</Text>
-            <Text style={styles.reasonSubtitle}>{t('orders.selectReason')}</Text>
-            {declineReasons.map((r) => (
-              <TouchableOpacity key={r.value} style={styles.reasonOption} onPress={() => handleDeclineReason(r.value)}>
-                <Text style={styles.reasonOptionText}>{r.label}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity style={styles.reasonCancel} onPress={() => setDeclineOrderId(null)}>
-              <Text style={styles.reasonCancelText}>{t('common.cancel')}</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </View>
   );
 }
@@ -400,12 +367,4 @@ const styles = StyleSheet.create({
   courierEta: { ...Typography.footnote, color: Colors.accent, marginLeft: 'auto' },
   emptyContainer: { alignItems: 'center', paddingTop: Spacing['3xl'], gap: Spacing.md },
   emptyText: { ...Typography.body, color: Colors.gray400 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
-  reasonSheet: { backgroundColor: Colors.white, borderRadius: BorderRadius.card, padding: Spacing.xl, width: '85%', maxWidth: 360 },
-  reasonTitle: { ...Typography.headline, color: Colors.black, textAlign: 'center' },
-  reasonSubtitle: { ...Typography.footnote, color: Colors.gray500, textAlign: 'center', marginTop: 4, marginBottom: Spacing.base },
-  reasonOption: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.gray100, minHeight: 48, justifyContent: 'center' },
-  reasonOptionText: { ...Typography.body, color: Colors.gray700 },
-  reasonCancel: { paddingVertical: 14, marginTop: Spacing.sm, alignItems: 'center', minHeight: 48, justifyContent: 'center' },
-  reasonCancelText: { ...Typography.headline, color: Colors.gray500 },
 });
