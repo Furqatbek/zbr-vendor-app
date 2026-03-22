@@ -1,5 +1,5 @@
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
-import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, RestaurantOrdersResponse, CancelOrderRequest } from '../types';
+import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, RestaurantOrdersResponse, RawApiOrder, CancelOrderRequest, Order, OrderItem, OrderStatus } from '../types';
 
 let getAccessToken: () => string | null = () => null;
 let getRefreshToken: () => string | null = () => null;
@@ -173,17 +173,59 @@ export function cancelOrder(orderId: string, data: CancelOrderRequest): Promise<
   });
 }
 
-export function fetchRestaurantOrders(
+function mapApiOrderItem(raw: RawApiOrder['items'][number]): OrderItem {
+  return {
+    id: String(raw.id),
+    name: raw.itemName,
+    quantity: raw.quantity,
+    price: raw.unitPrice,
+    modifiers: raw.modifiers?.map((m) => m.name),
+    specialNotes: raw.specialInstructions,
+  };
+}
+
+function mapApiOrder(raw: RawApiOrder): Order {
+  return {
+    id: String(raw.id),
+    orderNumber: raw.externalOrderNo,
+    status: raw.status.toLowerCase() as OrderStatus,
+    orderType: raw.orderType as Order['orderType'],
+    paymentStatus: raw.paymentStatus as Order['paymentStatus'],
+    items: raw.items.map(mapApiOrderItem),
+    totalPrice: raw.total,
+    customerName: raw.customerName,
+    customerPhone: raw.customerPhone,
+    courierName: raw.courierName,
+    receivedAt: raw.createdAt,
+    prepTimeMinutes: raw.estimatedPrepTimeMinutes ?? 0,
+    estimatedPrepTimeMinutes: raw.estimatedPrepTimeMinutes,
+    acceptedAt: raw.acceptedAt,
+    readyAt: raw.readyAt,
+    pickedUpAt: raw.pickedUpAt,
+    inTransitAt: raw.inTransitAt,
+    deliveredAt: raw.deliveredAt,
+    completedAt: raw.completedAt,
+    cancelledAt: raw.cancelledAt,
+    cancellationReason: raw.cancellationReason,
+  };
+}
+
+export async function fetchRestaurantOrders(
   restaurantId: number,
   params: { page?: number; size?: number } = {},
-): Promise<RestaurantOrdersResponse> {
+): Promise<{ content: Order[]; totalElements: number; last: boolean }> {
   const query = new URLSearchParams();
   if (params.page != null) query.set('page', String(params.page));
   if (params.size != null) query.set('size', String(params.size));
   const qs = query.toString();
-  return apiFetch<RestaurantOrdersResponse>(
+  const res = await apiFetch<RestaurantOrdersResponse>(
     ENDPOINTS.restaurantOrders(restaurantId) + (qs ? `?${qs}` : ''),
   );
+  return {
+    content: res.data.content.map(mapApiOrder),
+    totalElements: res.data.totalElements,
+    last: res.data.last,
+  };
 }
 
 // ── Menu Categories API ──

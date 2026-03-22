@@ -177,12 +177,67 @@ export interface OrderResponse {
 }
 
 export interface RestaurantOrdersResponse {
-  content: Order[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
-  last: boolean;
+  success: boolean;
+  data: {
+    content: RawApiOrder[];
+    totalElements: number;
+    totalPages: number;
+    page: number;
+    size: number;
+    first: boolean;
+    last: boolean;
+    empty: boolean;
+  };
+}
+
+export interface RawApiOrderItem {
+  id: number;
+  menuItemId: number;
+  itemName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  variantName?: string;
+  variantPriceDelta?: number;
+  modifiers?: { id: number; name: string; price: number }[];
+  modifiersTotal?: number;
+  specialInstructions?: string;
+}
+
+export interface RawApiOrder {
+  id: number;
+  externalOrderNo: string;
+  consumerId?: number;
+  consumerName?: string;
+  restaurantId: number;
+  restaurantName?: string;
+  courierId?: number;
+  courierName?: string;
+  orderType: string;
+  status: string;
+  paymentStatus?: string;
+  items: RawApiOrderItem[];
+  subtotal: number;
+  tax?: number;
+  deliveryFee?: number;
+  discount?: number;
+  tipAmount?: number;
+  total: number;
+  deliveryAddress?: string;
+  deliveryInstructions?: string;
+  customerName: string;
+  customerPhone?: string;
+  estimatedPrepTimeMinutes?: number;
+  estimatedDeliveryTime?: string;
+  createdAt: string;
+  acceptedAt?: string;
+  readyAt?: string;
+  pickedUpAt?: string;
+  inTransitAt?: string;
+  deliveredAt?: string;
+  completedAt?: string;
+  cancelledAt?: string;
+  cancellationReason?: string;
 }
 
 export interface CancelOrderRequest {
