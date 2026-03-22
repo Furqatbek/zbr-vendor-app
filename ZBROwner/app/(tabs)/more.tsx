@@ -75,7 +75,7 @@ export default function MoreScreen() {
       </View>
 
       {/* Restaurant Switcher */}
-      {restaurants.length > 1 && (
+      {restaurants.length > 0 && (
         <>
           <Text style={styles.sectionTitle}>{t('more.myRestaurants')}</Text>
           <Card style={styles.menuCard}>
