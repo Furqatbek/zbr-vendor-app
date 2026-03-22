@@ -48,14 +48,15 @@ export default function SlideToAction({ onAccept, onDecline }: Props) {
     .onEnd((e) => {
       const threshold = (containerWidth.value - THUMB_SIZE) * 0.6;
       if (e.translationX > threshold) {
+        // Fire immediately — don't wait for the animation
+        runOnJS(fireAccept)();
         translateX.value = withSpring(containerWidth.value - THUMB_SIZE - 8, SPRING_CONFIG, () => {
           translateX.value = withSpring(0, SPRING_CONFIG);
-          runOnJS(fireAccept)();
         });
       } else if (e.translationX < -threshold) {
+        runOnJS(fireDecline)();
         translateX.value = withSpring(-(containerWidth.value - THUMB_SIZE - 8), SPRING_CONFIG, () => {
           translateX.value = withSpring(0, SPRING_CONFIG);
-          runOnJS(fireDecline)();
         });
       } else {
         translateX.value = withSpring(0, SPRING_CONFIG);
