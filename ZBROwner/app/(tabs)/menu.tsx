@@ -364,6 +364,156 @@ export default function MenuScreen() {
                 ))}
               </View>
 
+              {/* ── Variants ── */}
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{t('menu.variants')}</Text>
+                <TouchableOpacity onPress={() => setItemForm((f) => ({ ...f, variants: [...(f.variants ?? []), { name: '', priceDelta: 0, sortOrder: (f.variants ?? []).length }] }))}>
+                  <Ionicons name="add-circle-outline" size={22} color={Colors.accent} />
+                </TouchableOpacity>
+              </View>
+              {(itemForm.variants ?? []).length === 0 && (
+                <Text style={styles.emptyHint}>{t('menu.noVariants')}</Text>
+              )}
+              {(itemForm.variants ?? []).map((variant, idx) => (
+                <View key={idx} style={styles.subItemCard}>
+                  <View style={styles.subItemRow}>
+                    <View style={styles.subItemFlex}>
+                      <TextInput
+                        style={styles.subInput}
+                        placeholder={t('menu.variantName')}
+                        placeholderTextColor={Colors.gray400}
+                        value={variant.name}
+                        onChangeText={(v) => setItemForm((f) => {
+                          const variants = [...(f.variants ?? [])];
+                          variants[idx] = { ...variants[idx], name: v };
+                          return { ...f, variants };
+                        })}
+                      />
+                    </View>
+                    <View style={styles.subInputSmall}>
+                      <TextInput
+                        style={styles.subInput}
+                        placeholder={t('menu.priceDelta')}
+                        placeholderTextColor={Colors.gray400}
+                        value={variant.priceDelta ? String(variant.priceDelta) : ''}
+                        onChangeText={(v) => setItemForm((f) => {
+                          const variants = [...(f.variants ?? [])];
+                          variants[idx] = { ...variants[idx], priceDelta: Number(v) || 0 };
+                          return { ...f, variants };
+                        })}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => setItemForm((f) => ({ ...f, variants: (f.variants ?? []).filter((_, i) => i !== idx) }))}
+                      style={styles.removeBtn}
+                    >
+                      <Ionicons name="close-circle" size={20} color={Colors.danger} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+
+              {/* ── Options ── */}
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{t('menu.options')}</Text>
+                <TouchableOpacity onPress={() => setItemForm((f) => ({ ...f, options: [...(f.options ?? []), { groupName: '', name: '', priceDelta: 0, isDefault: false, maxSelections: 1, required: false }] }))}>
+                  <Ionicons name="add-circle-outline" size={22} color={Colors.accent} />
+                </TouchableOpacity>
+              </View>
+              {(itemForm.options ?? []).length === 0 && (
+                <Text style={styles.emptyHint}>{t('menu.noOptions')}</Text>
+              )}
+              {(itemForm.options ?? []).map((option, idx) => (
+                <View key={idx} style={styles.subItemCard}>
+                  <View style={styles.subItemRow}>
+                    <View style={styles.subItemFlex}>
+                      <TextInput
+                        style={styles.subInput}
+                        placeholder={t('menu.optionGroupName')}
+                        placeholderTextColor={Colors.gray400}
+                        value={option.groupName}
+                        onChangeText={(v) => setItemForm((f) => {
+                          const options = [...(f.options ?? [])];
+                          options[idx] = { ...options[idx], groupName: v };
+                          return { ...f, options };
+                        })}
+                      />
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => setItemForm((f) => ({ ...f, options: (f.options ?? []).filter((_, i) => i !== idx) }))}
+                      style={styles.removeBtn}
+                    >
+                      <Ionicons name="close-circle" size={20} color={Colors.danger} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.subItemRow}>
+                    <View style={styles.subItemFlex}>
+                      <TextInput
+                        style={styles.subInput}
+                        placeholder={t('menu.optionName')}
+                        placeholderTextColor={Colors.gray400}
+                        value={option.name}
+                        onChangeText={(v) => setItemForm((f) => {
+                          const options = [...(f.options ?? [])];
+                          options[idx] = { ...options[idx], name: v };
+                          return { ...f, options };
+                        })}
+                      />
+                    </View>
+                    <View style={styles.subInputSmall}>
+                      <TextInput
+                        style={styles.subInput}
+                        placeholder={t('menu.priceDelta')}
+                        placeholderTextColor={Colors.gray400}
+                        value={option.priceDelta ? String(option.priceDelta) : ''}
+                        onChangeText={(v) => setItemForm((f) => {
+                          const options = [...(f.options ?? [])];
+                          options[idx] = { ...options[idx], priceDelta: Number(v) || 0 };
+                          return { ...f, options };
+                        })}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.optionFlagsRow}>
+                    <TouchableOpacity
+                      style={[styles.optionFlag, option.isDefault && styles.optionFlagActive]}
+                      onPress={() => setItemForm((f) => {
+                        const options = [...(f.options ?? [])];
+                        options[idx] = { ...options[idx], isDefault: !options[idx].isDefault };
+                        return { ...f, options };
+                      })}
+                    >
+                      <Text style={[styles.optionFlagText, option.isDefault && styles.optionFlagTextActive]}>{t('menu.optionDefault')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.optionFlag, option.required && styles.optionFlagActive]}
+                      onPress={() => setItemForm((f) => {
+                        const options = [...(f.options ?? [])];
+                        options[idx] = { ...options[idx], required: !options[idx].required };
+                        return { ...f, options };
+                      })}
+                    >
+                      <Text style={[styles.optionFlagText, option.required && styles.optionFlagTextActive]}>{t('menu.optionRequired')}</Text>
+                    </TouchableOpacity>
+                    <View style={styles.maxSelectWrap}>
+                      <Text style={styles.maxSelectLabel}>{t('menu.maxSelections')}</Text>
+                      <TextInput
+                        style={styles.maxSelectInput}
+                        value={option.maxSelections ? String(option.maxSelections) : ''}
+                        onChangeText={(v) => setItemForm((f) => {
+                          const options = [...(f.options ?? [])];
+                          options[idx] = { ...options[idx], maxSelections: Number(v) || undefined };
+                          return { ...f, options };
+                        })}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  </View>
+                </View>
+              ))}
+
               {/* Save */}
               <TouchableOpacity style={[styles.saveButton, savingItem && styles.disabled]} onPress={handleSaveItem} disabled={savingItem} activeOpacity={0.8}>
                 {savingItem ? <ActivityIndicator color={Colors.white} size="small" /> : (
@@ -435,6 +585,25 @@ const styles = StyleSheet.create({
   flagChipActive: { backgroundColor: Colors.accent, borderColor: Colors.accent },
   flagChipText: { ...Typography.caption1, color: Colors.gray500 },
   flagChipTextActive: { color: Colors.white },
+
+  // Sections (variants/options)
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: Spacing.xl, marginBottom: Spacing.sm, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.gray200 },
+  sectionTitle: { ...Typography.headline, color: Colors.black },
+  emptyHint: { ...Typography.footnote, color: Colors.gray400, textAlign: 'center', paddingVertical: Spacing.md },
+  subItemCard: { backgroundColor: Colors.gray50, borderRadius: BorderRadius.chip, padding: Spacing.md, marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.gray200 },
+  subItemRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: 4 },
+  subItemFlex: { flex: 1 },
+  subInputSmall: { width: 90 },
+  subInput: { borderWidth: 1, borderColor: Colors.gray200, borderRadius: BorderRadius.chip, paddingHorizontal: Spacing.sm, paddingVertical: Spacing.sm, ...Typography.footnote, backgroundColor: Colors.white, minHeight: 40 },
+  removeBtn: { padding: 4 },
+  optionFlagsRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: 4, flexWrap: 'wrap' },
+  optionFlag: { paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.gray300 },
+  optionFlagActive: { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  optionFlagText: { ...Typography.caption2, color: Colors.gray500 },
+  optionFlagTextActive: { color: Colors.white },
+  maxSelectWrap: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  maxSelectLabel: { ...Typography.caption2, color: Colors.gray500 },
+  maxSelectInput: { borderWidth: 1, borderColor: Colors.gray200, borderRadius: BorderRadius.chip, paddingHorizontal: Spacing.sm, paddingVertical: 2, width: 44, textAlign: 'center', ...Typography.caption1, backgroundColor: Colors.white, minHeight: 30 },
 
   // Save
   saveButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.accent, borderRadius: BorderRadius.button, paddingVertical: Spacing.md, gap: Spacing.sm, minHeight: 48, marginTop: Spacing.xl, marginBottom: Spacing.base },
