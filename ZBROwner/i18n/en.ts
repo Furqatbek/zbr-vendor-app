@@ -154,8 +154,11 @@ export default {
     noItemsInCategory: 'No items in this category',
     newCategory: 'New Category',
     categoryName: 'Category name',
+    categoryDescription: 'Description (optional)',
+    editCategory: 'Edit Category',
+    noCategories: 'No categories yet',
+    deleteCategoryConfirm: 'Delete "{{name}}"? This cannot be undone.',
     editItem: 'Edit Item',
-    connectBackendHint: 'Connect to backend API to enable editing',
     itemsCount: '{{count}} items',
   },
 

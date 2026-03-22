@@ -144,8 +144,11 @@ export default {
     noItemsInCategory: 'Bu kategoriyada mahsulot yo\'q',
     newCategory: 'Yangi kategoriya',
     categoryName: 'Kategoriya nomi',
+    categoryDescription: 'Tavsif (ixtiyoriy)',
+    editCategory: 'Kategoriyani tahrirlash',
+    noCategories: 'Hali kategoriya yo\'q',
+    deleteCategoryConfirm: '"{{name}}" o\'chirilsinmi? Buni qaytarib bo\'lmaydi.',
     editItem: 'Mahsulotni tahrirlash',
-    connectBackendHint: 'Tahrirlash uchun API ni ulang',
     itemsCount: '{{count}} ta mahsulot',
   },
 

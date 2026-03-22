@@ -1,170 +1,177 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, Switch, Alert, TextInput, Modal,
-  ScrollView, KeyboardAvoidingView, Platform, RefreshControl,
+  View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, TextInput, Modal,
+  RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
-import { useStore } from '../../store';
-import type { MenuCategory, MenuItem } from '../../types';
+import { useAuthStore } from '../../store/authStore';
+import { fetchMenuCategories, createMenuCategory, updateMenuCategory, deleteMenuCategory as apiDeleteCategory } from '../../services/api';
+import type { MenuCategory, CreateMenuCategoryRequest } from '../../types';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
-import { useRefresh } from '../../hooks/useRefresh';
-
-type ViewMode = 'categories' | 'items';
 
 export default function MenuScreen() {
-  const {
-    categories, menuItems,
-    toggleCategoryActive, toggleItemStock, addCategory, deleteMenuItem,
-  } = useStore();
-
+  const restaurant = useAuthStore((s) => s.restaurant);
   const t = useT();
-  const { refreshing, handleRefresh } = useRefresh();
 
-  const [viewMode, setViewMode] = useState<ViewMode>('categories');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Add category modal
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [showEditItem, setShowEditItem] = useState(false);
-  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [newCategoryDesc, setNewCategoryDesc] = useState('');
+  const [addingCategory, setAddingCategory] = useState(false);
 
-  const selectedItems = selectedCategoryId
-    ? menuItems.filter((i) => i.categoryId === selectedCategoryId)
-    : menuItems;
+  // Edit category modal
+  const [showEditCategory, setShowEditCategory] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<MenuCategory | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [savingCategory, setSavingCategory] = useState(false);
 
-  const handleDeleteItem = useCallback((item: MenuItem) => {
-    Alert.alert(t('common.delete'), t('common.removeItemConfirm', { name: item.name }), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => deleteMenuItem(item.id) },
-    ]);
-  }, [deleteMenuItem, t]);
-
-  const handleAddCategory = () => {
-    if (newCategoryName.trim()) {
-      addCategory(newCategoryName.trim());
-      setNewCategoryName('');
-      setShowAddCategory(false);
+  const loadCategories = useCallback(async () => {
+    if (!restaurant) return;
+    try {
+      const res = await fetchMenuCategories(restaurant.id);
+      setCategories(res.data ?? []);
+    } catch {
+      // silent
     }
+  }, [restaurant]);
+
+  useEffect(() => {
+    loadCategories().finally(() => setLoading(false));
+  }, [loadCategories]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadCategories();
+    setRefreshing(false);
+  };
+
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim() || !restaurant || addingCategory) return;
+    setAddingCategory(true);
+    try {
+      const data: CreateMenuCategoryRequest = {
+        name: newCategoryName.trim(),
+        description: newCategoryDesc.trim() || undefined,
+        sortOrder: categories.length,
+      };
+      await createMenuCategory(restaurant.id, data);
+      setNewCategoryName('');
+      setNewCategoryDesc('');
+      setShowAddCategory(false);
+      await loadCategories();
+    } catch {
+      // TODO: error toast
+    } finally {
+      setAddingCategory(false);
+    }
+  };
+
+  const handleEditCategory = (cat: MenuCategory) => {
+    setEditingCategory(cat);
+    setEditName(cat.name);
+    setEditDesc(cat.description ?? '');
+    setShowEditCategory(true);
+  };
+
+  const handleSaveCategory = async () => {
+    if (!editingCategory || !restaurant || savingCategory) return;
+    setSavingCategory(true);
+    try {
+      await updateMenuCategory(restaurant.id, editingCategory.id, {
+        name: editName.trim(),
+        description: editDesc.trim() || undefined,
+        sortOrder: editingCategory.sortOrder,
+      });
+      setShowEditCategory(false);
+      await loadCategories();
+    } catch {
+      // TODO: error toast
+    } finally {
+      setSavingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = (cat: MenuCategory) => {
+    if (!restaurant) return;
+    Alert.alert(t('common.delete'), t('menu.deleteCategoryConfirm', { name: cat.name }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'), style: 'destructive', onPress: async () => {
+          try {
+            await apiDeleteCategory(restaurant.id, cat.id);
+            await loadCategories();
+          } catch {
+            // TODO: error toast
+          }
+        },
+      },
+    ]);
   };
 
   const renderCategory = ({ item }: { item: MenuCategory }) => (
     <Card style={styles.categoryCard}>
       <TouchableOpacity
         style={styles.categoryRow}
-        onPress={() => { setSelectedCategoryId(item.id); setViewMode('items'); }}
+        onPress={() => handleEditCategory(item)}
         activeOpacity={0.7}
       >
-        <View style={styles.dragHandle}>
-          <Ionicons name="reorder-three" size={24} color={Colors.gray400} />
+        <View style={styles.categoryIconWrap}>
+          <Ionicons name="grid-outline" size={20} color={Colors.accent} />
         </View>
         <View style={styles.categoryInfo}>
           <Text style={styles.categoryName}>{item.name}</Text>
+          {item.description ? (
+            <Text style={styles.categoryDesc} numberOfLines={1}>{item.description}</Text>
+          ) : null}
           <Text style={styles.categoryCount}>{t('menu.itemsCount', { count: item.itemCount })}</Text>
         </View>
-        <Switch
-          value={item.isActive}
-          onValueChange={() => toggleCategoryActive(item.id)}
-          trackColor={{ false: Colors.gray300, true: Colors.accentLight }}
-          thumbColor={item.isActive ? Colors.accent : Colors.gray400}
-        />
+        <TouchableOpacity
+          onPress={() => handleDeleteCategory(item)}
+          style={styles.deleteButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="trash-outline" size={18} color={Colors.danger} />
+        </TouchableOpacity>
       </TouchableOpacity>
     </Card>
   );
 
-  const renderMenuItem = ({ item }: { item: MenuItem }) => (
-    <Card style={styles.menuItemCard}>
-      <View style={styles.menuItemRow}>
-        <View style={styles.menuItemImagePlaceholder}>
-          <Ionicons name="image-outline" size={24} color={Colors.gray400} />
-        </View>
-        <View style={styles.menuItemInfo}>
-          <Text style={styles.menuItemName}>{item.name}</Text>
-          <Text style={styles.menuItemDesc} numberOfLines={1}>{item.description}</Text>
-          <Text style={styles.menuItemPrice}>{t('common.currency', { amount: item.price.toFixed(2) })}</Text>
-        </View>
-        <View style={styles.menuItemActions}>
-          {!item.inStock && (
-            <View style={styles.outOfStockBadge}>
-              <Text style={styles.outOfStockText}>{t('menu.outOfStock')}</Text>
-            </View>
-          )}
-          <Switch
-            value={item.inStock}
-            onValueChange={() => toggleItemStock(item.id)}
-            trackColor={{ false: Colors.dangerLight, true: Colors.successLight }}
-            thumbColor={item.inStock ? Colors.success : Colors.danger}
-          />
-          <TouchableOpacity
-            onPress={() => { setEditingItem(item); setShowEditItem(true); }}
-            style={styles.editButton}
-            accessibilityLabel={t('menu.editItem')}
-          >
-            <Ionicons name="pencil" size={18} color={Colors.accent} />
-          </TouchableOpacity>
-        </View>
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
-      <TouchableOpacity
-        style={styles.deleteSwipe}
-        onPress={() => handleDeleteItem(item)}
-        accessibilityLabel={t('common.delete')}
-      >
-        <Ionicons name="trash-outline" size={16} color={Colors.danger} />
-        <Text style={styles.deleteText}>{t('common.delete')}</Text>
-      </TouchableOpacity>
-    </Card>
-  );
+    );
+  }
 
   return (
     <View style={styles.screen}>
-      {viewMode === 'items' && selectedCategoryId && (
-        <TouchableOpacity
-          onPress={() => { setViewMode('categories'); setSelectedCategoryId(null); }}
-          style={styles.backRow}
-        >
-          <Ionicons name="chevron-back" size={20} color={Colors.accent} />
-          <Text style={styles.backText}>
-            {categories.find((c) => c.id === selectedCategoryId)?.name ?? t('menu.menuCategories')}
-          </Text>
-        </TouchableOpacity>
-      )}
-
-      {viewMode === 'categories' ? (
-        <FlatList
-          data={categories}
-          keyExtractor={(item) => item.id}
-          renderItem={renderCategory}
-          contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}
-          ListFooterComponent={
-            <TouchableOpacity style={styles.addButton} onPress={() => setShowAddCategory(true)}>
-              <Ionicons name="add-circle" size={20} color={Colors.accent} />
-              <Text style={styles.addButtonText}>{t('menu.addCategory')}</Text>
-            </TouchableOpacity>
-          }
-        />
-      ) : (
-        <FlatList
-          data={selectedItems}
-          keyExtractor={(item) => item.id}
-          renderItem={renderMenuItem}
-          contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="fast-food-outline" size={48} color={Colors.gray300} />
-              <Text style={styles.emptyText}>{t('menu.noItemsInCategory')}</Text>
-            </View>
-          }
-        />
-      )}
-
-      {/* FAB for adding items */}
-      {viewMode === 'items' && (
-        <TouchableOpacity style={styles.fab} activeOpacity={0.8}>
-          <Ionicons name="add" size={28} color={Colors.white} />
-        </TouchableOpacity>
-      )}
+      <FlatList
+        data={categories}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={renderCategory}
+        contentContainerStyle={styles.listContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="folder-open-outline" size={48} color={Colors.gray300} />
+            <Text style={styles.emptyText}>{t('menu.noCategories')}</Text>
+          </View>
+        }
+        ListFooterComponent={
+          <TouchableOpacity style={styles.addButton} onPress={() => setShowAddCategory(true)}>
+            <Ionicons name="add-circle" size={20} color={Colors.accent} />
+            <Text style={styles.addButtonText}>{t('menu.addCategory')}</Text>
+          </TouchableOpacity>
+        }
+      />
 
       {/* Add Category Modal */}
       <Modal visible={showAddCategory} transparent animationType="fade">
@@ -174,50 +181,88 @@ export default function MenuScreen() {
             <TextInput
               style={styles.input}
               placeholder={t('menu.categoryName')}
+              placeholderTextColor={Colors.gray400}
               value={newCategoryName}
               onChangeText={setNewCategoryName}
               autoFocus
+              maxLength={100}
+            />
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder={t('menu.categoryDescription')}
+              placeholderTextColor={Colors.gray400}
+              value={newCategoryDesc}
+              onChangeText={setNewCategoryDesc}
+              multiline
+              maxLength={500}
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.modalCancelButton}
-                onPress={() => { setShowAddCategory(false); setNewCategoryName(''); }}
+                onPress={() => { setShowAddCategory(false); setNewCategoryName(''); setNewCategoryDesc(''); }}
               >
                 <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalConfirmButton} onPress={handleAddCategory}>
-                <Text style={styles.modalConfirmText}>{t('common.add')}</Text>
+              <TouchableOpacity
+                style={[styles.modalConfirmButton, addingCategory && styles.buttonDisabled]}
+                onPress={handleAddCategory}
+                disabled={addingCategory}
+              >
+                {addingCategory ? (
+                  <ActivityIndicator color={Colors.white} size="small" />
+                ) : (
+                  <Text style={styles.modalConfirmText}>{t('common.add')}</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* Edit Item Modal */}
-      <Modal visible={showEditItem} transparent animationType="slide">
-        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={styles.editModalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('menu.editItem')}</Text>
-              <TouchableOpacity onPress={() => setShowEditItem(false)}>
-                <Ionicons name="close" size={24} color={Colors.gray600} />
+      {/* Edit Category Modal */}
+      <Modal visible={showEditCategory} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t('menu.editCategory')}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder={t('menu.categoryName')}
+              placeholderTextColor={Colors.gray400}
+              value={editName}
+              onChangeText={setEditName}
+              autoFocus
+              maxLength={100}
+            />
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder={t('menu.categoryDescription')}
+              placeholderTextColor={Colors.gray400}
+              value={editDesc}
+              onChangeText={setEditDesc}
+              multiline
+              maxLength={500}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setShowEditCategory(false)}
+              >
+                <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalConfirmButton, savingCategory && styles.buttonDisabled]}
+                onPress={handleSaveCategory}
+                disabled={savingCategory}
+              >
+                {savingCategory ? (
+                  <ActivityIndicator color={Colors.white} size="small" />
+                ) : (
+                  <Text style={styles.modalConfirmText}>{t('profile.save')}</Text>
+                )}
               </TouchableOpacity>
             </View>
-            {editingItem && (
-              <ScrollView>
-                <Text style={styles.fieldLabel}>{t('common.name')}</Text>
-                <TextInput style={styles.input} value={editingItem.name} editable={false} />
-                <Text style={styles.fieldLabel}>{t('common.description')}</Text>
-                <TextInput style={[styles.input, styles.textArea]} value={editingItem.description} multiline editable={false} />
-                <Text style={styles.fieldLabel}>{t('common.price')}</Text>
-                <TextInput style={styles.input} value={t('common.currency', { amount: editingItem.price.toFixed(2) })} editable={false} />
-                <Text style={styles.fieldLabel}>{t('common.category')}</Text>
-                <TextInput style={styles.input} value={categories.find((c) => c.id === editingItem.categoryId)?.name ?? ''} editable={false} />
-                <Text style={styles.hintText}>{t('menu.connectBackendHint')}</Text>
-              </ScrollView>
-            )}
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
     </View>
   );
@@ -225,45 +270,29 @@ export default function MenuScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.gray50 },
-  backRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.base, paddingVertical: Spacing.sm, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.gray200 },
-  backText: { ...Typography.subhead, color: Colors.accent, marginLeft: 4 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: Spacing.base, paddingBottom: 100 },
   categoryCard: { marginBottom: Spacing.sm },
   categoryRow: { flexDirection: 'row', alignItems: 'center' },
-  dragHandle: { marginRight: Spacing.md, minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
+  categoryIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.accentLight, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
   categoryInfo: { flex: 1 },
   categoryName: { ...Typography.headline, color: Colors.black },
-  categoryCount: { ...Typography.footnote, color: Colors.gray500, marginTop: 2 },
-  menuItemCard: { marginBottom: Spacing.sm },
-  menuItemRow: { flexDirection: 'row', alignItems: 'center' },
-  menuItemImagePlaceholder: { width: 56, height: 56, borderRadius: BorderRadius.chip, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
-  menuItemInfo: { flex: 1 },
-  menuItemName: { ...Typography.headline, color: Colors.black },
-  menuItemDesc: { ...Typography.footnote, color: Colors.gray500, marginTop: 2 },
-  menuItemPrice: { ...Typography.subhead, color: Colors.accent, fontWeight: '600', marginTop: 4 },
-  menuItemActions: { alignItems: 'center', gap: 4 },
-  outOfStockBadge: { backgroundColor: Colors.dangerLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  outOfStockText: { ...Typography.caption2, color: Colors.danger, fontWeight: '600' },
-  editButton: { minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
-  deleteSwipe: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.gray100, marginTop: Spacing.sm, gap: 4, minHeight: 44 },
-  deleteText: { ...Typography.footnote, color: Colors.danger },
+  categoryDesc: { ...Typography.footnote, color: Colors.gray500, marginTop: 2 },
+  categoryCount: { ...Typography.caption1, color: Colors.gray400, marginTop: 2 },
+  deleteButton: { minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
   addButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.base, gap: Spacing.sm, minHeight: 48 },
   addButtonText: { ...Typography.headline, color: Colors.accent },
-  fab: { position: 'absolute', right: Spacing.base, bottom: Spacing.xl, width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.accent, justifyContent: 'center', alignItems: 'center', ...Shadows.cardHover },
   emptyContainer: { alignItems: 'center', paddingTop: Spacing['3xl'], gap: Spacing.md },
   emptyText: { ...Typography.body, color: Colors.gray400 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: Colors.white, borderRadius: BorderRadius.card, padding: Spacing.xl, width: '85%' },
-  editModalContent: { backgroundColor: Colors.white, borderRadius: BorderRadius.card, padding: Spacing.xl, width: '90%', maxHeight: '70%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.base },
   modalTitle: { ...Typography.title3, color: Colors.black },
   input: { borderWidth: 1, borderColor: Colors.gray200, borderRadius: BorderRadius.chip, paddingHorizontal: Spacing.md, paddingVertical: Spacing.md, ...Typography.body, marginTop: Spacing.sm, minHeight: 48 },
   textArea: { height: 80, textAlignVertical: 'top' },
-  fieldLabel: { ...Typography.subhead, fontWeight: '600', color: Colors.gray700, marginTop: Spacing.md },
-  hintText: { ...Typography.footnote, color: Colors.gray400, textAlign: 'center', marginTop: Spacing.xl },
   modalButtons: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: Spacing.xl, gap: Spacing.md },
   modalCancelButton: { paddingHorizontal: Spacing.base, paddingVertical: Spacing.md, minHeight: 44, justifyContent: 'center' },
   modalCancelText: { ...Typography.headline, color: Colors.gray500 },
   modalConfirmButton: { backgroundColor: Colors.accent, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderRadius: BorderRadius.button, minHeight: 44, justifyContent: 'center' },
   modalConfirmText: { ...Typography.headline, color: Colors.white },
+  buttonDisabled: { opacity: 0.5 },
 });

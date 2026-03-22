@@ -157,11 +157,30 @@ export interface Order {
 }
 
 export interface MenuCategory {
-  id: string;
+  id: number;
   name: string;
-  isActive: boolean;
+  description?: string;
+  imageUrl?: string;
   sortOrder: number;
+  active: boolean;
   itemCount: number;
+}
+
+export interface MenuCategoriesResponse {
+  success: boolean;
+  data: MenuCategory[];
+}
+
+export interface MenuCategoryResponse {
+  success: boolean;
+  data: MenuCategory;
+}
+
+export interface CreateMenuCategoryRequest {
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  sortOrder?: number;
 }
 
 export interface MenuItem {

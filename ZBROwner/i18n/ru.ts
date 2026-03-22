@@ -144,8 +144,11 @@ export default {
     noItemsInCategory: 'Нет позиций в этой категории',
     newCategory: 'Новая категория',
     categoryName: 'Название категории',
+    categoryDescription: 'Описание (необязательно)',
+    editCategory: 'Редактировать категорию',
+    noCategories: 'Пока нет категорий',
+    deleteCategoryConfirm: 'Удалить "{{name}}"? Это нельзя отменить.',
     editItem: 'Редактировать позицию',
-    connectBackendHint: 'Подключите API для редактирования',
     itemsCount: '{{count}} позиций',
   },
 

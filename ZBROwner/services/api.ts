@@ -1,5 +1,5 @@
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
-import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse } from '../types';
+import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest } from '../types';
 
 let getAccessToken: () => string | null = () => null;
 let getRefreshToken: () => string | null = () => null;
@@ -154,5 +154,31 @@ export function updateRestaurant(restaurantId: number, data: UpdateRestaurantReq
 export function toggleRestaurantOpen(restaurantId: number, isOpen: boolean): Promise<ApiResponse> {
   return apiFetch<ApiResponse>(ENDPOINTS.restaurantToggleOpen(restaurantId) + `?isOpen=${isOpen}`, {
     method: 'PATCH',
+  });
+}
+
+// ── Menu Categories API ──
+
+export function fetchMenuCategories(restaurantId: number): Promise<MenuCategoriesResponse> {
+  return apiFetch<MenuCategoriesResponse>(ENDPOINTS.menuCategories(restaurantId));
+}
+
+export function createMenuCategory(restaurantId: number, data: CreateMenuCategoryRequest): Promise<MenuCategoryResponse> {
+  return apiFetch<MenuCategoryResponse>(ENDPOINTS.menuCategories(restaurantId), {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateMenuCategory(restaurantId: number, categoryId: number, data: CreateMenuCategoryRequest): Promise<MenuCategoryResponse> {
+  return apiFetch<MenuCategoryResponse>(ENDPOINTS.menuCategory(restaurantId, categoryId), {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteMenuCategory(restaurantId: number, categoryId: number): Promise<ApiResponse> {
+  return apiFetch<ApiResponse>(ENDPOINTS.menuCategory(restaurantId, categoryId), {
+    method: 'DELETE',
   });
 }

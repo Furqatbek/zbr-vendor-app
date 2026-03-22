@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Order, MenuCategory, MenuItem, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, WorkingHoursDay, StaffMember } from '../types';
+import type { Order, MenuItem, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, WorkingHoursDay, StaffMember } from '../types';
 
 interface AppStore {
   // Restaurant
@@ -13,14 +13,10 @@ interface AppStore {
   declineOrder: (orderId: string, reason: DeclineReason) => void;
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
 
-  // Menu
-  categories: MenuCategory[];
+  // Menu (items only — categories managed via API)
   menuItems: MenuItem[];
-  toggleCategoryActive: (categoryId: string) => void;
   toggleItemStock: (itemId: string) => void;
-  addCategory: (name: string) => void;
   deleteMenuItem: (itemId: string) => void;
-  reorderCategories: (categories: MenuCategory[]) => void;
 
   // Reviews
   reviews: Review[];
@@ -90,30 +86,15 @@ export const useStore = create<AppStore>((set, get) => ({
       }),
     })),
 
-  categories: [],
   menuItems: [],
-  toggleCategoryActive: (categoryId) =>
-    set((s) => ({
-      categories: s.categories.map((c) =>
-        c.id === categoryId ? { ...c, isActive: !c.isActive } : c
-      ),
-    })),
   toggleItemStock: (itemId) =>
     set((s) => ({
       menuItems: s.menuItems.map((i) =>
         i.id === itemId ? { ...i, inStock: !i.inStock } : i
       ),
     })),
-  addCategory: (name) =>
-    set((s) => ({
-      categories: [
-        ...s.categories,
-        { id: Date.now().toString(), name, isActive: true, sortOrder: s.categories.length, itemCount: 0 },
-      ],
-    })),
   deleteMenuItem: (itemId) =>
     set((s) => ({ menuItems: s.menuItems.filter((i) => i.id !== itemId) })),
-  reorderCategories: (categories) => set({ categories }),
 
   reviews: [],
   replyToReview: (reviewId, text) =>

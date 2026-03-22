@@ -144,8 +144,11 @@ export default {
     noItemsInCategory: 'Бу категорияда маҳсулот йўқ',
     newCategory: 'Янги категория',
     categoryName: 'Категория номи',
+    categoryDescription: 'Тавсиф (ихтиёрий)',
+    editCategory: 'Категорияни таҳрирлаш',
+    noCategories: 'Ҳали категория йўқ',
+    deleteCategoryConfirm: '"{{name}}" ўчирилсинми? Буни қайтариб бўлмайди.',
     editItem: 'Маҳсулотни таҳрирлаш',
-    connectBackendHint: 'Таҳрирлаш учун API ни уланг',
     itemsCount: '{{count}} та маҳсулот',
   },
 
