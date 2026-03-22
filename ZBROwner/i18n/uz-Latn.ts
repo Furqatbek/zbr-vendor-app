@@ -172,6 +172,11 @@ export default {
     maxSelections: 'Maks. tanlash',
     noVariants: 'Variantlar qo\'shilmagan',
     noOptions: 'Opsiyalar qo\'shilmagan',
+    addImage: 'Rasm qo\'shish',
+    changeImage: 'Rasmni o\'zgartirish',
+    removeImage: 'Rasmni o\'chirish',
+    removeImageConfirm: 'Bu mahsulot rasmini o\'chirilsinmi?',
+    imageUploadFailed: 'Rasm yuklash xatosi',
   },
 
   reports: {

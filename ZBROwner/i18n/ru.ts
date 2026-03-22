@@ -172,6 +172,11 @@ export default {
     maxSelections: 'Макс. выбор',
     noVariants: 'Варианты не добавлены',
     noOptions: 'Опции не добавлены',
+    addImage: 'Добавить фото',
+    changeImage: 'Изменить фото',
+    removeImage: 'Удалить фото',
+    removeImageConfirm: 'Удалить фото этого товара?',
+    imageUploadFailed: 'Ошибка загрузки фото',
   },
 
   reports: {

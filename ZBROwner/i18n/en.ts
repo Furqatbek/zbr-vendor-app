@@ -182,6 +182,11 @@ export default {
     maxSelections: 'Max selections',
     noVariants: 'No variants added',
     noOptions: 'No options added',
+    addImage: 'Add Image',
+    changeImage: 'Change Image',
+    removeImage: 'Remove Image',
+    removeImageConfirm: 'Remove the image for this item?',
+    imageUploadFailed: 'Image upload failed',
   },
 
   // Reports

@@ -172,6 +172,11 @@ export default {
     maxSelections: 'Макс. танлаш',
     noVariants: 'Вариантлар қўшилмаган',
     noOptions: 'Опсиялар қўшилмаган',
+    addImage: 'Расм қўшиш',
+    changeImage: 'Расмни ўзгартириш',
+    removeImage: 'Расмни ўчириш',
+    removeImageConfirm: 'Бу маҳсулот расмини ўчирилсинми?',
+    imageUploadFailed: 'Расм юклаш хатоси',
   },
 
   reports: {

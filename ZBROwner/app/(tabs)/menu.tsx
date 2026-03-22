@@ -1,15 +1,17 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Pressable, Alert, TextInput, Modal,
-  ScrollView, KeyboardAvoidingView, Platform, RefreshControl, ActivityIndicator, Switch,
+  ScrollView, KeyboardAvoidingView, Platform, RefreshControl, ActivityIndicator, Switch, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
 import { useAuthStore } from '../../store/authStore';
 import {
   fetchMenuCategories, createMenuCategory, updateMenuCategory, deleteMenuCategory as apiDeleteCategory,
   fetchMenuItem, createMenuItem as apiCreateItem, updateMenuItem as apiUpdateItem,
   updateMenuItemStock, deleteMenuItem as apiDeleteItem,
+  uploadMenuItemImage, deleteMenuItemImage,
 } from '../../services/api';
 import type { MenuCategory, MenuItem, CreateMenuCategoryRequest, CreateMenuItemRequest } from '../../types';
 import Card from '../../components/Card';
@@ -191,6 +193,40 @@ export default function MenuScreen() {
     ]);
   };
 
+  const handlePickImage = async () => {
+    if (!restaurant || !editingItem) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    try {
+      await uploadMenuItemImage(restaurant.id, editingItem.id, result.assets[0].uri);
+      await loadData();
+      // Re-fetch to update imageUrl in the form
+      const res = await fetchMenuItem(restaurant.id, editingItem.id);
+      if (res.data) setEditingItem(res.data);
+    } catch {
+      Alert.alert(t('menu.imageUploadFailed'));
+    }
+  };
+
+  const handleDeleteImage = () => {
+    if (!restaurant || !editingItem) return;
+    Alert.alert(t('menu.removeImage'), t('menu.removeImageConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: async () => {
+        try {
+          await deleteMenuItemImage(restaurant.id, editingItem.id);
+          await loadData();
+          setEditingItem((prev) => prev ? { ...prev, imageUrl: undefined } : prev);
+        } catch { /* */ }
+      }},
+    ]);
+  };
+
   // ── Renders ──
 
   const renderCategory = ({ item }: { item: MenuCategory }) => (
@@ -222,7 +258,7 @@ export default function MenuScreen() {
       <View style={styles.itemRow}>
         <Pressable style={styles.itemPressable} onPress={() => openEditItem(item)}>
           <View style={styles.itemImagePlaceholder}>
-            {item.imageUrl ? <Ionicons name="image" size={24} color={Colors.accent} /> : <Ionicons name="image-outline" size={24} color={Colors.gray400} />}
+            {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.itemThumb} /> : <Ionicons name="image-outline" size={24} color={Colors.gray400} />}
           </View>
           <View style={styles.infoFlex}>
             <Text style={styles.titleText}>{item.name}</Text>
@@ -334,6 +370,32 @@ export default function MenuScreen() {
               <TouchableOpacity onPress={() => setShowItemForm(false)}><Ionicons name="close" size={24} color={Colors.gray600} /></TouchableOpacity>
             </View>
             <ScrollView keyboardShouldPersistTaps="handled">
+              {/* Image */}
+              {editingItem ? (
+                <View style={styles.imageSection}>
+                  {editingItem.imageUrl ? (
+                    <View style={styles.imagePreviewWrap}>
+                      <Image source={{ uri: editingItem.imageUrl }} style={styles.imagePreview} />
+                      <View style={styles.imageActions}>
+                        <TouchableOpacity style={styles.imageBtn} onPress={handlePickImage}>
+                          <Ionicons name="camera-outline" size={16} color={Colors.accent} />
+                          <Text style={styles.imageBtnText}>{t('menu.changeImage')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.imageBtn} onPress={handleDeleteImage}>
+                          <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+                          <Text style={[styles.imageBtnText, { color: Colors.danger }]}>{t('menu.removeImage')}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <TouchableOpacity style={styles.imagePlaceholderBtn} onPress={handlePickImage}>
+                      <Ionicons name="camera-outline" size={28} color={Colors.gray400} />
+                      <Text style={styles.imagePlaceholderText}>{t('menu.addImage')}</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : null}
+
               <Text style={styles.fieldLabel}>{t('common.name')} *</Text>
               <TextInput style={styles.input} value={itemForm.name} onChangeText={(v) => setItemForm((f) => ({ ...f, name: v }))} maxLength={200} />
 
@@ -554,7 +616,8 @@ const styles = StyleSheet.create({
   itemCard: { marginBottom: Spacing.sm },
   itemRow: { flexDirection: 'row', alignItems: 'center' },
   itemPressable: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  itemImagePlaceholder: { width: 56, height: 56, borderRadius: BorderRadius.chip, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
+  itemImagePlaceholder: { width: 56, height: 56, borderRadius: BorderRadius.chip, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md, overflow: 'hidden' },
+  itemThumb: { width: 56, height: 56, borderRadius: BorderRadius.chip },
   priceRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: Spacing.sm },
   priceText: { ...Typography.subhead, color: Colors.accent, fontWeight: '600' },
   originalPrice: { ...Typography.caption1, color: Colors.gray400, textDecorationLine: 'line-through' },
@@ -591,6 +654,16 @@ const styles = StyleSheet.create({
   flagChipActive: { backgroundColor: Colors.accent, borderColor: Colors.accent },
   flagChipText: { ...Typography.caption1, color: Colors.gray500 },
   flagChipTextActive: { color: Colors.white },
+
+  // Image
+  imageSection: { marginBottom: Spacing.md },
+  imagePreviewWrap: { alignItems: 'center', gap: Spacing.sm },
+  imagePreview: { width: 120, height: 120, borderRadius: BorderRadius.card },
+  imageActions: { flexDirection: 'row', gap: Spacing.md },
+  imageBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: Spacing.sm },
+  imageBtnText: { ...Typography.caption1, color: Colors.accent, fontWeight: '600' },
+  imagePlaceholderBtn: { alignItems: 'center', justifyContent: 'center', height: 100, borderRadius: BorderRadius.card, borderWidth: 1, borderColor: Colors.gray200, borderStyle: 'dashed', gap: Spacing.sm },
+  imagePlaceholderText: { ...Typography.footnote, color: Colors.gray400 },
 
   // Sections (variants/options)
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: Spacing.xl, marginBottom: Spacing.sm, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.gray200 },
