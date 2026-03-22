@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +20,7 @@ export default function MoreScreen() {
   const { t, locale, setLocale } = useI18n();
   const { refreshing, handleRefresh } = useRefresh();
   const authLogout = useAuthStore((s) => s.logout);
+  const [showLogout, setShowLogout] = useState(false);
 
   const locales: Locale[] = ['en', 'ru', 'uz-Latn', 'uz-Cyrl'];
 
@@ -134,16 +135,42 @@ export default function MoreScreen() {
       <TouchableOpacity
         style={styles.logoutButton}
         activeOpacity={0.7}
-        onPress={() => Alert.alert(t('more.logOut'), t('more.logOutConfirm'), [
-          { text: t('common.cancel'), style: 'cancel' },
-          { text: t('more.logOut'), style: 'destructive', onPress: async () => { await authLogout(); router.replace('/login'); } },
-        ])}
+        onPress={() => setShowLogout(true)}
       >
         <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
         <Text style={styles.logoutText}>{t('more.logOut')}</Text>
       </TouchableOpacity>
 
       <Text style={styles.versionText}>{t('more.appVersion')}</Text>
+
+      {/* Logout Confirmation Modal */}
+      <Modal visible={showLogout} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconWrap}>
+              <Ionicons name="log-out-outline" size={28} color={Colors.danger} />
+            </View>
+            <Text style={styles.modalTitle}>{t('more.logOut')}</Text>
+            <Text style={styles.modalMessage}>{t('more.logOutConfirm')}</Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setShowLogout(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalLogoutButton}
+                onPress={async () => { setShowLogout(false); await authLogout(); router.replace('/login'); }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalLogoutText}>{t('more.logOut')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -173,4 +200,14 @@ const styles = StyleSheet.create({
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.base, marginTop: Spacing.base, gap: Spacing.sm, minHeight: 48 },
   logoutText: { ...Typography.headline, color: Colors.danger },
   versionText: { ...Typography.caption1, color: Colors.gray400, textAlign: 'center', marginTop: Spacing.md },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: Colors.white, borderRadius: BorderRadius.card, padding: Spacing.xl, width: '85%', alignItems: 'center' },
+  modalIconWrap: { width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.dangerLight, justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.base },
+  modalTitle: { ...Typography.title3, color: Colors.black, marginBottom: Spacing.sm },
+  modalMessage: { ...Typography.body, color: Colors.gray500, textAlign: 'center', marginBottom: Spacing.xl },
+  modalButtons: { flexDirection: 'row', gap: Spacing.md, width: '100%' },
+  modalCancelButton: { flex: 1, paddingVertical: Spacing.md, borderRadius: BorderRadius.button, borderWidth: 1, borderColor: Colors.gray200, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
+  modalCancelText: { ...Typography.headline, color: Colors.gray500 },
+  modalLogoutButton: { flex: 1, paddingVertical: Spacing.md, borderRadius: BorderRadius.button, backgroundColor: Colors.danger, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
+  modalLogoutText: { ...Typography.headline, color: Colors.white },
 });
