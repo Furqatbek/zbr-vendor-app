@@ -23,6 +23,7 @@ export const ENDPOINTS = {
   menuItems: (restaurantId: number) => `/api/v1/restaurants/${restaurantId}/menu/items`,
   menuItem: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}`,
   menuItemStock: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}/stock`,
+  menuItemImage: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}/image`,
 
   // WebSocket
   ws: `${WS_BASE_URL}/ws/vendor`,

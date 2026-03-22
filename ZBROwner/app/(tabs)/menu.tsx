@@ -8,7 +8,7 @@ import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../consta
 import { useAuthStore } from '../../store/authStore';
 import {
   fetchMenuCategories, createMenuCategory, updateMenuCategory, deleteMenuCategory as apiDeleteCategory,
-  createMenuItem as apiCreateItem, updateMenuItem as apiUpdateItem,
+  fetchMenuItem, createMenuItem as apiCreateItem, updateMenuItem as apiUpdateItem,
   updateMenuItemStock, deleteMenuItem as apiDeleteItem,
 } from '../../services/api';
 import type { MenuCategory, MenuItem, CreateMenuCategoryRequest, CreateMenuItemRequest } from '../../types';
@@ -108,12 +108,14 @@ export default function MenuScreen() {
 
   const openAddItem = () => {
     setEditingItem(null);
-    setItemForm({ categoryId: selectedCategory?.id ?? 0, name: '', price: 0 });
+    setItemForm({ categoryId: selectedCategory?.id ?? 0, name: '', price: 0, sortOrder: categoryItems.length });
     setShowItemForm(true);
   };
 
-  const openEditItem = (item: MenuItem) => {
+  const openEditItem = async (item: MenuItem) => {
+    if (!restaurant) return;
     setEditingItem(item);
+    // Pre-fill from the list data immediately
     setItemForm({
       categoryId: item.categoryId,
       name: item.name,
@@ -128,8 +130,35 @@ export default function MenuScreen() {
       spicy: item.spicy,
       allergens: item.allergens,
       featured: item.featured,
+      sortOrder: item.sortOrder,
     });
     setShowItemForm(true);
+    // Fetch full details (variants, options) from the item management API
+    try {
+      const res = await fetchMenuItem(restaurant.id, item.id);
+      const full = res.data;
+      if (full) {
+        setEditingItem(full);
+        setItemForm({
+          categoryId: full.categoryId,
+          name: full.name,
+          description: full.description,
+          price: full.price,
+          originalPrice: full.originalPrice,
+          prepTimeMinutes: full.prepTimeMinutes,
+          calories: full.calories,
+          vegetarian: full.vegetarian,
+          vegan: full.vegan,
+          glutenFree: full.glutenFree,
+          spicy: full.spicy,
+          allergens: full.allergens,
+          featured: full.featured,
+          sortOrder: full.sortOrder,
+          variants: full.variants?.map((v) => ({ name: v.name, priceDelta: v.priceDelta, sortOrder: v.sortOrder })),
+          options: full.options?.map((o) => ({ groupName: o.groupName, name: o.name, priceDelta: o.priceDelta, isDefault: o.isDefault, maxSelections: o.maxSelections, required: o.required })),
+        });
+      }
+    } catch { /* use pre-filled data */ }
   };
 
   const handleSaveItem = async () => {
