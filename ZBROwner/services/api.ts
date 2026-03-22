@@ -82,8 +82,8 @@ export async function apiFetch<T>(
   });
 
   // Auto-refresh on 401
-  if (res.status === 401 && token) {
-    const refreshed = await tryRefreshToken();
+  if (res.status === 401) {
+    const refreshed = token ? await tryRefreshToken() : false;
     if (refreshed) {
       const newToken = getAccessToken();
       if (newToken) {
@@ -243,11 +243,31 @@ export async function uploadMenuItemImage(restaurantId: number, itemId: number, 
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.menuItemImage(restaurantId, itemId)}`, {
+  let res = await fetch(`${API_BASE_URL}${ENDPOINTS.menuItemImage(restaurantId, itemId)}`, {
     method: 'POST',
     headers,
     body: formData,
   });
+
+  // Handle 401 with token refresh, same as apiFetch
+  if (res.status === 401) {
+    const refreshed = token ? await tryRefreshToken() : false;
+    if (refreshed) {
+      const newToken = getAccessToken();
+      if (newToken) headers['Authorization'] = `Bearer ${newToken}`;
+      // Rebuild FormData since body may have been consumed
+      const newFormData = new FormData();
+      newFormData.append('file', file);
+      res = await fetch(`${API_BASE_URL}${ENDPOINTS.menuItemImage(restaurantId, itemId)}`, {
+        method: 'POST',
+        headers,
+        body: newFormData,
+      });
+    } else {
+      onSessionExpired();
+      throw new Error('Session expired');
+    }
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => null);
