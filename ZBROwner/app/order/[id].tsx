@@ -89,9 +89,9 @@ export default function OrderDetailScreen() {
   };
 
   const handleAccept = async () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     try {
       await acceptOrder(order.id);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
       Alert.alert(t('common.error'), t('orders.acceptFailed'));
     }
@@ -108,9 +108,9 @@ export default function OrderDetailScreen() {
       ...reasons.map((r) => ({
         text: r.label,
         onPress: async () => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
           try {
             await declineOrder(order.id, r.value);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
           } catch {
             Alert.alert(t('common.error'), t('orders.declineFailed'));
           }
