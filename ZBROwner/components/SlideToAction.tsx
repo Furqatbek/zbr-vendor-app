@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Animated, PanResponder } from 'react-native';
+import React, { useRef, useMemo } from 'react';
+import { View, StyleSheet, Animated, PanResponder } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors, BorderRadius, Typography, Spacing } from '../constants/theme';
@@ -17,39 +17,43 @@ export default function SlideToAction({ onAccept, onDecline }: Props) {
   const t = useT();
   const pan = useRef(new Animated.Value(0)).current;
   const containerWidth = useRef(0);
+  const callbacksRef = useRef({ onAccept, onDecline });
+  callbacksRef.current = { onAccept, onDecline };
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 5 && Math.abs(g.dx) > Math.abs(g.dy * 2),
-      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy * 2),
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderMove: (_, g) => {
-        const maxRight = containerWidth.current - THUMB_SIZE - 8;
-        const maxLeft = -(containerWidth.current - THUMB_SIZE - 8);
-        const clamped = Math.min(maxRight, Math.max(maxLeft, g.dx));
-        pan.setValue(clamped);
-      },
-      onPanResponderRelease: (_, g) => {
-        const threshold = (containerWidth.current - THUMB_SIZE) * 0.6;
-        if (g.dx > threshold) {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Animated.spring(pan, { toValue: containerWidth.current - THUMB_SIZE - 8, useNativeDriver: true }).start(() => {
-            pan.setValue(0);
-            onAccept();
-          });
-        } else if (g.dx < -threshold) {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          Animated.spring(pan, { toValue: -(containerWidth.current - THUMB_SIZE - 8), useNativeDriver: true }).start(() => {
-            pan.setValue(0);
-            onDecline();
-          });
-        } else {
-          Animated.spring(pan, { toValue: 0, useNativeDriver: true }).start();
-        }
-      },
-    })
-  ).current;
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 5 && Math.abs(g.dx) > Math.abs(g.dy * 2),
+        onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy * 2),
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderMove: (_, g) => {
+          const maxRight = containerWidth.current - THUMB_SIZE - 8;
+          const maxLeft = -(containerWidth.current - THUMB_SIZE - 8);
+          const clamped = Math.min(maxRight, Math.max(maxLeft, g.dx));
+          pan.setValue(clamped);
+        },
+        onPanResponderRelease: (_, g) => {
+          const threshold = (containerWidth.current - THUMB_SIZE) * 0.6;
+          if (g.dx > threshold) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Animated.spring(pan, { toValue: containerWidth.current - THUMB_SIZE - 8, useNativeDriver: true }).start(() => {
+              pan.setValue(0);
+              callbacksRef.current.onAccept();
+            });
+          } else if (g.dx < -threshold) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            Animated.spring(pan, { toValue: -(containerWidth.current - THUMB_SIZE - 8), useNativeDriver: true }).start(() => {
+              pan.setValue(0);
+              callbacksRef.current.onDecline();
+            });
+          } else {
+            Animated.spring(pan, { toValue: 0, useNativeDriver: true }).start();
+          }
+        },
+      }),
+    [pan],
+  );
 
   const acceptOpacity = pan.interpolate({ inputRange: [0, 100], outputRange: [0.3, 1], extrapolate: 'clamp' });
   const declineOpacity = pan.interpolate({ inputRange: [-100, 0], outputRange: [1, 0.3], extrapolate: 'clamp' });
