@@ -8,7 +8,7 @@ import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../consta
 import { useAuthStore } from '../../store/authStore';
 import {
   fetchMenuCategories, createMenuCategory, updateMenuCategory, deleteMenuCategory as apiDeleteCategory,
-  fetchMenuItems, createMenuItem as apiCreateItem, updateMenuItem as apiUpdateItem,
+  createMenuItem as apiCreateItem, updateMenuItem as apiUpdateItem,
   updateMenuItemStock, deleteMenuItem as apiDeleteItem,
 } from '../../services/api';
 import type { MenuCategory, MenuItem, CreateMenuCategoryRequest, CreateMenuItemRequest } from '../../types';
@@ -23,7 +23,6 @@ export default function MenuScreen() {
 
   const [viewMode, setViewMode] = useState<ViewMode>('categories');
   const [categories, setCategories] = useState<MenuCategory[]>([]);
-  const [items, setItems] = useState<MenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<MenuCategory | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -47,29 +46,23 @@ export default function MenuScreen() {
 
   // ── Data loading ──
 
-  const loadCategories = useCallback(async () => {
+  const loadData = useCallback(async () => {
     if (!restaurant) return;
     try {
       const res = await fetchMenuCategories(restaurant.id);
-      setCategories(res.data ?? []);
-    } catch { /* silent */ }
-  }, [restaurant]);
-
-  const loadItems = useCallback(async () => {
-    if (!restaurant) return;
-    try {
-      const res = await fetchMenuItems(restaurant.id);
-      setItems(res.data?.content ?? []);
+      const cats = res.data ?? [];
+      setCategories(cats);
+      setSelectedCategory((prev) => prev ? cats.find((c) => c.id === prev.id) ?? null : null);
     } catch { /* silent */ }
   }, [restaurant]);
 
   useEffect(() => {
-    Promise.all([loadCategories(), loadItems()]).finally(() => setLoading(false));
-  }, [loadCategories, loadItems]);
+    loadData().finally(() => setLoading(false));
+  }, [loadData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([loadCategories(), loadItems()]);
+    await loadData();
     setRefreshing(false);
   };
 
@@ -81,7 +74,7 @@ export default function MenuScreen() {
     try {
       await createMenuCategory(restaurant.id, { name: newCatName.trim(), description: newCatDesc.trim() || undefined, sortOrder: categories.length });
       setNewCatName(''); setNewCatDesc(''); setShowAddCategory(false);
-      await loadCategories();
+      await loadData();
     } catch { /* */ } finally { setSavingCat(false); }
   };
 
@@ -95,7 +88,7 @@ export default function MenuScreen() {
     try {
       await updateMenuCategory(restaurant.id, editCat.id, { name: editCatName.trim(), description: editCatDesc.trim() || undefined, sortOrder: editCat.sortOrder });
       setShowEditCategory(false);
-      await loadCategories();
+      await loadData();
     } catch { /* */ } finally { setSavingCat(false); }
   };
 
@@ -103,13 +96,15 @@ export default function MenuScreen() {
     if (!restaurant) return;
     Alert.alert(t('common.delete'), t('menu.deleteCategoryConfirm', { name: cat.name }), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: async () => { try { await apiDeleteCategory(restaurant.id, cat.id); await loadCategories(); } catch { /* */ } } },
+      { text: t('common.delete'), style: 'destructive', onPress: async () => { try { await apiDeleteCategory(restaurant.id, cat.id); await loadData(); } catch { /* */ } } },
     ]);
   };
 
   // ── Item actions ──
 
-  const categoryItems = selectedCategory ? items.filter((i) => i.categoryId === selectedCategory.id) : items;
+  // Derive all items from categories
+  const allItems = categories.flatMap((c) => c.items ?? []);
+  const categoryItems = selectedCategory ? (selectedCategory.items ?? []) : allItems;
 
   const openAddItem = () => {
     setEditingItem(null);
@@ -147,7 +142,7 @@ export default function MenuScreen() {
         await apiCreateItem(restaurant.id, { ...itemForm, name: itemForm.name.trim() });
       }
       setShowItemForm(false);
-      await Promise.all([loadItems(), loadCategories()]);
+      await loadData();
     } catch { /* */ } finally { setSavingItem(false); }
   };
 
@@ -155,7 +150,7 @@ export default function MenuScreen() {
     if (!restaurant) return;
     try {
       await updateMenuItemStock(restaurant.id, item.id, !item.inStock);
-      await loadItems();
+      await loadData();
     } catch { /* */ }
   };
 
@@ -163,7 +158,7 @@ export default function MenuScreen() {
     if (!restaurant) return;
     Alert.alert(t('common.delete'), t('menu.deleteItemConfirm', { name: item.name }), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: async () => { try { await apiDeleteItem(restaurant.id, item.id); await Promise.all([loadItems(), loadCategories()]); } catch { /* */ } } },
+      { text: t('common.delete'), style: 'destructive', onPress: async () => { try { await apiDeleteItem(restaurant.id, item.id); await loadData(); } catch { /* */ } } },
     ]);
   };
 
@@ -178,7 +173,7 @@ export default function MenuScreen() {
         <View style={styles.infoFlex}>
           <Text style={styles.titleText}>{item.name}</Text>
           {item.description ? <Text style={styles.subtitleText} numberOfLines={1}>{item.description}</Text> : null}
-          <Text style={styles.countText}>{t('menu.itemsCount', { count: item.itemCount })}</Text>
+          <Text style={styles.countText}>{t('menu.itemsCount', { count: (item.items ?? []).length })}</Text>
         </View>
         <TouchableOpacity onPress={() => openEditCategory(item)} style={styles.actionBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="pencil" size={16} color={Colors.accent} />

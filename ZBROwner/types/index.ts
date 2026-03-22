@@ -158,12 +158,13 @@ export interface Order {
 
 export interface MenuCategory {
   id: number;
+  restaurantId?: number;
   name: string;
   description?: string;
   imageUrl?: string;
   sortOrder: number;
   active: boolean;
-  itemCount: number;
+  items: MenuItem[];
 }
 
 export interface MenuCategoriesResponse {
@@ -216,8 +217,13 @@ export interface MenuItem {
   onSale?: boolean;
   discountPercentage?: number;
   imageUrl?: string;
+  imagePath?: string;
+  imageName?: string;
+  imageSize?: number;
+  imageContentType?: string;
   inStock: boolean;
   featured?: boolean;
+  sortOrder?: number;
   prepTimeMinutes?: number;
   calories?: number;
   vegetarian?: boolean;
@@ -225,7 +231,7 @@ export interface MenuItem {
   glutenFree?: boolean;
   spicy?: boolean;
   allergens?: string;
-  sortOrder?: number;
+  active?: boolean;
   variants?: MenuItemVariant[];
   options?: MenuItemOption[];
 }
