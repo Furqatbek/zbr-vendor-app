@@ -311,9 +311,9 @@ export default function MenuScreen() {
             trackColor={{ false: Colors.dangerLight, true: Colors.successLight }}
             thumbColor={item.inStock ? Colors.success : Colors.danger}
           />
-          <Pressable onPress={() => handleDeleteItem(item)} style={styles.actionBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={() => handleDeleteItem(item)} style={styles.actionBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} activeOpacity={0.6}>
             <Ionicons name="trash-outline" size={16} color={Colors.danger} />
-          </Pressable>
+          </TouchableOpacity>
         </View>
       </View>
     </Card>
@@ -667,8 +667,8 @@ const styles = StyleSheet.create({
 
   // Item card
   itemCard: { marginBottom: Spacing.sm },
-  itemRow: { flexDirection: 'row', alignItems: 'center' },
-  itemPressable: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  itemRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  itemPressable: { flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
   itemImagePlaceholder: { width: 56, height: 56, borderRadius: BorderRadius.chip, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md, overflow: 'hidden' },
   itemThumb: { width: 56, height: 56, borderRadius: BorderRadius.chip },
   deleteImageBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: Colors.white, borderRadius: 9 },
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
   originalPrice: { ...Typography.caption1, color: Colors.gray400, textDecorationLine: 'line-through' },
   featuredBadge: { backgroundColor: Colors.warningLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   featuredText: { ...Typography.caption2, color: Colors.warning, fontWeight: '600' },
-  itemActions: { alignItems: 'center', gap: 4, zIndex: 1 },
+  itemActions: { alignItems: 'center', gap: Spacing.sm, paddingLeft: Spacing.sm },
 
   // Buttons
   addButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.base, gap: Spacing.sm, minHeight: 48 },
