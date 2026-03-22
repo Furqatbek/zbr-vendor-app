@@ -36,8 +36,9 @@ interface Props {
 
 export default function StatusBadge({ status }: Props) {
   const t = useT();
-  const colors = statusColors[status];
-  const label = t(statusKeys[status] as any);
+  const colors = statusColors[status] ?? { bg: Colors.gray100, text: Colors.gray500 };
+  const key = statusKeys[status];
+  const label = key ? t(key as any) : status;
 
   return (
     <View style={[styles.badge, { backgroundColor: colors.bg }]}>
