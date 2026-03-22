@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { Order, Review, RevenueData, OrderStatus, CourierRating, StaffMember } from '../types';
-import { fetchRatings, fetchRestaurantOrders, fetchActiveOrders, updateOrderStatus as apiUpdateOrderStatus, cancelOrder as apiCancelOrder } from '../services/api';
+import type { Order, Review, RevenueData, OrderStatus, CourierRating, StaffMember, FinancialReportData } from '../types';
+import { fetchRatings, fetchRestaurantOrders, fetchActiveOrders, updateOrderStatus as apiUpdateOrderStatus, cancelOrder as apiCancelOrder, fetchFinancialReport } from '../services/api';
 import { useAuthStore } from './authStore';
 
 interface AppStore {
@@ -27,10 +27,13 @@ interface AppStore {
   loadReviews: () => Promise<void>;
   replyToReview: (reviewId: string, text: string) => void;
 
-  // Revenue
+  // Revenue / Financial Report
   revenueData: RevenueData;
+  financialReport: FinancialReportData | null;
+  financialReportLoading: boolean;
   selectedPeriod: 'day' | 'week' | 'month';
   setSelectedPeriod: (period: 'day' | 'week' | 'month') => void;
+  loadFinancialReport: () => Promise<void>;
 
   // Courier Ratings
   courierRatings: CourierRating[];
@@ -205,8 +208,55 @@ export const useStore = create<AppStore>((set, get) => ({
     })),
 
   revenueData: emptyRevenueData,
+  financialReport: null,
+  financialReportLoading: false,
   selectedPeriod: 'day',
-  setSelectedPeriod: (period) => set({ selectedPeriod: period }),
+  setSelectedPeriod: (period) => {
+    set({ selectedPeriod: period });
+    // Reload report when period changes
+    get().loadFinancialReport();
+  },
+  loadFinancialReport: async () => {
+    const restaurant = useAuthStore.getState().restaurant;
+    if (!restaurant) return;
+    set({ financialReportLoading: true });
+    try {
+      const now = new Date();
+      const period = get().selectedPeriod;
+      let startDate: Date;
+      if (period === 'day') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      } else if (period === 'week') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+      } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+      const res = await fetchFinancialReport(
+        restaurant.id,
+        startDate.toISOString(),
+        now.toISOString(),
+      );
+      const d = res.data;
+      // Also populate revenueData for backward compatibility
+      set({
+        financialReport: d,
+        revenueData: {
+          ...get().revenueData,
+          totalRevenue: d.totalRevenue,
+          ordersCount: d.totalOrders,
+          avgOrderValue: d.averageOrderValue,
+          chartData: d.dailyRevenueTrend.map((t) => ({
+            label: new Date(t.date).toLocaleDateString([], { month: 'short', day: 'numeric' }),
+            value: t.gmv,
+          })),
+        },
+      });
+    } catch {
+      // Non-fatal – keep existing data
+    } finally {
+      set({ financialReportLoading: false });
+    }
+  },
 
   courierRatings: [],
   submitCourierRating: (rating) =>

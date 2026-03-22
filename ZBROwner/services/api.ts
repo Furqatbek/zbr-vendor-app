@@ -1,5 +1,5 @@
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
-import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, RestaurantOrdersResponse, RawApiOrder, CancelOrderRequest, Order, OrderItem, OrderStatus, PayoutsResponse } from '../types';
+import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, RestaurantOrdersResponse, RawApiOrder, CancelOrderRequest, Order, OrderItem, OrderStatus, PayoutsResponse, FinancialReportResponse } from '../types';
 
 let getAccessToken: () => string | null = () => null;
 let getRefreshToken: () => string | null = () => null;
@@ -451,6 +451,17 @@ export function fetchPayouts(
 ): Promise<PayoutsResponse> {
   const params = new URLSearchParams({ startDate, endDate });
   return apiFetch<PayoutsResponse>(ENDPOINTS.payouts(restaurantId) + `?${params}`);
+}
+
+// ── Financial Report API ──
+
+export function fetchFinancialReport(
+  restaurantId: number,
+  startDate: string,
+  endDate: string,
+): Promise<FinancialReportResponse> {
+  const params = new URLSearchParams({ startDate, endDate });
+  return apiFetch<FinancialReportResponse>(ENDPOINTS.financialReport(restaurantId) + `?${params}`);
 }
 
 export function deleteMenuItemImage(restaurantId: number, itemId: number): Promise<ApiResponse> {

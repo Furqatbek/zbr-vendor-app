@@ -500,6 +500,53 @@ export interface RevenueData {
   cancellations: number;
 }
 
+// Financial Report
+export interface DailyRevenueTrend {
+  date: string;
+  gmv: number;
+  orderCount: number;
+  averageOrderValue: number;
+}
+
+export interface DailyPayoutTrend {
+  date: string;
+  grossSales: number;
+  netPayouts: number;
+  restaurantCount: number;
+  disputeCount: number;
+}
+
+export interface FinancialReportData {
+  restaurantId: number;
+  periodStart: string;
+  periodEnd: string;
+  totalRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  foodRevenue: number;
+  deliveryFeeRevenue: number;
+  tipRevenue: number;
+  growthRate: number;
+  grossSales: number;
+  commissionsDeducted: number;
+  deliverySubsidies: number;
+  promotionCosts: number;
+  adjustments: number;
+  fees: number;
+  netPayout: number;
+  pendingPayouts: number;
+  completedPayouts: number;
+  dailyRevenueTrend: DailyRevenueTrend[];
+  dailyPayoutTrend: DailyPayoutTrend[];
+}
+
+export interface FinancialReportResponse {
+  success: boolean;
+  message: string;
+  data: FinancialReportData;
+  timestamp: string;
+}
+
 export interface WorkingHoursDay {
   day: string;
   isOpen: boolean;
