@@ -228,6 +228,24 @@ export async function fetchRestaurantOrders(
   };
 }
 
+export async function fetchActiveOrders(
+  restaurantId: number,
+  params: { page?: number; size?: number } = {},
+): Promise<{ content: Order[]; totalElements: number; last: boolean }> {
+  const query = new URLSearchParams();
+  if (params.page != null) query.set('page', String(params.page));
+  if (params.size != null) query.set('size', String(params.size));
+  const qs = query.toString();
+  const res = await apiFetch<RestaurantOrdersResponse>(
+    ENDPOINTS.restaurantActiveOrders(restaurantId) + (qs ? `?${qs}` : ''),
+  );
+  return {
+    content: res.data.content.map(mapApiOrder),
+    totalElements: res.data.totalElements,
+    last: res.data.last,
+  };
+}
+
 // ── Menu Categories API ──
 
 export function fetchMenuCategories(restaurantId: number): Promise<MenuCategoriesResponse> {

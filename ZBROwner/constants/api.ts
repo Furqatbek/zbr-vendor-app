@@ -27,6 +27,7 @@ export const ENDPOINTS = {
 
   // Orders
   restaurantOrders: (restaurantId: number) => `/api/v1/orders/restaurant/${restaurantId}`,
+  restaurantActiveOrders: (restaurantId: number) => `/api/v1/orders/restaurant/${restaurantId}/active`,
   orderStatus: (orderId: string) => `/api/v1/orders/${orderId}/status`,
   orderCancel: (orderId: string) => `/api/v1/orders/${orderId}/cancel`,
 
@@ -41,6 +42,7 @@ export const ENDPOINTS = {
   // Analytics
   ratings: (restaurantId: number) => `/api/v1/analytics/cx/ratings/restaurant/${restaurantId}`,
 
-  // WebSocket – set to empty string; no backend WS endpoint available yet
-  ws: '',
+  // WebSocket
+  ws: '/ws',
+  wsSockJS: '/ws-sockjs',
 } as const;

@@ -1,88 +1,135 @@
 /**
- * WebSocket client for real-time order & notification updates.
+ * STOMP-over-WebSocket client for real-time order & notification updates.
  *
- * Usage:
- *   const ws = createWSClient(ENDPOINTS.ws);
- *   ws.connect(pushToken);
- *   ws.onMessage((event) => { ... });
- *   ws.disconnect();
+ * The backend exposes:
+ *   - Native WS: ws://host/ws
+ *   - SockJS:    ws://host/ws-sockjs
+ *
+ * Topics the restaurant frontend subscribes to:
+ *   /topic/restaurants/{id}/orders  – new incoming orders
+ *   /topic/restaurants/{id}/kitchen – kitchen display tickets
+ *   /user/queue/notifications       – personal notifications
+ *   /topic/orders/{orderId}         – order-specific status updates
+ *
+ * Authentication: JWT token passed via Authorization header on CONNECT.
  */
 
-type WSMessage = {
-  type: string;
+import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
+import { WS_BASE_URL, ENDPOINTS } from '../constants/api';
+
+export type WSMessageType = 'new_order' | 'order_update' | 'kitchen_ticket' | 'notification';
+
+export interface WSMessage {
+  type: WSMessageType;
   payload?: unknown;
-};
+}
 
 type MessageHandler = (message: WSMessage) => void;
 
-const MAX_RETRIES = 3;
-const RECONNECT_DELAYS = [1000, 2000, 4000]; // exponential backoff
+const MAX_RETRIES = 5;
+const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000];
 
-export function createWSClient(url: string) {
-  let socket: WebSocket | null = null;
+export function createStompClient(restaurantId: number) {
+  let client: Client | null = null;
   let handlers: MessageHandler[] = [];
-  let reconnectAttempt = 0;
-  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let subscriptions: StompSubscription[] = [];
   let intentionalClose = false;
-  let currentToken: string | null = null;
 
-  function connect(pushToken?: string | null) {
-    if (!url) return; // no WS endpoint configured
+  function connect(token: string | null) {
     intentionalClose = false;
-    currentToken = pushToken ?? null;
 
-    const wsUrl = currentToken ? `${url}?token=${encodeURIComponent(currentToken)}` : url;
-    socket = new WebSocket(wsUrl);
+    const wsUrl = `${WS_BASE_URL}${ENDPOINTS.ws}`;
 
-    socket.onopen = () => {
-      reconnectAttempt = 0;
-    };
+    client = new Client({
+      webSocketFactory: () => new WebSocket(wsUrl),
+      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+      reconnectDelay: RECONNECT_DELAYS[0],
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
 
-    socket.onmessage = (event) => {
-      try {
-        const message: WSMessage = JSON.parse(event.data);
-        handlers.forEach((handler) => handler(message));
-      } catch {
-        // ignore malformed messages
-      }
-    };
+      onConnect: () => {
+        subscriptions = [];
 
-    socket.onclose = () => {
-      if (!intentionalClose) {
-        scheduleReconnect();
-      }
-    };
+        // Subscribe to new orders for this restaurant
+        const ordersSub = client!.subscribe(
+          `/topic/restaurants/${restaurantId}/orders`,
+          (msg: IMessage) => {
+            dispatch({ type: 'new_order', payload: parseBody(msg.body) });
+          },
+        );
+        subscriptions.push(ordersSub);
 
-    socket.onerror = () => {
-      // onclose will fire after onerror, triggering reconnect
+        // Subscribe to kitchen tickets
+        const kitchenSub = client!.subscribe(
+          `/topic/restaurants/${restaurantId}/kitchen`,
+          (msg: IMessage) => {
+            dispatch({ type: 'kitchen_ticket', payload: parseBody(msg.body) });
+          },
+        );
+        subscriptions.push(kitchenSub);
+
+        // Subscribe to personal notifications (user-specific queue)
+        const notifSub = client!.subscribe(
+          '/user/queue/notifications',
+          (msg: IMessage) => {
+            dispatch({ type: 'notification', payload: parseBody(msg.body) });
+          },
+        );
+        subscriptions.push(notifSub);
+      },
+
+      onStompError: (frame) => {
+        console.warn('[STOMP] Error:', frame.headers['message']);
+      },
+
+      onWebSocketClose: () => {
+        if (intentionalClose) return;
+      },
+    });
+
+    client.activate();
+  }
+
+  function subscribeToOrder(orderId: string, handler?: MessageHandler) {
+    if (!client?.connected) return () => {};
+
+    const sub = client.subscribe(
+      `/topic/orders/${orderId}`,
+      (msg: IMessage) => {
+        const wsMsg: WSMessage = { type: 'order_update', payload: parseBody(msg.body) };
+        if (handler) handler(wsMsg);
+        dispatch(wsMsg);
+      },
+    );
+    subscriptions.push(sub);
+
+    return () => {
+      sub.unsubscribe();
+      subscriptions = subscriptions.filter((s) => s !== sub);
     };
   }
 
-  function scheduleReconnect() {
-    if (reconnectAttempt >= MAX_RETRIES) return;
-    if (reconnectTimer) clearTimeout(reconnectTimer);
-    const delay = RECONNECT_DELAYS[reconnectAttempt] ?? RECONNECT_DELAYS[RECONNECT_DELAYS.length - 1];
-    reconnectTimer = setTimeout(() => {
-      reconnectAttempt++;
-      connect(currentToken);
-    }, delay);
+  function dispatch(message: WSMessage) {
+    handlers.forEach((h) => h(message));
+  }
+
+  function parseBody(body: string): unknown {
+    try {
+      return JSON.parse(body);
+    } catch {
+      return body;
+    }
   }
 
   function disconnect() {
     intentionalClose = true;
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
-    }
-    if (socket) {
-      socket.close();
-      socket = null;
-    }
-  }
-
-  function send(message: WSMessage) {
-    if (socket?.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify(message));
+    subscriptions.forEach((s) => {
+      try { s.unsubscribe(); } catch { /* already closed */ }
+    });
+    subscriptions = [];
+    if (client) {
+      client.deactivate();
+      client = null;
     }
   }
 
@@ -93,5 +140,5 @@ export function createWSClient(url: string) {
     };
   }
 
-  return { connect, disconnect, send, onMessage };
+  return { connect, disconnect, onMessage, subscribeToOrder };
 }
