@@ -195,15 +195,17 @@ export default function MenuScreen() {
 
   const renderCategory = ({ item }: { item: MenuCategory }) => (
     <Card style={styles.categoryCard}>
-      <TouchableOpacity style={styles.categoryRow} onPress={() => { setSelectedCategory(item); setViewMode('items'); }} activeOpacity={0.7}>
-        <View style={styles.iconWrap}>
-          <Ionicons name="grid-outline" size={20} color={Colors.accent} />
-        </View>
-        <View style={styles.infoFlex}>
-          <Text style={styles.titleText}>{item.name}</Text>
-          {item.description ? <Text style={styles.subtitleText} numberOfLines={1}>{item.description}</Text> : null}
-          <Text style={styles.countText}>{t('menu.itemsCount', { count: (item.items ?? []).length })}</Text>
-        </View>
+      <View style={styles.categoryRow}>
+        <Pressable style={styles.categoryPressable} onPress={() => { setSelectedCategory(item); setViewMode('items'); }}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="grid-outline" size={20} color={Colors.accent} />
+          </View>
+          <View style={styles.infoFlex}>
+            <Text style={styles.titleText}>{item.name}</Text>
+            {item.description ? <Text style={styles.subtitleText} numberOfLines={1}>{item.description}</Text> : null}
+            <Text style={styles.countText}>{t('menu.itemsCount', { count: (item.items ?? []).length })}</Text>
+          </View>
+        </Pressable>
         <Pressable onPress={() => openEditCategory(item)} style={styles.actionBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="pencil" size={16} color={Colors.accent} />
         </Pressable>
@@ -211,7 +213,7 @@ export default function MenuScreen() {
           <Ionicons name="trash-outline" size={16} color={Colors.danger} />
         </Pressable>
         <Ionicons name="chevron-forward" size={18} color={Colors.gray400} />
-      </TouchableOpacity>
+      </View>
     </Card>
   );
 
@@ -540,6 +542,7 @@ const styles = StyleSheet.create({
   // Category card
   categoryCard: { marginBottom: Spacing.sm },
   categoryRow: { flexDirection: 'row', alignItems: 'center' },
+  categoryPressable: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   iconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.accentLight, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
   infoFlex: { flex: 1 },
   titleText: { ...Typography.headline, color: Colors.black },
@@ -557,7 +560,7 @@ const styles = StyleSheet.create({
   originalPrice: { ...Typography.caption1, color: Colors.gray400, textDecorationLine: 'line-through' },
   featuredBadge: { backgroundColor: Colors.warningLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   featuredText: { ...Typography.caption2, color: Colors.warning, fontWeight: '600' },
-  itemActions: { alignItems: 'center', gap: 4 },
+  itemActions: { alignItems: 'center', gap: 4, zIndex: 1 },
 
   // Buttons
   addButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.base, gap: Spacing.sm, minHeight: 48 },
