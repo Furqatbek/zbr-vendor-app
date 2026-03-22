@@ -127,12 +127,23 @@ export type OrderType = 'DELIVERY' | 'TAKEAWAY' | 'PICKUP' | 'DINE_IN';
 
 export type PaymentStatus = 'PENDING' | 'PROCESSING' | 'CONFIRMED' | 'FAILED' | 'REFUNDED' | 'CANCELLED';
 
+export interface OrderItemModifier {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface OrderItem {
   id: string;
+  menuItemId?: number;
   name: string;
   quantity: number;
   price: number;
-  modifiers?: string[];
+  totalPrice: number;
+  variantName?: string;
+  variantPriceDelta?: number;
+  modifiers?: OrderItemModifier[];
+  modifiersTotal?: number;
   specialNotes?: string;
 }
 
@@ -143,15 +154,23 @@ export interface Order {
   orderType?: OrderType;
   paymentStatus?: PaymentStatus;
   items: OrderItem[];
+  subtotal: number;
+  tax?: number;
+  deliveryFee?: number;
+  discount?: number;
+  tipAmount?: number;
   totalPrice: number;
   customerName: string;
   customerPhone?: string;
+  deliveryAddress?: string;
+  deliveryInstructions?: string;
   courierName?: string;
   courierPhone?: string;
   courierETA?: number;
   receivedAt: string;
   prepTimeMinutes: number;
   estimatedPrepTimeMinutes?: number;
+  estimatedDeliveryTime?: string;
   acceptedAt?: string;
   prepStartedAt?: string;
   readyAt?: string;

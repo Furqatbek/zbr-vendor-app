@@ -177,14 +177,28 @@ export default function OrdersScreen() {
           <Text style={styles.orderNumber}>{order.orderNumber}</Text>
           <Text style={styles.orderTime}>{formatTime(order.receivedAt)}</Text>
         </View>
-        <Text style={styles.customerName}>{order.customerName}</Text>
+        <View style={styles.orderMeta}>
+          <Text style={styles.customerName}>{order.customerName}</Text>
+          {order.orderType && (
+            <View style={styles.orderTypeBadge}>
+              <Ionicons name={order.orderType === 'DELIVERY' ? 'bicycle-outline' : order.orderType === 'DINE_IN' ? 'restaurant-outline' : 'bag-handle-outline'} size={12} color={Colors.accent} />
+              <Text style={styles.orderTypeText}>{order.orderType}</Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.itemsSummary} numberOfLines={2}>
-          {order.items.map((i) => `${i.quantity}x ${i.name}`).join(', ')}
+          {order.items.map((i) => `${i.quantity}x ${i.name}${i.variantName ? ` (${i.variantName})` : ''}`).join(', ')}
         </Text>
-        {order.specialNotes && (
+        {order.deliveryAddress && (
           <View style={styles.notesRow}>
-            <Ionicons name="chatbubble-ellipses-outline" size={14} color={Colors.gray500} />
-            <Text style={styles.notesText} numberOfLines={1}>{order.specialNotes}</Text>
+            <Ionicons name="location-outline" size={14} color={Colors.gray500} />
+            <Text style={styles.notesText} numberOfLines={1}>{order.deliveryAddress}</Text>
+          </View>
+        )}
+        {order.deliveryInstructions && (
+          <View style={styles.notesRow}>
+            <Ionicons name="document-text-outline" size={14} color={Colors.gray500} />
+            <Text style={styles.notesText} numberOfLines={1}>{order.deliveryInstructions}</Text>
           </View>
         )}
         <Text style={styles.totalPrice}>{t('common.currency', { amount: order.totalPrice.toFixed(2) })}</Text>
@@ -339,7 +353,10 @@ const styles = StyleSheet.create({
   orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   orderNumber: { ...Typography.headline, color: Colors.black },
   orderTime: { ...Typography.footnote, color: Colors.gray500 },
-  customerName: { ...Typography.subhead, color: Colors.gray700, marginTop: 4 },
+  orderMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  orderTypeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.accentLight, paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.chip },
+  orderTypeText: { ...Typography.caption1, color: Colors.accent, fontWeight: '600' },
+  customerName: { ...Typography.subhead, color: Colors.gray700 },
   itemsSummary: { ...Typography.footnote, color: Colors.gray500, marginTop: 4 },
   notesRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 4 },
   notesText: { ...Typography.footnote, color: Colors.gray500, flex: 1, fontStyle: 'italic' },

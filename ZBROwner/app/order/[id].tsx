@@ -158,6 +158,39 @@ export default function OrderDetailScreen() {
         })}
       </Card>
 
+      {/* Order Info */}
+      <Card style={styles.infoCard}>
+        <Text style={styles.sectionTitle}>{t('orderDetail.orderInfo')}</Text>
+        {order.orderType && (
+          <View style={styles.infoRow}>
+            <Ionicons name="bag-outline" size={18} color={Colors.gray500} />
+            <Text style={styles.infoLabel}>{t('orderDetail.orderType')}</Text>
+            <Text style={styles.infoValue}>{order.orderType}</Text>
+          </View>
+        )}
+        {order.paymentStatus && (
+          <View style={styles.infoRow}>
+            <Ionicons name="card-outline" size={18} color={Colors.gray500} />
+            <Text style={styles.infoLabel}>{t('orderDetail.paymentStatus')}</Text>
+            <Text style={styles.infoValue}>{order.paymentStatus}</Text>
+          </View>
+        )}
+        {order.estimatedPrepTimeMinutes != null && (
+          <View style={styles.infoRow}>
+            <Ionicons name="timer-outline" size={18} color={Colors.gray500} />
+            <Text style={styles.infoLabel}>{t('orderDetail.estimatedPrepTime')}</Text>
+            <Text style={styles.infoValue}>{order.estimatedPrepTimeMinutes} {t('common.minutes')}</Text>
+          </View>
+        )}
+        {order.estimatedDeliveryTime && (
+          <View style={styles.infoRow}>
+            <Ionicons name="time-outline" size={18} color={Colors.gray500} />
+            <Text style={styles.infoLabel}>{t('orderDetail.estimatedDelivery')}</Text>
+            <Text style={styles.infoValue}>{formatTime(order.estimatedDeliveryTime)}</Text>
+          </View>
+        )}
+      </Card>
+
       {/* Customer Info */}
       <Card style={styles.infoCard}>
         <Text style={styles.sectionTitle}>{t('orderDetail.customer')}</Text>
@@ -170,6 +203,18 @@ export default function OrderDetailScreen() {
             <Ionicons name="call-outline" size={18} color={Colors.accent} />
             <Text style={[styles.infoText, { color: Colors.accent }]}>{order.customerPhone}</Text>
           </TouchableOpacity>
+        )}
+        {order.deliveryAddress && (
+          <View style={styles.infoRow}>
+            <Ionicons name="location-outline" size={18} color={Colors.gray500} />
+            <Text style={[styles.infoText, { flex: 1 }]}>{order.deliveryAddress}</Text>
+          </View>
+        )}
+        {order.deliveryInstructions && (
+          <View style={styles.infoRow}>
+            <Ionicons name="document-text-outline" size={18} color={Colors.gray500} />
+            <Text style={[styles.infoText, { flex: 1, fontStyle: 'italic' }]}>{order.deliveryInstructions}</Text>
+          </View>
         )}
       </Card>
 
@@ -195,16 +240,62 @@ export default function OrderDetailScreen() {
       <Card style={styles.infoCard}>
         <Text style={styles.sectionTitle}>{t('orderDetail.items')}</Text>
         {order.items.map((item) => (
-          <View key={item.id} style={styles.itemRow}>
-            <Text style={styles.itemQty}>{item.quantity}x</Text>
-            <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.itemPrice}>{t('common.currency', { amount: (item.price * item.quantity).toFixed(2) })}</Text>
+          <View key={item.id} style={styles.itemBlock}>
+            <View style={styles.itemRow}>
+              <Text style={styles.itemQty}>{item.quantity}x</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itemName}>{item.name}</Text>
+                {item.variantName && (
+                  <Text style={styles.itemDetail}>{t('orderDetail.variant')}: {item.variantName}</Text>
+                )}
+                {item.modifiers && item.modifiers.length > 0 && (
+                  <View style={styles.modifiersList}>
+                    {item.modifiers.map((mod) => (
+                      <Text key={mod.id} style={styles.itemDetail}>
+                        + {mod.name} ({t('common.currency', { amount: mod.price.toFixed(2) })})
+                      </Text>
+                    ))}
+                  </View>
+                )}
+                {item.specialNotes && (
+                  <Text style={styles.itemSpecialNote}>{item.specialNotes}</Text>
+                )}
+              </View>
+              <Text style={styles.itemPrice}>{t('common.currency', { amount: item.totalPrice.toFixed(2) })}</Text>
+            </View>
           </View>
         ))}
-        {order.specialNotes && (
-          <View style={styles.notesSection}>
-            <Ionicons name="chatbubble-ellipses-outline" size={16} color={Colors.gray500} />
-            <Text style={styles.notesText}>{order.specialNotes}</Text>
+      </Card>
+
+      {/* Price Summary */}
+      <Card style={styles.infoCard}>
+        <Text style={styles.sectionTitle}>{t('orderDetail.priceSummary')}</Text>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>{t('orderDetail.subtotal')}</Text>
+          <Text style={styles.summaryValue}>{t('common.currency', { amount: order.subtotal.toFixed(2) })}</Text>
+        </View>
+        {order.tax != null && order.tax > 0 && (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>{t('orderDetail.tax')}</Text>
+            <Text style={styles.summaryValue}>{t('common.currency', { amount: order.tax.toFixed(2) })}</Text>
+          </View>
+        )}
+        {order.deliveryFee != null && order.deliveryFee > 0 && (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>{t('orderDetail.deliveryFee')}</Text>
+            <Text style={styles.summaryValue}>{t('common.currency', { amount: order.deliveryFee.toFixed(2) })}</Text>
+          </View>
+        )}
+        {order.discount != null && order.discount > 0 && (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>{t('orderDetail.discount')}</Text>
+            <Text style={[styles.summaryValue, { color: Colors.success }]}>-{t('common.currency', { amount: order.discount.toFixed(2) })}</Text>
+          </View>
+        )}
+        {order.tipAmount != null && order.tipAmount > 0 && (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>{t('orderDetail.tipAmount')}</Text>
+            <Text style={styles.summaryValue}>{t('common.currency', { amount: order.tipAmount.toFixed(2) })}</Text>
           </View>
         )}
         <View style={styles.totalRow}>
@@ -358,14 +449,21 @@ const styles = StyleSheet.create({
   stepLabelCurrent: { color: Colors.accent, fontWeight: '600' },
   infoCard: { marginBottom: Spacing.base },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: 6, minHeight: 44 },
+  infoLabel: { ...Typography.body, color: Colors.gray500, flex: 1 },
+  infoValue: { ...Typography.body, color: Colors.gray700, fontWeight: '500' },
   infoText: { ...Typography.body, color: Colors.gray700 },
   etaText: { ...Typography.footnote, color: Colors.accent, marginLeft: 'auto' },
-  itemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
-  itemQty: { ...Typography.headline, color: Colors.accent, width: 32 },
-  itemName: { ...Typography.body, color: Colors.black, flex: 1 },
-  itemPrice: { ...Typography.subhead, color: Colors.gray600 },
-  notesSection: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, paddingTop: Spacing.sm },
-  notesText: { ...Typography.subhead, color: Colors.gray500, fontStyle: 'italic', flex: 1 },
+  itemBlock: { paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  itemRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  itemQty: { ...Typography.headline, color: Colors.accent, width: 32, marginTop: 2 },
+  itemName: { ...Typography.body, color: Colors.black },
+  itemDetail: { ...Typography.footnote, color: Colors.gray500, marginTop: 2 },
+  modifiersList: { marginTop: 2 },
+  itemSpecialNote: { ...Typography.footnote, color: Colors.gray500, fontStyle: 'italic', marginTop: 4 },
+  itemPrice: { ...Typography.subhead, color: Colors.gray600, marginTop: 2, marginLeft: Spacing.sm },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
+  summaryLabel: { ...Typography.body, color: Colors.gray500 },
+  summaryValue: { ...Typography.body, color: Colors.gray700 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: Spacing.md, marginTop: Spacing.sm, borderTopWidth: 2, borderTopColor: Colors.gray200 },
   totalLabel: { ...Typography.headline, color: Colors.black },
   totalPrice: { ...Typography.title3, color: Colors.accent },
