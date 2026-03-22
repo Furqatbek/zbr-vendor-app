@@ -4,6 +4,7 @@ export interface AuthUser {
   email: string;
   fullName: string;
   roles: string[];
+  restaurantId: number;
 }
 
 export interface AuthTokens {
@@ -23,6 +24,7 @@ export interface LoginResponseData extends AuthTokens {
   email: string;
   fullName: string;
   roles: string[];
+  restaurantId: number;
 }
 
 export interface LoginResponse {

@@ -73,8 +73,8 @@ export const useAuthStore = create<AuthStore>((set, get) => {
       try {
         const response = await apiLogin({ emailOrPhone, password });
 
-        const { accessToken, refreshToken, userId, email, fullName, roles } = response.data;
-        const user: AuthUser = { id: userId, email, fullName, roles };
+        const { accessToken, refreshToken, userId, email, fullName, roles, restaurantId } = response.data;
+        const user: AuthUser = { id: userId, email, fullName, roles, restaurantId };
 
         await Promise.all([
           AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken),
