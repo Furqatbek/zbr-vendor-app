@@ -25,6 +25,10 @@ export const ENDPOINTS = {
   menuItemStock: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}/stock`,
   menuItemImage: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}/image`,
 
+  // Orders
+  orderStatus: (orderId: string) => `/api/v1/orders/${orderId}/status`,
+  orderCancel: (orderId: string) => `/api/v1/orders/${orderId}/cancel`,
+
   // Notifications
   notificationsMe: '/api/v1/notifications/me',
   notificationsUnread: (userId: number) => `/api/v1/notifications/user/${userId}/unread`,

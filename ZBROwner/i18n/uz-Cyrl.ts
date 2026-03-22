@@ -111,6 +111,9 @@ export default {
     reasonTooBusy: 'Жуда банд',
     reasonClosingSoon: 'Тез орада ёпилади',
     reasonOther: 'Бошқа',
+    acceptFailed: 'Буюртмани қабул қилиб бўлмади. Қайта уриниб кўринг.',
+    declineFailed: 'Буюртмани рад этиб бўлмади. Қайта уриниб кўринг.',
+    statusUpdateFailed: 'Ҳолатни янгилаб бўлмади. Қайта уриниб кўринг.',
   },
 
   orderDetail: {

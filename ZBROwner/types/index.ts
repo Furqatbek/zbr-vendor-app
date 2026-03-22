@@ -156,6 +156,23 @@ export interface Order {
   declineReason?: DeclineReason;
 }
 
+export interface UpdateOrderStatusRequest {
+  status: string;
+  estimatedPrepTimeMinutes?: number;
+  notes?: string;
+}
+
+export interface OrderResponse {
+  success: boolean;
+  message: string;
+  data: Order;
+}
+
+export interface CancelOrderRequest {
+  reason: string;
+  requestRefund?: boolean;
+}
+
 export interface MenuCategory {
   id: number;
   restaurantId?: number;

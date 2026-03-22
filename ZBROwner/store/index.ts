@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Order, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, StaffMember } from '../types';
-import { fetchRatings } from '../services/api';
+import { fetchRatings, updateOrderStatus as apiUpdateOrderStatus, cancelOrder as apiCancelOrder } from '../services/api';
 import { useAuthStore } from './authStore';
 
 interface AppStore {
@@ -11,9 +11,9 @@ interface AppStore {
   // Orders
   orders: Order[];
   getOrdersByStatus: (statuses: OrderStatus[]) => Order[];
-  acceptOrder: (orderId: string) => void;
-  declineOrder: (orderId: string, reason: DeclineReason) => void;
-  updateOrderStatus: (orderId: string, status: OrderStatus) => void;
+  acceptOrder: (orderId: string, estimatedPrepTimeMinutes?: number) => Promise<void>;
+  declineOrder: (orderId: string, reason: string) => Promise<void>;
+  updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
 
   // Reviews
   reviews: Review[];
@@ -62,19 +62,27 @@ export const useStore = create<AppStore>((set, get) => ({
 
   orders: [],
   getOrdersByStatus: (statuses) => get().orders.filter((o) => statuses.includes(o.status)),
-  acceptOrder: (orderId) =>
+  acceptOrder: async (orderId, estimatedPrepTimeMinutes) => {
+    await apiUpdateOrderStatus(orderId, {
+      status: 'ACCEPTED',
+      estimatedPrepTimeMinutes,
+    });
     set((s) => ({
       orders: s.orders.map((o) =>
-        o.id === orderId ? { ...o, status: 'preparing' as const, prepStartedAt: new Date().toISOString() } : o
+        o.id === orderId ? { ...o, status: 'preparing' as const, prepStartedAt: new Date().toISOString(), prepTimeMinutes: estimatedPrepTimeMinutes ?? o.prepTimeMinutes } : o
       ),
-    })),
-  declineOrder: (orderId, reason) =>
+    }));
+  },
+  declineOrder: async (orderId, reason) => {
+    await apiCancelOrder(orderId, { reason, requestRefund: true });
     set((s) => ({
       orders: s.orders.map((o) =>
-        o.id === orderId ? { ...o, status: 'cancelled' as const, declineReason: reason } : o
+        o.id === orderId ? { ...o, status: 'cancelled' as const, declineReason: reason as DeclineReason } : o
       ),
-    })),
-  updateOrderStatus: (orderId, status) =>
+    }));
+  },
+  updateOrderStatus: async (orderId, status) => {
+    await apiUpdateOrderStatus(orderId, { status: status.toUpperCase() });
     set((s) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
@@ -84,7 +92,8 @@ export const useStore = create<AppStore>((set, get) => ({
         if (status === 'delivered') updates.deliveredAt = new Date().toISOString();
         return { ...o, ...updates };
       }),
-    })),
+    }));
+  },
 
   reviews: [],
   averageRating: 0,

@@ -111,6 +111,9 @@ export default {
     reasonTooBusy: 'Слишком загружены',
     reasonClosingSoon: 'Скоро закрываемся',
     reasonOther: 'Другое',
+    acceptFailed: 'Не удалось принять заказ. Попробуйте ещё раз.',
+    declineFailed: 'Не удалось отклонить заказ. Попробуйте ещё раз.',
+    statusUpdateFailed: 'Не удалось обновить статус. Попробуйте ещё раз.',
   },
 
   orderDetail: {

@@ -1,5 +1,5 @@
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
-import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory } from '../types';
+import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, CancelOrderRequest } from '../types';
 
 let getAccessToken: () => string | null = () => null;
 let getRefreshToken: () => string | null = () => null;
@@ -154,6 +154,22 @@ export function updateRestaurant(restaurantId: number, data: UpdateRestaurantReq
 export function toggleRestaurantOpen(restaurantId: number, isOpen: boolean): Promise<ApiResponse> {
   return apiFetch<ApiResponse>(ENDPOINTS.restaurantToggleOpen(restaurantId) + `?isOpen=${isOpen}`, {
     method: 'PATCH',
+  });
+}
+
+// ── Orders API ──
+
+export function updateOrderStatus(orderId: string, data: UpdateOrderStatusRequest): Promise<OrderResponse> {
+  return apiFetch<OrderResponse>(ENDPOINTS.orderStatus(orderId), {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export function cancelOrder(orderId: string, data: CancelOrderRequest): Promise<OrderResponse> {
+  return apiFetch<OrderResponse>(ENDPOINTS.orderCancel(orderId), {
+    method: 'POST',
+    body: JSON.stringify(data),
   });
 }
 

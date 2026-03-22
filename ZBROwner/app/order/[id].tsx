@@ -59,11 +59,15 @@ export default function OrderDetailScreen() {
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('common.confirm'),
-        onPress: () => {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          updateOrderStatus(order.id, newStatus);
-          if (newStatus === 'picked_up' && order.courierName) {
-            setShowRatingSheet(true);
+        onPress: async () => {
+          try {
+            await updateOrderStatus(order.id, newStatus);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            if (newStatus === 'picked_up' && order.courierName) {
+              setShowRatingSheet(true);
+            }
+          } catch {
+            Alert.alert(t('common.error'), t('orders.statusUpdateFailed'));
           }
         },
       },

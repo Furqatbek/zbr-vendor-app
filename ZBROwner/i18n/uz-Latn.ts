@@ -111,6 +111,9 @@ export default {
     reasonTooBusy: 'Juda band',
     reasonClosingSoon: 'Tez orada yopiladi',
     reasonOther: 'Boshqa',
+    acceptFailed: 'Buyurtmani qabul qilib bo\'lmadi. Qayta urinib ko\'ring.',
+    declineFailed: 'Buyurtmani rad etib bo\'lmadi. Qayta urinib ko\'ring.',
+    statusUpdateFailed: 'Holatni yangilab bo\'lmadi. Qayta urinib ko\'ring.',
   },
 
   orderDetail: {

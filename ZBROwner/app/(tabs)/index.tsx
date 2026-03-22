@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Animated,
   ScrollView, RefreshControl,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,7 +11,7 @@ import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../consta
 import { useStore } from '../../store';
 import { useAuthStore } from '../../store/authStore';
 import { toggleRestaurantOpen } from '../../services/api';
-import type { Order, DeclineReason } from '../../types';
+import type { Order } from '../../types';
 import Card from '../../components/Card';
 import StatusBadge from '../../components/StatusBadge';
 import SlideToAction from '../../components/SlideToAction';
@@ -58,18 +59,43 @@ export default function OrdersScreen() {
     return { total, count: delivered.length, avg: delivered.length > 0 ? total / delivered.length : 0 };
   }, [orders]);
 
+  const handleAccept = useCallback(async (orderId: string) => {
+    try {
+      await acceptOrder(orderId);
+    } catch {
+      Alert.alert(t('common.error'), t('orders.acceptFailed'));
+    }
+  }, [acceptOrder, t]);
+
   const handleDecline = useCallback((orderId: string) => {
-    const reasons: { label: string; value: DeclineReason }[] = [
-      { label: t('orders.reasonOutOfStock'), value: 'out_of_stock' },
-      { label: t('orders.reasonTooBusy'), value: 'too_busy' },
-      { label: t('orders.reasonClosingSoon'), value: 'closing_soon' },
-      { label: t('orders.reasonOther'), value: 'other' },
+    const reasons: { label: string; value: string }[] = [
+      { label: t('orders.reasonOutOfStock'), value: 'Out of stock' },
+      { label: t('orders.reasonTooBusy'), value: 'Too busy' },
+      { label: t('orders.reasonClosingSoon'), value: 'Closing soon' },
+      { label: t('orders.reasonOther'), value: 'Other' },
     ];
     Alert.alert(t('orders.declineOrder'), t('orders.selectReason'), [
-      ...reasons.map((r) => ({ text: r.label, onPress: () => declineOrder(orderId, r.value) })),
+      ...reasons.map((r) => ({
+        text: r.label,
+        onPress: async () => {
+          try {
+            await declineOrder(orderId, r.value);
+          } catch {
+            Alert.alert(t('common.error'), t('orders.declineFailed'));
+          }
+        },
+      })),
       { text: t('common.cancel'), style: 'cancel' as const },
     ]);
   }, [declineOrder, t]);
+
+  const handleMarkReady = useCallback(async (orderId: string) => {
+    try {
+      await updateOrderStatus(orderId, 'ready');
+    } catch {
+      Alert.alert(t('common.error'), t('orders.statusUpdateFailed'));
+    }
+  }, [updateOrderStatus, t]);
 
   const formatTime = (iso: string) => {
     const d = new Date(iso);
@@ -160,7 +186,7 @@ export default function OrdersScreen() {
         <Text style={styles.totalPrice}>{t('common.currency', { amount: order.totalPrice.toFixed(2) })}</Text>
       </TouchableOpacity>
       <SlideToAction
-        onAccept={() => acceptOrder(order.id)}
+        onAccept={() => handleAccept(order.id)}
         onDecline={() => handleDecline(order.id)}
       />
     </Card>
@@ -183,7 +209,7 @@ export default function OrdersScreen() {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.markReadyButton}
-        onPress={() => updateOrderStatus(order.id, 'ready')}
+        onPress={() => handleMarkReady(order.id)}
         activeOpacity={0.8}
       >
         <Ionicons name="checkmark-circle" size={20} color={Colors.white} />

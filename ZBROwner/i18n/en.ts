@@ -119,6 +119,9 @@ export default {
     reasonTooBusy: 'Too Busy',
     reasonClosingSoon: 'Closing Soon',
     reasonOther: 'Other',
+    acceptFailed: 'Failed to accept order. Please try again.',
+    declineFailed: 'Failed to decline order. Please try again.',
+    statusUpdateFailed: 'Failed to update order status. Please try again.',
   },
 
   // Order detail
