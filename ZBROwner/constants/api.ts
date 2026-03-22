@@ -41,6 +41,6 @@ export const ENDPOINTS = {
   // Analytics
   ratings: (restaurantId: number) => `/api/v1/analytics/cx/ratings/restaurant/${restaurantId}`,
 
-  // WebSocket
-  ws: `${WS_BASE_URL}/ws/vendor`,
+  // WebSocket – set to empty string; no backend WS endpoint available yet
+  ws: '',
 } as const;

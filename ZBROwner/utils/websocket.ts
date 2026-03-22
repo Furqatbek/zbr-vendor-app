@@ -27,6 +27,7 @@ export function createWSClient(url: string) {
   let currentToken: string | null = null;
 
   function connect(pushToken?: string | null) {
+    if (!url) return; // no WS endpoint configured
     intentionalClose = false;
     currentToken = pushToken ?? null;
 
