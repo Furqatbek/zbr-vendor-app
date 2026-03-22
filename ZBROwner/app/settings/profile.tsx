@@ -4,22 +4,22 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
-import { useStore } from '../../store';
+import { useAuthStore } from '../../store/authStore';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
 
 export default function RestaurantProfileScreen() {
-  const { restaurantProfile } = useStore();
+  const restaurant = useAuthStore((s) => s.restaurant);
   const t = useT();
 
   const fields = [
-    { label: t('profile.restaurantName'), value: restaurantProfile.name, icon: 'storefront-outline' as const },
-    { label: t('profile.address'), value: restaurantProfile.address, icon: 'location-outline' as const },
-    { label: t('profile.phone'), value: restaurantProfile.phone, icon: 'call-outline' as const },
-    { label: t('profile.email'), value: restaurantProfile.email, icon: 'mail-outline' as const },
-    { label: t('profile.cuisineType'), value: restaurantProfile.cuisine, icon: 'restaurant-outline' as const },
-    { label: t('profile.avgPrepTime'), value: t('profile.minutesUnit', { count: restaurantProfile.avgPrepTime }), icon: 'time-outline' as const },
-    { label: t('profile.deliveryRadius'), value: t('profile.kmUnit', { count: restaurantProfile.deliveryRadius }), icon: 'navigate-outline' as const },
+    { label: t('profile.restaurantName'), value: restaurant?.name ?? '', icon: 'storefront-outline' as const },
+    { label: t('profile.address'), value: restaurant?.address ?? '', icon: 'location-outline' as const },
+    { label: t('profile.phone'), value: restaurant?.phone ?? '', icon: 'call-outline' as const },
+    { label: t('profile.email'), value: restaurant?.email ?? '', icon: 'mail-outline' as const },
+    { label: t('profile.cuisineType'), value: restaurant?.cuisine ?? '', icon: 'restaurant-outline' as const },
+    { label: t('profile.avgPrepTime'), value: restaurant ? t('profile.minutesUnit', { count: restaurant.avgPrepTime }) : '', icon: 'time-outline' as const },
+    { label: t('profile.deliveryRadius'), value: restaurant ? t('profile.kmUnit', { count: restaurant.deliveryRadius }) : '', icon: 'navigate-outline' as const },
   ];
 
   return (
@@ -29,14 +29,14 @@ export default function RestaurantProfileScreen() {
         <View style={styles.avatar}>
           <Ionicons name="restaurant" size={40} color={Colors.accent} />
         </View>
-        <Text style={styles.restaurantName}>{restaurantProfile.name}</Text>
-        <Text style={styles.cuisine}>{restaurantProfile.cuisine}</Text>
+        <Text style={styles.restaurantName}>{restaurant?.name ?? ''}</Text>
+        <Text style={styles.cuisine}>{restaurant?.cuisine ?? ''}</Text>
       </View>
 
       {/* Description */}
       <Card style={styles.descCard}>
         <Text style={styles.fieldLabel}>{t('profile.aboutSection')}</Text>
-        <Text style={styles.description}>{restaurantProfile.description}</Text>
+        <Text style={styles.description}>{restaurant?.description ?? ''}</Text>
       </Card>
 
       {/* Fields */}

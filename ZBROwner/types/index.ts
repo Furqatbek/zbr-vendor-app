@@ -19,12 +19,26 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface LoginRestaurant {
+  id: number;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  description: string;
+  cuisine: string;
+  avgPrepTime: number;
+  deliveryRadius: number;
+  isOpen: boolean;
+}
+
 export interface LoginResponseData extends AuthTokens {
   userId: number;
   email: string;
   fullName: string;
   roles: string[];
   restaurantId: number;
+  restaurant: LoginRestaurant;
 }
 
 export interface LoginResponse {
@@ -159,16 +173,6 @@ export interface StaffMember {
   isActive: boolean;
 }
 
-export interface RestaurantProfile {
-  name: string;
-  address: string;
-  phone: string;
-  email: string;
-  description: string;
-  cuisine: string;
-  avgPrepTime: number;
-  deliveryRadius: number;
-}
 
 export interface ContactCard {
   type: 'customer' | 'courier' | 'support';

@@ -28,10 +28,11 @@ export default function OrdersScreen() {
   const t = useT();
 
   const {
-    restaurantName, isOpen, setOpen,
+    isOpen, setOpen,
     orders, acceptOrder, declineOrder, updateOrderStatus,
   } = useStore();
-  const restaurantId = useAuthStore((s) => s.user?.restaurantId);
+  const restaurant = useAuthStore((s) => s.restaurant);
+  const restaurantId = restaurant?.id;
 
   const handleToggleOpen = useCallback(async () => {
     const newStatus = !isOpen;
@@ -81,7 +82,7 @@ export default function OrdersScreen() {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <View>
-          <Text style={styles.restaurantName}>{restaurantName}</Text>
+          <Text style={styles.restaurantName}>{restaurant?.name ?? ''}</Text>
           <Text style={styles.dateText}>
             {new Date().toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
           </Text>

@@ -1,10 +1,8 @@
 import { create } from 'zustand';
-import type { Order, MenuCategory, MenuItem, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, WorkingHoursDay, StaffMember, RestaurantProfile } from '../types';
-import { mockOrders, mockCategories, mockMenuItems, mockReviews, mockRevenueData, mockRestaurantProfile, mockWorkingHours, mockStaffMembers } from './mockData';
+import type { Order, MenuCategory, MenuItem, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, WorkingHoursDay, StaffMember } from '../types';
 
 interface AppStore {
   // Restaurant
-  restaurantName: string;
   isOpen: boolean;
   setOpen: (isOpen: boolean) => void;
 
@@ -37,8 +35,7 @@ interface AppStore {
   courierRatings: CourierRating[];
   submitCourierRating: (rating: CourierRating) => void;
 
-  // Restaurant Profile
-  restaurantProfile: RestaurantProfile;
+  // Working Hours & Staff
   workingHours: WorkingHoursDay[];
   staffMembers: StaffMember[];
   toggleWorkingDay: (day: string) => void;
@@ -53,12 +50,21 @@ interface AppStore {
   toggleNotificationPref: (key: string) => void;
 }
 
+const emptyRevenueData: RevenueData = {
+  totalRevenue: 0,
+  ordersCount: 0,
+  avgOrderValue: 0,
+  chartData: [],
+  soldItems: [],
+  refunds: 0,
+  cancellations: 0,
+};
+
 export const useStore = create<AppStore>((set, get) => ({
-  restaurantName: 'Burger Palace',
-  isOpen: true,
+  isOpen: false,
   setOpen: (isOpen) => set({ isOpen }),
 
-  orders: mockOrders,
+  orders: [],
   getOrdersByStatus: (statuses) => get().orders.filter((o) => statuses.includes(o.status)),
   acceptOrder: (orderId) =>
     set((s) => ({
@@ -84,8 +90,8 @@ export const useStore = create<AppStore>((set, get) => ({
       }),
     })),
 
-  categories: mockCategories,
-  menuItems: mockMenuItems,
+  categories: [],
+  menuItems: [],
   toggleCategoryActive: (categoryId) =>
     set((s) => ({
       categories: s.categories.map((c) =>
@@ -109,7 +115,7 @@ export const useStore = create<AppStore>((set, get) => ({
     set((s) => ({ menuItems: s.menuItems.filter((i) => i.id !== itemId) })),
   reorderCategories: (categories) => set({ categories }),
 
-  reviews: mockReviews,
+  reviews: [],
   replyToReview: (reviewId, text) =>
     set((s) => ({
       reviews: s.reviews.map((r) =>
@@ -117,7 +123,7 @@ export const useStore = create<AppStore>((set, get) => ({
       ),
     })),
 
-  revenueData: mockRevenueData,
+  revenueData: emptyRevenueData,
   selectedPeriod: 'day',
   setSelectedPeriod: (period) => set({ selectedPeriod: period }),
 
@@ -125,9 +131,8 @@ export const useStore = create<AppStore>((set, get) => ({
   submitCourierRating: (rating) =>
     set((s) => ({ courierRatings: [...s.courierRatings, rating] })),
 
-  restaurantProfile: mockRestaurantProfile,
-  workingHours: mockWorkingHours,
-  staffMembers: mockStaffMembers,
+  workingHours: [],
+  staffMembers: [],
   toggleWorkingDay: (day) =>
     set((s) => ({
       workingHours: s.workingHours.map((h) =>

@@ -15,13 +15,14 @@ import type { Locale } from '../../i18n';
 import { useRefresh } from '../../hooks/useRefresh';
 
 export default function MoreScreen() {
-  const { restaurantName, isOpen, setOpen, orders, reviews, revenueData, restaurantProfile, staffMembers } = useStore();
+  const { isOpen, setOpen, orders, reviews, revenueData, staffMembers } = useStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, locale, setLocale } = useI18n();
   const { refreshing, handleRefresh } = useRefresh();
   const authLogout = useAuthStore((s) => s.logout);
-  const restaurantId = useAuthStore((s) => s.user?.restaurantId);
+  const restaurant = useAuthStore((s) => s.restaurant);
+  const restaurantId = restaurant?.id;
   const [showLogout, setShowLogout] = useState(false);
 
   const handleToggleOpen = async () => {
@@ -48,7 +49,7 @@ export default function MoreScreen() {
   type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
   const settingsItems: { icon: IoniconsName; label: string; route: string; subtitle: string }[] = [
-    { icon: 'storefront-outline', label: t('more.restaurantProfile'), route: '/settings/profile', subtitle: restaurantProfile.address.split(',')[0] },
+    { icon: 'storefront-outline', label: t('more.restaurantProfile'), route: '/settings/profile', subtitle: restaurant?.address.split(',')[0] ?? '' },
     { icon: 'time-outline', label: t('more.workingHours'), route: '/settings/working-hours', subtitle: isOpen ? t('more.currentlyOpen') : t('more.currentlyClosed') },
     { icon: 'card-outline', label: t('more.paymentSettings'), route: '/settings/payments', subtitle: t('more.balancePayouts') },
     { icon: 'notifications-outline', label: t('more.notificationPrefs'), route: '/settings/notifications', subtitle: t('more.manageAlerts') },
@@ -66,8 +67,8 @@ export default function MoreScreen() {
           <Ionicons name="restaurant" size={28} color={Colors.accent} />
         </View>
         <View style={styles.restaurantInfo}>
-          <Text style={styles.restaurantName}>{restaurantName}</Text>
-          <Text style={styles.restaurantAddress} numberOfLines={1}>{restaurantProfile.address}</Text>
+          <Text style={styles.restaurantName}>{restaurant?.name ?? ''}</Text>
+          <Text style={styles.restaurantAddress} numberOfLines={1}>{restaurant?.address ?? ''}</Text>
         </View>
         <PillSwitch isOn={isOpen} onToggle={handleToggleOpen} />
       </View>
