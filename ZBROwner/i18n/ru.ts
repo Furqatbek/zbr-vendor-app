@@ -17,6 +17,7 @@ export default {
     soldItems: 'Проданные товары',
     helpCenter: 'Центр помощи',
     about: 'О приложении',
+    notificationInbox: 'Уведомления',
   },
 
   common: {
@@ -359,6 +360,20 @@ export default {
     navigation: 'Навигация',
     stateManagement: 'Управление состоянием',
     copyright: '© 2026 ZBR. Все права защищены.',
+  },
+
+  notifInbox: {
+    unreadCount: '{{count}} непрочитанных',
+    markAllRead: 'Прочитать все',
+    noNotifications: 'Уведомлений пока нет',
+    orders: 'Заказы',
+    finance: 'Финансы',
+    promotions: 'Акции',
+    system: 'Система',
+    justNow: 'Только что',
+    minutesAgo: '{{count}} мин назад',
+    hoursAgo: '{{count}} ч назад',
+    daysAgo: '{{count}} дн назад',
   },
 
   login: {

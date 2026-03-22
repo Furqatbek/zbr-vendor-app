@@ -61,6 +61,10 @@ function AppStack() {
         }}
       />
       <Stack.Screen
+        name="notifications"
+        options={{ headerShown: true, title: t('screenTitles.notificationInbox'), headerTintColor: Colors.accent }}
+      />
+      <Stack.Screen
         name="settings/profile"
         options={{ headerShown: true, title: t('screenTitles.restaurantProfile'), headerTintColor: Colors.accent }}
       />

@@ -17,6 +17,7 @@ export default {
     soldItems: 'Сотилган маҳсулотлар',
     helpCenter: 'Ёрдам маркази',
     about: 'Илова ҳақида',
+    notificationInbox: 'Билдиришномалар',
   },
 
   common: {
@@ -359,6 +360,20 @@ export default {
     navigation: 'Навигация',
     stateManagement: 'Ҳолат бошқаруви',
     copyright: '© 2026 ZBR. Барча ҳуқуқлар ҳимояланган.',
+  },
+
+  notifInbox: {
+    unreadCount: '{{count}} ўқилмаган',
+    markAllRead: 'Барчасини ўқилган деб белгилаш',
+    noNotifications: 'Ҳали билдиришномалар йўқ',
+    orders: 'Буюртмалар',
+    finance: 'Молия',
+    promotions: 'Акциялар',
+    system: 'Тизим',
+    justNow: 'Ҳозир',
+    minutesAgo: '{{count}} дақ олдин',
+    hoursAgo: '{{count}} соат олдин',
+    daysAgo: '{{count}} кун олдин',
   },
 
   login: {

@@ -294,6 +294,44 @@ export interface RatingsResponse {
   periodEnd: string;
 }
 
+// Notifications
+export type NotificationRole = 'VENDOR' | 'CUSTOMER' | 'COURIER' | 'ADMIN';
+export type NotificationCategory = 'ORDER' | 'FINANCE' | 'PROMOTION' | 'SYSTEM';
+
+export interface AppNotification {
+  id: number;
+  title: string;
+  message: string;
+  category: NotificationCategory;
+  role: NotificationRole;
+  isRead: boolean;
+  readAt?: string;
+  createdAt: string;
+}
+
+export interface NotificationsPageResponse {
+  content: AppNotification[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
+export interface NotificationCounts {
+  total: number;
+  unread: number;
+  byCategory: Record<string, number>;
+}
+
+export interface UnreadCountResponse {
+  unreadCount: number;
+}
+
+export interface MarkAllReadResponse {
+  status: string;
+  markedCount: number;
+}
+
 export interface CourierRating {
   courierName: string;
   orderId: string;

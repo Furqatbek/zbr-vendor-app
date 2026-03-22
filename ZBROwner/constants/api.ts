@@ -25,6 +25,14 @@ export const ENDPOINTS = {
   menuItemStock: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}/stock`,
   menuItemImage: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}/image`,
 
+  // Notifications
+  notificationsMe: '/api/v1/notifications/me',
+  notificationsUnread: (userId: number) => `/api/v1/notifications/user/${userId}/unread`,
+  notificationCounts: (userId: number) => `/api/v1/notifications/user/${userId}/counts`,
+  notificationUnreadCount: (userId: number) => `/api/v1/notifications/user/${userId}/unread-count`,
+  notificationMarkRead: (id: number) => `/api/v1/notifications/${id}/read`,
+  notificationMarkAllRead: '/api/v1/notifications/read-all',
+
   // Analytics
   ratings: (restaurantId: number) => `/api/v1/analytics/cx/ratings/restaurant/${restaurantId}`,
 

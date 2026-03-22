@@ -17,6 +17,7 @@ export default {
     soldItems: 'Sotilgan mahsulotlar',
     helpCenter: 'Yordam markazi',
     about: 'Ilova haqida',
+    notificationInbox: 'Bildirishnomalar',
   },
 
   common: {
@@ -359,6 +360,20 @@ export default {
     navigation: 'Navigatsiya',
     stateManagement: 'Holat boshqaruvi',
     copyright: '© 2026 ZBR. Barcha huquqlar himoyalangan.',
+  },
+
+  notifInbox: {
+    unreadCount: '{{count}} o\'qilmagan',
+    markAllRead: 'Barchasini o\'qilgan deb belgilash',
+    noNotifications: 'Hali bildirishnomalar yo\'q',
+    orders: 'Buyurtmalar',
+    finance: 'Moliya',
+    promotions: 'Aksiyalar',
+    system: 'Tizim',
+    justNow: 'Hozir',
+    minutesAgo: '{{count}} daq oldin',
+    hoursAgo: '{{count}} soat oldin',
+    daysAgo: '{{count}} kun oldin',
   },
 
   login: {

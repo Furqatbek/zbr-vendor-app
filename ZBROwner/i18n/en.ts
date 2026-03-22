@@ -19,6 +19,7 @@ export default {
     soldItems: 'Sold Items',
     helpCenter: 'Help Center',
     about: 'About',
+    notificationInbox: 'Notifications',
   },
 
   // Common
@@ -379,6 +380,21 @@ export default {
     navigation: 'Navigation',
     stateManagement: 'State Management',
     copyright: '© 2026 ZBR. All rights reserved.',
+  },
+
+  // Notification inbox
+  notifInbox: {
+    unreadCount: '{{count}} unread',
+    markAllRead: 'Mark all read',
+    noNotifications: 'No notifications yet',
+    orders: 'Orders',
+    finance: 'Finance',
+    promotions: 'Promotions',
+    system: 'System',
+    justNow: 'Just now',
+    minutesAgo: '{{count}}m ago',
+    hoursAgo: '{{count}}h ago',
+    daysAgo: '{{count}}d ago',
   },
 
   login: {

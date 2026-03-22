@@ -1,5 +1,5 @@
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
-import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse } from '../types';
+import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory } from '../types';
 
 let getAccessToken: () => string | null = () => null;
 let getRefreshToken: () => string | null = () => null;
@@ -274,6 +274,50 @@ export async function uploadMenuItemImage(restaurantId: number, itemId: number, 
     throw new Error(body?.message ?? `Upload failed: ${res.status}`);
   }
   return res.json();
+}
+
+// ── Notifications API ──
+
+export function fetchMyNotifications(
+  options?: { role?: NotificationRole; isRead?: boolean; category?: NotificationCategory; page?: number; pageSize?: number },
+): Promise<NotificationsPageResponse> {
+  const params = new URLSearchParams();
+  if (options?.role) params.set('role', options.role);
+  if (options?.isRead !== undefined) params.set('isRead', String(options.isRead));
+  if (options?.category) params.set('category', options.category);
+  params.set('page', String(options?.page ?? 0));
+  params.set('pageSize', String(options?.pageSize ?? 20));
+  return apiFetch<NotificationsPageResponse>(ENDPOINTS.notificationsMe + `?${params}`);
+}
+
+export function fetchUnreadNotifications(
+  userId: number,
+  options?: { role?: NotificationRole; page?: number; pageSize?: number },
+): Promise<NotificationsPageResponse> {
+  const params = new URLSearchParams();
+  if (options?.role) params.set('role', options.role);
+  params.set('page', String(options?.page ?? 0));
+  params.set('pageSize', String(options?.pageSize ?? 20));
+  return apiFetch<NotificationsPageResponse>(ENDPOINTS.notificationsUnread(userId) + `?${params}`);
+}
+
+export function fetchNotificationCounts(userId: number): Promise<NotificationCounts> {
+  return apiFetch<NotificationCounts>(ENDPOINTS.notificationCounts(userId));
+}
+
+export function fetchUnreadCount(userId: number, role?: NotificationRole): Promise<UnreadCountResponse> {
+  const params = role ? `?role=${role}` : '';
+  return apiFetch<UnreadCountResponse>(ENDPOINTS.notificationUnreadCount(userId) + params);
+}
+
+export function markNotificationRead(id: number): Promise<AppNotification> {
+  return apiFetch<AppNotification>(ENDPOINTS.notificationMarkRead(id), { method: 'PATCH' });
+}
+
+export function markAllNotificationsRead(userId: number, role?: NotificationRole): Promise<MarkAllReadResponse> {
+  const params = new URLSearchParams({ userId: String(userId) });
+  if (role) params.set('role', role);
+  return apiFetch<MarkAllReadResponse>(ENDPOINTS.notificationMarkAllRead + `?${params}`, { method: 'PATCH' });
 }
 
 // ── Ratings / Reviews API ──
