@@ -49,7 +49,7 @@ export const useAuthStore = create<AuthStore>((set, get) => {
   function applyRestaurant(restaurant: Restaurant | null) {
     set({ restaurant });
     if (restaurant) {
-      useStore.getState().setOpen(restaurant.isOpen);
+      useStore.getState().setOpen(restaurant.isCurrentlyOpen);
     }
   }
 
