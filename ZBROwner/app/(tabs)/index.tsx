@@ -8,6 +8,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
 import { useStore } from '../../store';
+import { useAuthStore } from '../../store/authStore';
+import { toggleRestaurantOpen } from '../../services/api';
 import type { Order, DeclineReason } from '../../types';
 import Card from '../../components/Card';
 import StatusBadge from '../../components/StatusBadge';
@@ -26,9 +28,21 @@ export default function OrdersScreen() {
   const t = useT();
 
   const {
-    restaurantName, isOpen, toggleOpen,
+    restaurantName, isOpen, setOpen,
     orders, acceptOrder, declineOrder, updateOrderStatus,
   } = useStore();
+  const restaurantId = useAuthStore((s) => s.user?.restaurantId);
+
+  const handleToggleOpen = useCallback(async () => {
+    const newStatus = !isOpen;
+    if (!restaurantId) return;
+    try {
+      await toggleRestaurantOpen(restaurantId, newStatus);
+      setOpen(newStatus);
+    } catch {
+      // API failed — don't update local state
+    }
+  }, [isOpen, restaurantId, setOpen]);
 
   const { refreshing, handleRefresh } = useRefresh();
 
@@ -72,7 +86,7 @@ export default function OrdersScreen() {
             {new Date().toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
           </Text>
         </View>
-        <PillSwitch isOn={isOpen} onToggle={toggleOpen} />
+        <PillSwitch isOn={isOpen} onToggle={handleToggleOpen} />
       </View>
 
       {/* Revenue Snapshot */}

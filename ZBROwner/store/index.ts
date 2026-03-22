@@ -1,14 +1,12 @@
 import { create } from 'zustand';
 import type { Order, MenuCategory, MenuItem, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, WorkingHoursDay, StaffMember, RestaurantProfile } from '../types';
 import { mockOrders, mockCategories, mockMenuItems, mockReviews, mockRevenueData, mockRestaurantProfile, mockWorkingHours, mockStaffMembers } from './mockData';
-import { useAuthStore } from './authStore';
-import { toggleRestaurantOpen } from '../services/api';
 
 interface AppStore {
   // Restaurant
   restaurantName: string;
   isOpen: boolean;
-  toggleOpen: () => Promise<void>;
+  setOpen: (isOpen: boolean) => void;
 
   // Orders
   orders: Order[];
@@ -58,19 +56,7 @@ interface AppStore {
 export const useStore = create<AppStore>((set, get) => ({
   restaurantName: 'Burger Palace',
   isOpen: true,
-  toggleOpen: async () => {
-    const newStatus = !get().isOpen;
-    const restaurantId = useAuthStore.getState().user?.restaurantId;
-    if (restaurantId) {
-      try {
-        await toggleRestaurantOpen(restaurantId, newStatus);
-      } catch {
-        // Revert will not happen since we haven't set yet
-        return;
-      }
-    }
-    set({ isOpen: newStatus });
-  },
+  setOpen: (isOpen) => set({ isOpen }),
 
   orders: mockOrders,
   getOrdersByStatus: (statuses) => get().orders.filter((o) => statuses.includes(o.status)),

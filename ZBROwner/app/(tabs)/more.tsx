@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
 import { useStore } from '../../store';
 import { useAuthStore } from '../../store/authStore';
+import { toggleRestaurantOpen } from '../../services/api';
 import Card from '../../components/Card';
 import PillSwitch from '../../components/PillSwitch';
 import RatingStars from '../../components/RatingStars';
@@ -14,13 +15,25 @@ import type { Locale } from '../../i18n';
 import { useRefresh } from '../../hooks/useRefresh';
 
 export default function MoreScreen() {
-  const { restaurantName, isOpen, toggleOpen, orders, reviews, revenueData, restaurantProfile, staffMembers } = useStore();
+  const { restaurantName, isOpen, setOpen, orders, reviews, revenueData, restaurantProfile, staffMembers } = useStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, locale, setLocale } = useI18n();
   const { refreshing, handleRefresh } = useRefresh();
   const authLogout = useAuthStore((s) => s.logout);
+  const restaurantId = useAuthStore((s) => s.user?.restaurantId);
   const [showLogout, setShowLogout] = useState(false);
+
+  const handleToggleOpen = async () => {
+    const newStatus = !isOpen;
+    if (!restaurantId) return;
+    try {
+      await toggleRestaurantOpen(restaurantId, newStatus);
+      setOpen(newStatus);
+    } catch {
+      // API failed — don't update local state
+    }
+  };
 
   const locales: Locale[] = ['en', 'ru', 'uz-Latn', 'uz-Cyrl'];
 
@@ -56,7 +69,7 @@ export default function MoreScreen() {
           <Text style={styles.restaurantName}>{restaurantName}</Text>
           <Text style={styles.restaurantAddress} numberOfLines={1}>{restaurantProfile.address}</Text>
         </View>
-        <PillSwitch isOn={isOpen} onToggle={toggleOpen} />
+        <PillSwitch isOn={isOpen} onToggle={handleToggleOpen} />
       </View>
 
       {/* Quick Stats */}
