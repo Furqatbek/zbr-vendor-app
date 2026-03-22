@@ -33,10 +33,9 @@ export default function ReviewsScreen() {
 
   // Build distribution array [5-star count, 4-star, 3-star, 2-star, 1-star]
   const distCounts = useMemo(() => {
-    if (ratingDistribution.length > 0) {
-      const arr = [0, 0, 0, 0, 0];
-      ratingDistribution.forEach((d) => { if (d.rating >= 1 && d.rating <= 5) arr[d.rating - 1] = d.count; });
-      return arr.reverse(); // 5-star first
+    const hasApiDist = Object.keys(ratingDistribution).length > 0;
+    if (hasApiDist) {
+      return [5, 4, 3, 2, 1].map((star) => ratingDistribution[String(star)] ?? 0);
     }
     // Fallback: compute from reviews locally
     const dist = [0, 0, 0, 0, 0];
@@ -144,7 +143,7 @@ export default function ReviewsScreen() {
     </View>
   );
 
-  if (reviewsLoading && reviews.length === 0) {
+  if (reviewsLoading && totalRatings === 0 && reviews.length === 0) {
     return (
       <View style={[styles.screen, styles.centered]}>
         <ActivityIndicator size="large" color={Colors.accent} />

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Order, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, StaffMember, RatingDistribution } from '../types';
+import type { Order, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, StaffMember } from '../types';
 import { fetchRatings } from '../services/api';
 import { useAuthStore } from './authStore';
 
@@ -19,7 +19,7 @@ interface AppStore {
   reviews: Review[];
   averageRating: number;
   totalRatings: number;
-  ratingDistribution: RatingDistribution[];
+  ratingDistribution: Record<string, number>;
   reviewsLoading: boolean;
   loadReviews: () => Promise<void>;
   replyToReview: (reviewId: string, text: string) => void;
@@ -89,7 +89,7 @@ export const useStore = create<AppStore>((set, get) => ({
   reviews: [],
   averageRating: 0,
   totalRatings: 0,
-  ratingDistribution: [],
+  ratingDistribution: {},
   reviewsLoading: false,
   loadReviews: async () => {
     const restaurant = useAuthStore.getState().restaurant;
@@ -100,11 +100,18 @@ export const useStore = create<AppStore>((set, get) => ({
       const startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString();
       const endDate = now.toISOString();
       const res = await fetchRatings(restaurant.id, startDate, endDate, { includeDistribution: true });
+      // Compute average from distribution
+      const dist = res.distribution ?? {};
+      let totalWeighted = 0;
+      let totalCount = 0;
+      for (const [star, count] of Object.entries(dist)) {
+        totalWeighted += Number(star) * count;
+        totalCount += count;
+      }
       set({
-        reviews: res.data.reviews,
-        averageRating: res.data.averageRating,
-        totalRatings: res.data.totalRatings,
-        ratingDistribution: res.data.distribution ?? [],
+        averageRating: totalCount > 0 ? totalWeighted / totalCount : 0,
+        totalRatings: res.ratingCount,
+        ratingDistribution: dist,
       });
     } catch {
       // Non-fatal – keep existing data
