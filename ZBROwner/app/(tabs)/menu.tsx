@@ -166,15 +166,17 @@ export default function MenuScreen() {
 
   const renderCategory = ({ item }: { item: MenuCategory }) => (
     <Card style={styles.categoryCard}>
-      <TouchableOpacity style={styles.categoryRow} onPress={() => { setSelectedCategory(item); setViewMode('items'); }} activeOpacity={0.7}>
-        <View style={styles.iconWrap}>
-          <Ionicons name="grid-outline" size={20} color={Colors.accent} />
-        </View>
-        <View style={styles.infoFlex}>
-          <Text style={styles.titleText}>{item.name}</Text>
-          {item.description ? <Text style={styles.subtitleText} numberOfLines={1}>{item.description}</Text> : null}
-          <Text style={styles.countText}>{t('menu.itemsCount', { count: (item.items ?? []).length })}</Text>
-        </View>
+      <View style={styles.categoryRow}>
+        <TouchableOpacity style={styles.categoryContent} onPress={() => { setSelectedCategory(item); setViewMode('items'); }} activeOpacity={0.7}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="grid-outline" size={20} color={Colors.accent} />
+          </View>
+          <View style={styles.infoFlex}>
+            <Text style={styles.titleText}>{item.name}</Text>
+            {item.description ? <Text style={styles.subtitleText} numberOfLines={1}>{item.description}</Text> : null}
+            <Text style={styles.countText}>{t('menu.itemsCount', { count: (item.items ?? []).length })}</Text>
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => openEditCategory(item)} style={styles.actionBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="pencil" size={16} color={Colors.accent} />
         </TouchableOpacity>
@@ -182,7 +184,7 @@ export default function MenuScreen() {
           <Ionicons name="trash-outline" size={16} color={Colors.danger} />
         </TouchableOpacity>
         <Ionicons name="chevron-forward" size={18} color={Colors.gray400} />
-      </TouchableOpacity>
+      </View>
     </Card>
   );
 
@@ -359,6 +361,7 @@ const styles = StyleSheet.create({
   // Category card
   categoryCard: { marginBottom: Spacing.sm },
   categoryRow: { flexDirection: 'row', alignItems: 'center' },
+  categoryContent: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   iconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.accentLight, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
   infoFlex: { flex: 1 },
   titleText: { ...Typography.headline, color: Colors.black },
