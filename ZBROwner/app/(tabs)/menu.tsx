@@ -178,7 +178,7 @@ export default function MenuScreen() {
         if (pendingImageUri && created.data?.id) {
           try {
             await uploadMenuItemImage(restaurant.id, created.data.id, pendingImageUri);
-          } catch { /* image upload failed but item was created */ }
+          } catch (e: any) { Alert.alert(t('menu.imageUploadFailed'), e?.message); }
         }
       }
       setPendingImageUri(null);
@@ -220,8 +220,8 @@ export default function MenuScreen() {
         await loadData();
         const res = await fetchMenuItem(restaurant.id, editingItem.id);
         if (res.data) setEditingItem(res.data);
-      } catch {
-        Alert.alert(t('menu.imageUploadFailed'));
+      } catch (e: any) {
+        Alert.alert(t('menu.imageUploadFailed'), e?.message);
       }
     } else {
       // Store locally for new items — will upload after creation

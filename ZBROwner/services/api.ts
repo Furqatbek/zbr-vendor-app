@@ -243,7 +243,10 @@ export async function uploadMenuItemImage(restaurantId: number, itemId: number, 
     body: formData,
   });
 
-  if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.message ?? `Upload failed: ${res.status}`);
+  }
   return res.json();
 }
 
