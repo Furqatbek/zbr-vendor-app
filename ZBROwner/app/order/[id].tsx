@@ -47,7 +47,7 @@ const CRITERIA_KEYS = [
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { orders: _orders, updateOrderStatus, submitCourierRating } = useStore();
+  const { orders: _orders, updateOrderStatus, acceptOrder, declineOrder, submitCourierRating } = useStore();
   const orders = _orders ?? [];
   const order = orders.find((o) => o.id === id);
   const t = useT();
@@ -87,6 +87,63 @@ export default function OrderDetailScreen() {
       },
     ]);
   };
+
+  const handleAccept = async () => {
+    try {
+      await acceptOrder(order.id);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      Alert.alert(t('common.error'), t('orders.acceptFailed'));
+    }
+  };
+
+  const handleDecline = () => {
+    const reasons = [
+      { label: t('orders.reasonOutOfStock'), value: 'Out of stock' },
+      { label: t('orders.reasonTooBusy'), value: 'Too busy' },
+      { label: t('orders.reasonClosingSoon'), value: 'Closing soon' },
+      { label: t('orders.reasonOther'), value: 'Other' },
+    ];
+    Alert.alert(t('orders.declineOrder'), t('orders.selectReason'), [
+      ...reasons.map((r) => ({
+        text: r.label,
+        onPress: async () => {
+          try {
+            await declineOrder(order.id, r.value);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          } catch {
+            Alert.alert(t('common.error'), t('orders.declineFailed'));
+          }
+        },
+      })),
+      { text: t('common.cancel'), style: 'cancel' as const },
+    ]);
+  };
+
+  const handleCancel = () => {
+    const reasons = [
+      { label: t('orders.reasonOutOfStock'), value: 'Out of stock' },
+      { label: t('orders.reasonTooBusy'), value: 'Too busy' },
+      { label: t('orders.reasonOther'), value: 'Other' },
+    ];
+    Alert.alert(t('orderDetail.cancelOrder'), t('orderDetail.cancelOrderConfirm'), [
+      ...reasons.map((r) => ({
+        text: r.label,
+        style: 'destructive' as const,
+        onPress: async () => {
+          try {
+            await declineOrder(order.id, r.value);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          } catch {
+            Alert.alert(t('common.error'), t('orders.declineFailed'));
+          }
+        },
+      })),
+      { text: t('common.cancel'), style: 'cancel' as const },
+    ]);
+  };
+
+  const isTerminal = ['delivered', 'completed', 'cancelled', 'refunded'].includes(order.status);
 
   const handleSubmitRating = () => {
     if (courierStars > 0) {
@@ -304,6 +361,26 @@ export default function OrderDetailScreen() {
         </View>
       </Card>
 
+      {/* Action Buttons */}
+      {order.status === 'created' && (
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.acceptButton} onPress={handleAccept} activeOpacity={0.8}>
+            <Ionicons name="checkmark-circle" size={22} color={Colors.white} />
+            <Text style={styles.acceptButtonText}>{t('orderDetail.acceptOrder')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.declineButton} onPress={handleDecline} activeOpacity={0.8}>
+            <Ionicons name="close-circle" size={22} color={Colors.white} />
+            <Text style={styles.declineButtonText}>{t('orderDetail.declineOrder')}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {!isTerminal && order.status !== 'created' && (
+        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel} activeOpacity={0.8}>
+          <Ionicons name="close-circle-outline" size={20} color={Colors.danger} />
+          <Text style={styles.cancelButtonText}>{t('orderDetail.cancelOrder')}</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Quick Contact */}
       <Card style={styles.contactSection}>
         <Text style={styles.sectionTitle}>{t('orderDetail.quickContact')}</Text>
@@ -467,6 +544,13 @@ const styles = StyleSheet.create({
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: Spacing.md, marginTop: Spacing.sm, borderTopWidth: 2, borderTopColor: Colors.gray200 },
   totalLabel: { ...Typography.headline, color: Colors.black },
   totalPrice: { ...Typography.title3, color: Colors.accent },
+  actionButtons: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.base },
+  acceptButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.success, borderRadius: BorderRadius.button, paddingVertical: 14, gap: Spacing.sm, minHeight: 48 },
+  acceptButtonText: { ...Typography.headline, color: Colors.white },
+  declineButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.danger, borderRadius: BorderRadius.button, paddingVertical: 14, gap: Spacing.sm, minHeight: 48 },
+  declineButtonText: { ...Typography.headline, color: Colors.white },
+  cancelButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.danger, borderRadius: BorderRadius.button, paddingVertical: 12, gap: Spacing.sm, marginBottom: Spacing.base, minHeight: 48 },
+  cancelButtonText: { ...Typography.subhead, color: Colors.danger, fontWeight: '600' },
   contactSection: { marginBottom: Spacing.base },
   contactCard: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.gray100, minHeight: 56 },
   contactIcon: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
