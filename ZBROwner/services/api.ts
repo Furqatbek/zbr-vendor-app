@@ -167,7 +167,9 @@ export function updateOrderStatus(orderId: string, data: UpdateOrderStatusReques
 }
 
 export function cancelOrder(orderId: string, data: CancelOrderRequest): Promise<OrderResponse> {
-  return apiFetch<OrderResponse>(ENDPOINTS.orderCancel(orderId), {
+  const url = ENDPOINTS.orderCancel(orderId);
+  console.log('[api.cancelOrder] calling:', url, 'with data:', JSON.stringify(data));
+  return apiFetch<OrderResponse>(url, {
     method: 'POST',
     body: JSON.stringify(data),
   });

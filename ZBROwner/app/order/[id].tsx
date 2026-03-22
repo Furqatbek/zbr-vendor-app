@@ -98,6 +98,7 @@ export default function OrderDetailScreen() {
   };
 
   const handleDecline = () => {
+    console.log('[OrderDetail.handleDecline] called for order:', order.id);
     const reasons = [
       { label: t('orders.reasonOutOfStock'), value: 'Out of stock' },
       { label: t('orders.reasonTooBusy'), value: 'Too busy' },
@@ -108,10 +109,13 @@ export default function OrderDetailScreen() {
       ...reasons.map((r) => ({
         text: r.label,
         onPress: async () => {
+          console.log('[OrderDetail.handleDecline] reason selected:', r.value);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
           try {
             await declineOrder(order.id, r.value);
-          } catch {
+            console.log('[OrderDetail.handleDecline] declineOrder resolved');
+          } catch (e) {
+            console.error('[OrderDetail.handleDecline] declineOrder failed:', e);
             Alert.alert(t('common.error'), t('orders.declineFailed'));
           }
         },

@@ -33,6 +33,7 @@ export default function SlideToAction({ onAccept, onDecline }: Props) {
   }, [onAccept]);
 
   const fireDecline = useCallback(() => {
+    console.log('[SlideToAction] fireDecline called');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     onDecline();
   }, [onDecline]);

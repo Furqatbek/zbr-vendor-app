@@ -72,6 +72,7 @@ export default function OrdersScreen() {
   }, [acceptOrder, t]);
 
   const handleDecline = useCallback((orderId: string) => {
+    console.log('[handleDecline] called with orderId:', orderId);
     const reasons: { label: string; value: string }[] = [
       { label: t('orders.reasonOutOfStock'), value: 'Out of stock' },
       { label: t('orders.reasonTooBusy'), value: 'Too busy' },
@@ -82,9 +83,12 @@ export default function OrdersScreen() {
       ...reasons.map((r) => ({
         text: r.label,
         onPress: async () => {
+          console.log('[handleDecline] reason selected:', r.value, 'for orderId:', orderId);
           try {
             await declineOrder(orderId, r.value);
-          } catch {
+            console.log('[handleDecline] declineOrder resolved successfully');
+          } catch (e) {
+            console.error('[handleDecline] declineOrder failed:', e);
             Alert.alert(t('common.error'), t('orders.declineFailed'));
           }
         },

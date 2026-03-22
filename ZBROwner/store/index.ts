@@ -121,15 +121,21 @@ export const useStore = create<AppStore>((set, get) => ({
     }
   },
   declineOrder: async (orderId, reason) => {
+    console.log('[store.declineOrder] called with orderId:', orderId, 'reason:', reason);
     const prev = get().orders;
+    const orderExists = prev.some((o) => o.id === orderId);
+    console.log('[store.declineOrder] order found in store:', orderExists, 'total orders:', prev.length);
     set((s) => ({
       orders: s.orders.map((o) =>
         o.id === orderId ? { ...o, status: 'cancelled' as const, cancellationReason: reason, cancelledAt: new Date().toISOString() } : o
       ),
     }));
+    console.log('[store.declineOrder] optimistic update done, calling API...');
     try {
-      await apiCancelOrder(orderId, { reason, requestRefund: true });
+      const result = await apiCancelOrder(orderId, { reason, requestRefund: true });
+      console.log('[store.declineOrder] API success:', JSON.stringify(result));
     } catch (e) {
+      console.error('[store.declineOrder] API failed, rolling back:', e);
       set({ orders: prev });
       throw e;
     }
