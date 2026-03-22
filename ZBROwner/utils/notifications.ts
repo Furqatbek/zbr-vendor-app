@@ -71,6 +71,7 @@ export function addNotificationResponseListener(
 }
 
 export async function sendLocalNotification(title: string, body: string, channelId = 'orders') {
+  if (Platform.OS === 'web') return;
   await Notifications.scheduleNotificationAsync({
     content: {
       title,

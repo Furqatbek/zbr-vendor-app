@@ -37,9 +37,10 @@ export default function ReportsScreen() {
     propsForBackgroundLines: { stroke: Colors.gray100 },
   };
 
+  const hasChartData = revenueData.chartData.length > 0;
   const chartData = {
-    labels: revenueData.chartData.map((d) => d.label),
-    datasets: [{ data: revenueData.chartData.map((d) => d.value) }],
+    labels: hasChartData ? revenueData.chartData.map((d) => d.label) : [''],
+    datasets: [{ data: hasChartData ? revenueData.chartData.map((d) => d.value) : [0] }],
   };
 
   return (
