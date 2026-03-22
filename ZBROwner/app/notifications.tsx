@@ -13,6 +13,7 @@ import Chip from '../components/Chip';
 import type { AppNotification, NotificationCategory } from '../types';
 import {
   fetchMyNotifications,
+  fetchUnreadCount,
   markNotificationRead,
   markAllNotificationsRead,
 } from '../services/api';
@@ -98,6 +99,14 @@ export default function NotificationsScreen() {
     setLoadingMore(false);
   };
 
+  const refreshUnreadCount = async () => {
+    if (!user) return;
+    try {
+      const res = await fetchUnreadCount(user.id);
+      setUnreadCount(res.unreadCount);
+    } catch { /* ignore */ }
+  };
+
   const handleMarkRead = async (item: AppNotification) => {
     if (item.isRead) return;
     try {
@@ -105,7 +114,7 @@ export default function NotificationsScreen() {
       setNotifications((prev) =>
         prev.map((n) => (n.id === item.id ? { ...n, isRead: true, readAt: new Date().toISOString() } : n)),
       );
-      setUnreadCount(Math.max(0, unreadCount - 1));
+      refreshUnreadCount();
     } catch {
       // Non-fatal
     }
@@ -114,9 +123,9 @@ export default function NotificationsScreen() {
   const handleMarkAllRead = async () => {
     if (!user || unreadCount === 0) return;
     try {
-      const res = await markAllNotificationsRead(user.id);
+      await markAllNotificationsRead(user.id);
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, readAt: n.readAt ?? new Date().toISOString() })));
-      setUnreadCount(0);
+      refreshUnreadCount();
     } catch {
       // Non-fatal
     }

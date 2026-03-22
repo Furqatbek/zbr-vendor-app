@@ -83,6 +83,12 @@ export function useNotifications() {
         case 'order_update':
           // store updates will come via a future REST sync or direct WS payload
           break;
+        case 'notification':
+          // Bump unread badge when a new notification arrives via WS
+          useStore.getState().setUnreadNotifCount(
+            useStore.getState().unreadNotifCount + 1,
+          );
+          break;
       }
     });
 
