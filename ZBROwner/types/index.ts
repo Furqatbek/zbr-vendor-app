@@ -18,10 +18,17 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface LoginResponseData extends AuthTokens {
+  userId: number;
+  email: string;
+  fullName: string;
+  roles: string[];
+}
+
 export interface LoginResponse {
   success: boolean;
   message: string;
-  data: AuthTokens & { user: AuthUser };
+  data: LoginResponseData;
 }
 
 export interface RefreshResponse {
