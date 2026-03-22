@@ -45,6 +45,7 @@ export default function MenuScreen() {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [itemForm, setItemForm] = useState<CreateMenuItemRequest>({ categoryId: 0, name: '', price: 0 });
   const [savingItem, setSavingItem] = useState(false);
+  const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
 
   // ── Data loading ──
 
@@ -110,6 +111,7 @@ export default function MenuScreen() {
 
   const openAddItem = () => {
     setEditingItem(null);
+    setPendingImageUri(null);
     setItemForm({ categoryId: selectedCategory?.id ?? 0, name: '', price: 0, sortOrder: categoryItems.length });
     setShowItemForm(true);
   };
@@ -117,6 +119,7 @@ export default function MenuScreen() {
   const openEditItem = async (item: MenuItem) => {
     if (!restaurant) return;
     setEditingItem(item);
+    setPendingImageUri(null);
     // Pre-fill from the list data immediately
     setItemForm({
       categoryId: item.categoryId,
@@ -170,8 +173,15 @@ export default function MenuScreen() {
       if (editingItem) {
         await apiUpdateItem(restaurant.id, editingItem.id, { ...itemForm, name: itemForm.name.trim() });
       } else {
-        await apiCreateItem(restaurant.id, { ...itemForm, name: itemForm.name.trim() });
+        const created = await apiCreateItem(restaurant.id, { ...itemForm, name: itemForm.name.trim() });
+        // Upload pending image for newly created item
+        if (pendingImageUri && created.data?.id) {
+          try {
+            await uploadMenuItemImage(restaurant.id, created.data.id, pendingImageUri);
+          } catch { /* image upload failed but item was created */ }
+        }
       }
+      setPendingImageUri(null);
       setShowItemForm(false);
       await loadData();
     } catch { /* */ } finally { setSavingItem(false); }
@@ -194,7 +204,7 @@ export default function MenuScreen() {
   };
 
   const handlePickImage = async () => {
-    if (!restaurant || !editingItem) return;
+    if (!restaurant) return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -202,14 +212,20 @@ export default function MenuScreen() {
       quality: 0.8,
     });
     if (result.canceled || !result.assets[0]) return;
-    try {
-      await uploadMenuItemImage(restaurant.id, editingItem.id, result.assets[0].uri);
-      await loadData();
-      // Re-fetch to update imageUrl in the form
-      const res = await fetchMenuItem(restaurant.id, editingItem.id);
-      if (res.data) setEditingItem(res.data);
-    } catch {
-      Alert.alert(t('menu.imageUploadFailed'));
+    const uri = result.assets[0].uri;
+    if (editingItem) {
+      // Upload immediately for existing items
+      try {
+        await uploadMenuItemImage(restaurant.id, editingItem.id, uri);
+        await loadData();
+        const res = await fetchMenuItem(restaurant.id, editingItem.id);
+        if (res.data) setEditingItem(res.data);
+      } catch {
+        Alert.alert(t('menu.imageUploadFailed'));
+      }
+    } else {
+      // Store locally for new items — will upload after creation
+      setPendingImageUri(uri);
     }
   };
 
@@ -371,30 +387,42 @@ export default function MenuScreen() {
             </View>
             <ScrollView keyboardShouldPersistTaps="handled">
               {/* Image */}
-              {editingItem ? (
-                <View style={styles.imageSection}>
-                  {editingItem.imageUrl ? (
-                    <View style={styles.imagePreviewWrap}>
-                      <Image source={{ uri: editingItem.imageUrl }} style={styles.imagePreview} />
-                      <View style={styles.imageActions}>
-                        <TouchableOpacity style={styles.imageBtn} onPress={handlePickImage}>
-                          <Ionicons name="camera-outline" size={16} color={Colors.accent} />
-                          <Text style={styles.imageBtnText}>{t('menu.changeImage')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.imageBtn} onPress={handleDeleteImage}>
-                          <Ionicons name="trash-outline" size={16} color={Colors.danger} />
-                          <Text style={[styles.imageBtnText, { color: Colors.danger }]}>{t('menu.removeImage')}</Text>
-                        </TouchableOpacity>
-                      </View>
+              <View style={styles.imageSection}>
+                {editingItem?.imageUrl ? (
+                  <View style={styles.imagePreviewWrap}>
+                    <Image source={{ uri: editingItem.imageUrl }} style={styles.imagePreview} />
+                    <View style={styles.imageActions}>
+                      <TouchableOpacity style={styles.imageBtn} onPress={handlePickImage}>
+                        <Ionicons name="camera-outline" size={16} color={Colors.accent} />
+                        <Text style={styles.imageBtnText}>{t('menu.changeImage')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.imageBtn} onPress={handleDeleteImage}>
+                        <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+                        <Text style={[styles.imageBtnText, { color: Colors.danger }]}>{t('menu.removeImage')}</Text>
+                      </TouchableOpacity>
                     </View>
-                  ) : (
-                    <TouchableOpacity style={styles.imagePlaceholderBtn} onPress={handlePickImage}>
-                      <Ionicons name="camera-outline" size={28} color={Colors.gray400} />
-                      <Text style={styles.imagePlaceholderText}>{t('menu.addImage')}</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              ) : null}
+                  </View>
+                ) : pendingImageUri ? (
+                  <View style={styles.imagePreviewWrap}>
+                    <Image source={{ uri: pendingImageUri }} style={styles.imagePreview} />
+                    <View style={styles.imageActions}>
+                      <TouchableOpacity style={styles.imageBtn} onPress={handlePickImage}>
+                        <Ionicons name="camera-outline" size={16} color={Colors.accent} />
+                        <Text style={styles.imageBtnText}>{t('menu.changeImage')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.imageBtn} onPress={() => setPendingImageUri(null)}>
+                        <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+                        <Text style={[styles.imageBtnText, { color: Colors.danger }]}>{t('menu.removeImage')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <TouchableOpacity style={styles.imagePlaceholderBtn} onPress={handlePickImage}>
+                    <Ionicons name="camera-outline" size={28} color={Colors.gray400} />
+                    <Text style={styles.imagePlaceholderText}>{t('menu.addImage')}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
 
               <Text style={styles.fieldLabel}>{t('common.name')} *</Text>
               <TextInput style={styles.input} value={itemForm.name} onChangeText={(v) => setItemForm((f) => ({ ...f, name: v }))} maxLength={200} />
