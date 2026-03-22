@@ -136,7 +136,7 @@ export default function MoreScreen() {
         activeOpacity={0.7}
         onPress={() => Alert.alert(t('more.logOut'), t('more.logOutConfirm'), [
           { text: t('common.cancel'), style: 'cancel' },
-          { text: t('more.logOut'), style: 'destructive', onPress: () => authLogout() },
+          { text: t('more.logOut'), style: 'destructive', onPress: async () => { await authLogout(); router.replace('/login'); } },
         ])}
       >
         <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
