@@ -52,7 +52,7 @@ const bellStyles = StyleSheet.create({
 
 export default function TabLayout() {
   const t = useT();
-  const orders = useStore((s) => s.orders);
+  const orders = useStore((s) => s.orders) ?? [];
   const newOrderCount = orders.filter((o) => o.status === 'created').length;
   const insets = useSafeAreaInsets();
 
