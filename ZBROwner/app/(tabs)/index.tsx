@@ -28,10 +28,12 @@ export default function OrdersScreen() {
   const router = useRouter();
   const t = useT();
 
+  const store = useStore();
   const {
     isOpen, setOpen,
-    orders, loadOrders, acceptOrder, declineOrder, updateOrderStatus,
-  } = useStore();
+    loadOrders, acceptOrder, declineOrder, updateOrderStatus,
+  } = store;
+  const orders = store.orders ?? [];
   const restaurant = useAuthStore((s) => s.restaurant);
 
   useEffect(() => { loadOrders(); }, [restaurant?.id]);
