@@ -81,8 +81,8 @@ export async function apiFetch<T>(
     headers,
   });
 
-  // Auto-refresh on 401
-  if (res.status === 401) {
+  // Auto-refresh on 401/403
+  if (res.status === 401 || res.status === 403) {
     const refreshed = token ? await tryRefreshToken() : false;
     if (refreshed) {
       const newToken = getAccessToken();
@@ -249,8 +249,8 @@ export async function uploadMenuItemImage(restaurantId: number, itemId: number, 
     body: formData,
   });
 
-  // Handle 401 with token refresh, same as apiFetch
-  if (res.status === 401) {
+  // Handle 401/403 with token refresh, same as apiFetch
+  if (res.status === 401 || res.status === 403) {
     const refreshed = token ? await tryRefreshToken() : false;
     if (refreshed) {
       const newToken = getAccessToken();
