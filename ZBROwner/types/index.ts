@@ -295,8 +295,9 @@ export interface RatingsResponse {
 }
 
 // Notifications
-export type NotificationRole = 'VENDOR' | 'CUSTOMER' | 'COURIER' | 'ADMIN';
-export type NotificationCategory = 'ORDER' | 'FINANCE' | 'PROMOTION' | 'SYSTEM';
+export type NotificationRole = 'CUSTOMER' | 'COURIER' | 'RESTAURANT' | 'ADMIN' | 'SUPPORT' | 'FINANCE' | 'OPERATIONS' | 'ALL';
+export type NotificationCategory = 'ORDER' | 'FINANCE' | 'SUPPORT' | 'SYSTEM' | 'PROMOTION' | 'ACCOUNT' | 'DELIVERY' | 'RESTAURANT_OPS' | 'ALERT';
+export type NotificationRelatedEntityType = 'ORDER' | 'RESTAURANT' | 'COURIER' | 'CUSTOMER' | 'SUPPORT_TICKET' | 'PAYMENT' | 'PAYOUT';
 
 export interface AppNotification {
   id: number;
@@ -307,6 +308,8 @@ export interface AppNotification {
   isRead: boolean;
   readAt?: string;
   createdAt: string;
+  relatedEntityId?: number;
+  relatedEntityType?: NotificationRelatedEntityType;
 }
 
 export interface NotificationsPageResponse {

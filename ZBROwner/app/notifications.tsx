@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator,
+  View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius } from '../constants/theme';
@@ -17,21 +17,33 @@ import {
   markAllNotificationsRead,
 } from '../services/api';
 
-type Filter = 'all' | 'ORDER' | 'FINANCE' | 'PROMOTION' | 'SYSTEM';
+type Filter = 'all' | NotificationCategory;
 
 const CATEGORY_ICONS: Record<NotificationCategory, keyof typeof Ionicons.glyphMap> = {
-  ORDER: 'receipt-outline',
-  FINANCE: 'wallet-outline',
-  PROMOTION: 'megaphone-outline',
+  ORDER: 'bag-outline',
+  FINANCE: 'card-outline',
+  SUPPORT: 'headset-outline',
   SYSTEM: 'settings-outline',
+  PROMOTION: 'pricetag-outline',
+  ACCOUNT: 'person-outline',
+  DELIVERY: 'bicycle-outline',
+  RESTAURANT_OPS: 'restaurant-outline',
+  ALERT: 'alert-circle-outline',
 };
 
 const CATEGORY_COLORS: Record<NotificationCategory, string> = {
   ORDER: Colors.accent,
   FINANCE: Colors.success,
+  SUPPORT: Colors.info,
+  SYSTEM: Colors.gray500,
   PROMOTION: Colors.warning,
-  SYSTEM: Colors.info,
+  ACCOUNT: '#8B5CF6',
+  DELIVERY: '#06B6D4',
+  RESTAURANT_OPS: Colors.accent,
+  ALERT: Colors.danger,
 };
+
+const FILTER_CATEGORIES: Filter[] = ['all', 'ORDER', 'FINANCE', 'DELIVERY', 'RESTAURANT_OPS', 'ALERT', 'PROMOTION', 'SUPPORT', 'ACCOUNT', 'SYSTEM'];
 
 export default function NotificationsScreen() {
   const t = useT();
@@ -138,8 +150,13 @@ export default function NotificationsScreen() {
     all: 'common.all',
     ORDER: 'notifInbox.orders',
     FINANCE: 'notifInbox.finance',
-    PROMOTION: 'notifInbox.promotions',
+    SUPPORT: 'notifInbox.support',
     SYSTEM: 'notifInbox.system',
+    PROMOTION: 'notifInbox.promotions',
+    ACCOUNT: 'notifInbox.account',
+    DELIVERY: 'notifInbox.delivery',
+    RESTAURANT_OPS: 'notifInbox.restaurantOps',
+    ALERT: 'notifInbox.alerts',
   };
 
   const renderNotification = ({ item }: { item: AppNotification }) => {
@@ -161,7 +178,14 @@ export default function NotificationsScreen() {
                 {!item.isRead && <View style={styles.unreadDot} />}
               </View>
               <Text style={styles.notifMessage} numberOfLines={2}>{item.message}</Text>
-              <Text style={styles.notifTime}>{formatTime(item.createdAt)}</Text>
+              <View style={styles.notifMeta}>
+                <Text style={styles.notifTime}>{formatTime(item.createdAt)}</Text>
+                <View style={[styles.categoryBadge, { backgroundColor: iconColor + '15' }]}>
+                  <Text style={[styles.categoryBadgeText, { color: iconColor }]}>
+                    {t(filterKeys[item.category] as any)}
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
         </Card>
@@ -181,8 +205,8 @@ export default function NotificationsScreen() {
           </TouchableOpacity>
         </View>
       )}
-      <View style={styles.filterRow}>
-        {(['all', 'ORDER', 'FINANCE', 'PROMOTION', 'SYSTEM'] as Filter[]).map((f) => (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
+        {FILTER_CATEGORIES.map((f) => (
           <Chip
             key={f}
             label={t(filterKeys[f] as any)}
@@ -190,7 +214,7 @@ export default function NotificationsScreen() {
             onPress={() => setFilter(f)}
           />
         ))}
-      </View>
+      </ScrollView>
     </View>
   );
 
@@ -247,7 +271,8 @@ const styles = StyleSheet.create({
   unreadBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
   unreadText: { ...Typography.subhead, color: Colors.gray600 },
   markAllText: { ...Typography.subhead, color: Colors.accent, fontWeight: '600' },
-  filterRow: { flexDirection: 'row', marginBottom: Spacing.base, flexWrap: 'wrap', gap: Spacing.xs },
+  filterScroll: { marginBottom: Spacing.base, marginHorizontal: -Spacing.base },
+  filterRow: { flexDirection: 'row', gap: Spacing.xs, paddingHorizontal: Spacing.base },
   notifCard: { marginBottom: Spacing.sm },
   notifUnread: { backgroundColor: Colors.accentLight },
   notifRow: { flexDirection: 'row', gap: Spacing.md },
@@ -258,7 +283,10 @@ const styles = StyleSheet.create({
   notifTitleUnread: { ...Typography.headline, color: Colors.black },
   unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.accent },
   notifMessage: { ...Typography.footnote, color: Colors.gray500, marginTop: 2 },
-  notifTime: { ...Typography.caption1, color: Colors.gray400, marginTop: 4 },
+  notifMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: 4 },
+  notifTime: { ...Typography.caption1, color: Colors.gray400 },
+  categoryBadge: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 },
+  categoryBadgeText: { ...Typography.caption2, fontWeight: '600' },
   emptyContainer: { alignItems: 'center', paddingTop: 60, gap: Spacing.md },
   emptyText: { ...Typography.body, color: Colors.gray400 },
   footerLoader: { paddingVertical: Spacing.base, alignItems: 'center' },
