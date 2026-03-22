@@ -137,11 +137,3 @@ export function confirmPasswordReset(token: string, newPassword: string): Promis
     body: JSON.stringify({ token, newPassword }),
   });
 }
-
-// ── Restaurant API ──
-
-export function toggleRestaurantOpen(restaurantId: number, isOpen: boolean): Promise<ApiResponse> {
-  return apiFetch<ApiResponse>(ENDPOINTS.restaurantToggleOpen(restaurantId) + `?isOpen=${isOpen}`, {
-    method: 'PATCH',
-  });
-}

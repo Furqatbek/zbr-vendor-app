@@ -4,7 +4,6 @@ export interface AuthUser {
   email: string;
   fullName: string;
   roles: string[];
-  restaurantId: number;
 }
 
 export interface AuthTokens {
@@ -19,26 +18,11 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface LoginRestaurant {
-  id: number;
-  name: string;
-  address: string;
-  phone: string;
-  email: string;
-  description: string;
-  cuisine: string;
-  avgPrepTime: number;
-  deliveryRadius: number;
-  isOpen: boolean;
-}
-
 export interface LoginResponseData extends AuthTokens {
   userId: number;
   email: string;
   fullName: string;
   roles: string[];
-  restaurantId: number;
-  restaurant: LoginRestaurant;
 }
 
 export interface LoginResponse {
