@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Order, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, WorkingHoursDay, StaffMember } from '../types';
+import type { Order, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, StaffMember } from '../types';
 
 interface AppStore {
   // Restaurant
@@ -26,10 +26,8 @@ interface AppStore {
   courierRatings: CourierRating[];
   submitCourierRating: (rating: CourierRating) => void;
 
-  // Working Hours & Staff
-  workingHours: WorkingHoursDay[];
+  // Staff
   staffMembers: StaffMember[];
-  toggleWorkingDay: (day: string) => void;
   toggleStaffActive: (staffId: string) => void;
 
   // Push Notifications
@@ -97,14 +95,7 @@ export const useStore = create<AppStore>((set, get) => ({
   submitCourierRating: (rating) =>
     set((s) => ({ courierRatings: [...s.courierRatings, rating] })),
 
-  workingHours: [],
   staffMembers: [],
-  toggleWorkingDay: (day) =>
-    set((s) => ({
-      workingHours: s.workingHours.map((h) =>
-        h.day === day ? { ...h, isOpen: !h.isOpen } : h
-      ),
-    })),
   toggleStaffActive: (staffId) =>
     set((s) => ({
       staffMembers: s.staffMembers.map((m) =>

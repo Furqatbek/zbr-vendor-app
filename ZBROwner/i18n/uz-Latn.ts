@@ -10,7 +10,6 @@ export default {
   screenTitles: {
     orderDetail: 'Buyurtma tafsilotlari',
     restaurantProfile: 'Restoran profili',
-    workingHours: 'Ish vaqti',
     paymentSettings: 'To\'lov sozlamalari',
     notifications: 'Bildirishnomalar',
     staffAccounts: 'Xodimlar',
@@ -213,9 +212,6 @@ export default {
     staffOnline: 'Xodimlar onlayn',
     settingsManagement: 'Sozlamalar va boshqaruv',
     restaurantProfile: 'Restoran profili',
-    workingHours: 'Ish vaqti',
-    currentlyOpen: 'Hozir ochiq',
-    currentlyClosed: 'Hozir yopiq',
     paymentSettings: 'To\'lov sozlamalari',
     balancePayouts: 'Balans va to\'lovlar',
     notificationPrefs: 'Bildirishnoma sozlamalari',
@@ -252,14 +248,6 @@ export default {
     minutesUnit: '{{count}} daqiqa',
     kmUnit: '{{count}} km',
     save: 'Saqlash',
-  },
-
-  workingHoursScreen: {
-    subtitle: 'Restoran ish vaqtini belgilang',
-    opensAt: 'Ochilish',
-    closesAt: 'Yopilish',
-    currentlyOpen: 'Restoran hozir ochiq',
-    currentlyClosed: 'Restoran hozir yopiq',
   },
 
   payments: {

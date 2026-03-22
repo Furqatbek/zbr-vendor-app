@@ -10,7 +10,6 @@ export default {
   screenTitles: {
     orderDetail: 'Буюртма тафсилотлари',
     restaurantProfile: 'Ресторан профили',
-    workingHours: 'Иш вақти',
     paymentSettings: 'Тўлов созламалари',
     notifications: 'Билдиришномалар',
     staffAccounts: 'Ходимлар',
@@ -213,9 +212,6 @@ export default {
     staffOnline: 'Ходимлар онлайн',
     settingsManagement: 'Созламалар ва бошқарув',
     restaurantProfile: 'Ресторан профили',
-    workingHours: 'Иш вақти',
-    currentlyOpen: 'Ҳозир очиқ',
-    currentlyClosed: 'Ҳозир ёпиқ',
     paymentSettings: 'Тўлов созламалари',
     balancePayouts: 'Баланс ва тўловлар',
     notificationPrefs: 'Билдиришнома созламалари',
@@ -252,14 +248,6 @@ export default {
     minutesUnit: '{{count}} дақиқа',
     kmUnit: '{{count}} км',
     save: 'Сақлаш',
-  },
-
-  workingHoursScreen: {
-    subtitle: 'Ресторан иш вақтини белгиланг',
-    opensAt: 'Очилиш',
-    closesAt: 'Ёпилиш',
-    currentlyOpen: 'Ресторан ҳозир очиқ',
-    currentlyClosed: 'Ресторан ҳозир ёпиқ',
   },
 
   payments: {

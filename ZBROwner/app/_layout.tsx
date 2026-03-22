@@ -65,10 +65,6 @@ function AppStack() {
         options={{ headerShown: true, title: t('screenTitles.restaurantProfile'), headerTintColor: Colors.accent }}
       />
       <Stack.Screen
-        name="settings/working-hours"
-        options={{ headerShown: true, title: t('screenTitles.workingHours'), headerTintColor: Colors.accent }}
-      />
-      <Stack.Screen
         name="settings/payments"
         options={{ headerShown: true, title: t('screenTitles.paymentSettings'), headerTintColor: Colors.accent }}
       />

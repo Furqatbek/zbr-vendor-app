@@ -51,8 +51,7 @@ export default function MoreScreen() {
 
   const settingsItems: { icon: IoniconsName; label: string; route: string; subtitle: string }[] = [
     { icon: 'storefront-outline', label: t('more.restaurantProfile'), route: '/settings/profile', subtitle: restaurant?.addressLine1 ?? '' },
-    { icon: 'time-outline', label: t('more.workingHours'), route: '/settings/working-hours', subtitle: isOpen ? t('more.currentlyOpen') : t('more.currentlyClosed') },
-    { icon: 'card-outline', label: t('more.paymentSettings'), route: '/settings/payments', subtitle: t('more.balancePayouts') },
+{ icon: 'card-outline', label: t('more.paymentSettings'), route: '/settings/payments', subtitle: t('more.balancePayouts') },
     { icon: 'notifications-outline', label: t('more.notificationPrefs'), route: '/settings/notifications', subtitle: t('more.manageAlerts') },
     { icon: 'people-outline', label: t('more.staffAccounts'), route: '/settings/staff', subtitle: t('more.activeMembers', { count: stats.activeStaff }) },
     { icon: 'document-text-outline', label: t('more.orderHistory'), route: '/settings/order-history', subtitle: t('more.totalOrders', { count: orders.length }) },

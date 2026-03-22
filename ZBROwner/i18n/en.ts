@@ -12,7 +12,6 @@ export default {
   screenTitles: {
     orderDetail: 'Order Detail',
     restaurantProfile: 'Restaurant Profile',
-    workingHours: 'Working Hours',
     paymentSettings: 'Payment Settings',
     notifications: 'Notifications',
     staffAccounts: 'Staff Accounts',
@@ -226,9 +225,6 @@ export default {
     staffOnline: 'Staff Online',
     settingsManagement: 'Settings & Management',
     restaurantProfile: 'Restaurant Profile',
-    workingHours: 'Working Hours',
-    currentlyOpen: 'Currently open',
-    currentlyClosed: 'Currently closed',
     paymentSettings: 'Payment Settings',
     balancePayouts: 'Balance & payouts',
     notificationPrefs: 'Notification Preferences',
@@ -266,15 +262,6 @@ export default {
     minutesUnit: '{{count}} minutes',
     kmUnit: '{{count}} km',
     save: 'Save Changes',
-  },
-
-  // Working hours
-  workingHoursScreen: {
-    subtitle: "Set your restaurant's operating hours",
-    opensAt: 'Opens At',
-    closesAt: 'Closes At',
-    currentlyOpen: 'Restaurant is currently open',
-    currentlyClosed: 'Restaurant is currently closed',
   },
 
   // Payment settings

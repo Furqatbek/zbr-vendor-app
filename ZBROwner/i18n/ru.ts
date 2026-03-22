@@ -10,7 +10,6 @@ export default {
   screenTitles: {
     orderDetail: 'Детали заказа',
     restaurantProfile: 'Профиль ресторана',
-    workingHours: 'Часы работы',
     paymentSettings: 'Настройки оплаты',
     notifications: 'Уведомления',
     staffAccounts: 'Сотрудники',
@@ -213,9 +212,6 @@ export default {
     staffOnline: 'Сотрудники онлайн',
     settingsManagement: 'Настройки и управление',
     restaurantProfile: 'Профиль ресторана',
-    workingHours: 'Часы работы',
-    currentlyOpen: 'Сейчас открыто',
-    currentlyClosed: 'Сейчас закрыто',
     paymentSettings: 'Настройки оплаты',
     balancePayouts: 'Баланс и выплаты',
     notificationPrefs: 'Настройки уведомлений',
@@ -252,14 +248,6 @@ export default {
     minutesUnit: '{{count}} минут',
     kmUnit: '{{count}} км',
     save: 'Сохранить',
-  },
-
-  workingHoursScreen: {
-    subtitle: 'Установите часы работы ресторана',
-    opensAt: 'Открытие',
-    closesAt: 'Закрытие',
-    currentlyOpen: 'Ресторан сейчас открыт',
-    currentlyClosed: 'Ресторан сейчас закрыт',
   },
 
   payments: {
