@@ -47,14 +47,14 @@ export default function OrdersScreen() {
 
   const { refreshing, handleRefresh } = useRefresh();
 
-  const newOrders = useMemo(() => orders.filter((o) => o.status === 'received'), [orders]);
-  const preparingOrders = useMemo(() => orders.filter((o) => o.status === 'preparing'), [orders]);
+  const newOrders = useMemo(() => orders.filter((o) => o.status === 'created'), [orders]);
+  const preparingOrders = useMemo(() => orders.filter((o) => o.status === 'accepted' || o.status === 'preparing'), [orders]);
   const waitingOrders = useMemo(() => orders.filter((o) => o.status === 'ready'), [orders]);
 
   const currentOrders = segment === 'new' ? newOrders : segment === 'preparing' ? preparingOrders : waitingOrders;
 
   const todayRevenue = useMemo(() => {
-    const delivered = orders.filter((o) => o.status === 'delivered');
+    const delivered = orders.filter((o) => o.status === 'delivered' || o.status === 'completed');
     const total = delivered.reduce((sum, o) => sum + o.totalPrice, 0);
     return { total, count: delivered.length, avg: delivered.length > 0 ? total / delivered.length : 0 };
   }, [orders]);

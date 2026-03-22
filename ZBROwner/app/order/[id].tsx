@@ -7,22 +7,34 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 import { useStore } from '../../store';
-import type { OrderStatus, CourierRating } from '../../types';
+import type { OrderStatus, OrderType, CourierRating } from '../../types';
 import Card from '../../components/Card';
 import StatusBadge from '../../components/StatusBadge';
 import RatingStars from '../../components/RatingStars';
 import Chip from '../../components/Chip';
 import { useT } from '../../i18n';
 
-const STATUS_STEPS: OrderStatus[] = ['received', 'confirmed', 'preparing', 'ready', 'picked_up', 'delivered'];
+const DELIVERY_STEPS: OrderStatus[] = ['created', 'accepted', 'preparing', 'ready', 'picked_up', 'in_transit', 'delivered', 'completed'];
+const TAKEAWAY_STEPS: OrderStatus[] = ['created', 'accepted', 'preparing', 'ready', 'completed'];
+const DINE_IN_STEPS: OrderStatus[] = ['created', 'accepted', 'preparing', 'ready', 'delivered', 'completed'];
 
-const STATUS_LABEL_KEYS: Record<string, string> = {
-  received: 'orderStatus.received',
-  confirmed: 'orderStatus.confirmed',
+function getStatusSteps(orderType?: OrderType): OrderStatus[] {
+  if (orderType === 'TAKEAWAY' || orderType === 'PICKUP') return TAKEAWAY_STEPS;
+  if (orderType === 'DINE_IN') return DINE_IN_STEPS;
+  return DELIVERY_STEPS;
+}
+
+const STATUS_LABEL_KEYS: Record<OrderStatus, string> = {
+  created: 'orderStatus.created',
+  accepted: 'orderStatus.accepted',
   preparing: 'orderStatus.preparing',
   ready: 'orderStatus.ready',
   picked_up: 'orderStatus.picked_up',
+  in_transit: 'orderStatus.in_transit',
   delivered: 'orderStatus.delivered',
+  completed: 'orderStatus.completed',
+  cancelled: 'orderStatus.cancelled',
+  refunded: 'orderStatus.refunded',
 };
 
 const CRITERIA_KEYS = [
@@ -52,7 +64,8 @@ export default function OrderDetailScreen() {
     );
   }
 
-  const currentStepIndex = STATUS_STEPS.indexOf(order.status);
+  const statusSteps = getStatusSteps(order.orderType);
+  const currentStepIndex = statusSteps.indexOf(order.status);
 
   const handleStatusChange = (newStatus: OrderStatus) => {
     Alert.alert(t('orderDetail.updateStatus'), t('orderDetail.changeStatusTo', { status: t(STATUS_LABEL_KEYS[newStatus] as any) }), [
@@ -115,29 +128,28 @@ export default function OrderDetailScreen() {
       {/* Status Stepper */}
       <Card style={styles.stepperCard}>
         <Text style={styles.sectionTitle}>{t('orderDetail.orderProgress')}</Text>
-        {STATUS_STEPS.map((step, index) => {
+        {statusSteps.map((step, index) => {
           const isCompleted = index <= currentStepIndex;
           const isCurrent = index === currentStepIndex;
+          const isNext = index === currentStepIndex + 1;
           return (
             <TouchableOpacity
               key={step}
               style={styles.stepRow}
-              onPress={() => {
-                if (index === currentStepIndex + 1) handleStatusChange(step);
-              }}
-              disabled={index !== currentStepIndex + 1}
-              activeOpacity={index === currentStepIndex + 1 ? 0.6 : 1}
+              onPress={() => { if (isNext) handleStatusChange(step); }}
+              disabled={!isNext}
+              activeOpacity={isNext ? 0.6 : 1}
             >
               <View style={[styles.stepDot, isCompleted && styles.stepDotActive, isCurrent && styles.stepDotCurrent]} >
                 {isCompleted && <Ionicons name="checkmark" size={12} color={Colors.white} />}
               </View>
-              {index < STATUS_STEPS.length - 1 && (
+              {index < statusSteps.length - 1 && (
                 <View style={[styles.stepLine, isCompleted && styles.stepLineActive]} />
               )}
               <Text style={[styles.stepLabel, isCompleted && styles.stepLabelActive, isCurrent && styles.stepLabelCurrent]}>
                 {t(STATUS_LABEL_KEYS[step] as any)}
               </Text>
-              {index === currentStepIndex + 1 && (
+              {isNext && (
                 <Ionicons name="chevron-forward" size={16} color={Colors.accent} style={{ marginLeft: 'auto' }} />
               )}
             </TouchableOpacity>

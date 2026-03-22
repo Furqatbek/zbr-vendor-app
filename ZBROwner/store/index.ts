@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Order, Review, RevenueData, OrderStatus, DeclineReason, CourierRating, StaffMember } from '../types';
+import type { Order, Review, RevenueData, OrderStatus, CourierRating, StaffMember } from '../types';
 import { fetchRatings, updateOrderStatus as apiUpdateOrderStatus, cancelOrder as apiCancelOrder } from '../services/api';
 import { useAuthStore } from './authStore';
 
@@ -69,7 +69,12 @@ export const useStore = create<AppStore>((set, get) => ({
     });
     set((s) => ({
       orders: s.orders.map((o) =>
-        o.id === orderId ? { ...o, status: 'preparing' as const, prepStartedAt: new Date().toISOString(), prepTimeMinutes: estimatedPrepTimeMinutes ?? o.prepTimeMinutes } : o
+        o.id === orderId ? {
+          ...o,
+          status: 'accepted' as const,
+          acceptedAt: new Date().toISOString(),
+          estimatedPrepTimeMinutes: estimatedPrepTimeMinutes ?? o.estimatedPrepTimeMinutes,
+        } : o
       ),
     }));
   },
@@ -77,7 +82,7 @@ export const useStore = create<AppStore>((set, get) => ({
     await apiCancelOrder(orderId, { reason, requestRefund: true });
     set((s) => ({
       orders: s.orders.map((o) =>
-        o.id === orderId ? { ...o, status: 'cancelled' as const, declineReason: reason as DeclineReason } : o
+        o.id === orderId ? { ...o, status: 'cancelled' as const, cancellationReason: reason, cancelledAt: new Date().toISOString() } : o
       ),
     }));
   },
@@ -86,10 +91,14 @@ export const useStore = create<AppStore>((set, get) => ({
     set((s) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
+        const now = new Date().toISOString();
         const updates: Partial<Order> = { status };
-        if (status === 'ready') updates.readyAt = new Date().toISOString();
-        if (status === 'picked_up') updates.pickedUpAt = new Date().toISOString();
-        if (status === 'delivered') updates.deliveredAt = new Date().toISOString();
+        if (status === 'preparing') updates.prepStartedAt = now;
+        if (status === 'ready') updates.readyAt = now;
+        if (status === 'picked_up') updates.pickedUpAt = now;
+        if (status === 'in_transit') updates.inTransitAt = now;
+        if (status === 'delivered') updates.deliveredAt = now;
+        if (status === 'completed') updates.completedAt = now;
         return { ...o, ...updates };
       }),
     }));

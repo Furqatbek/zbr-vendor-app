@@ -112,19 +112,20 @@ export interface UpdateRestaurantResponse {
 }
 
 export type OrderStatus =
-  | 'received'
-  | 'confirmed'
+  | 'created'
+  | 'accepted'
   | 'preparing'
   | 'ready'
   | 'picked_up'
+  | 'in_transit'
   | 'delivered'
-  | 'cancelled';
+  | 'completed'
+  | 'cancelled'
+  | 'refunded';
 
-export type DeclineReason =
-  | 'out_of_stock'
-  | 'too_busy'
-  | 'closing_soon'
-  | 'other';
+export type OrderType = 'DELIVERY' | 'TAKEAWAY' | 'PICKUP' | 'DINE_IN';
+
+export type PaymentStatus = 'PENDING' | 'PROCESSING' | 'CONFIRMED' | 'FAILED' | 'REFUNDED' | 'CANCELLED';
 
 export interface OrderItem {
   id: string;
@@ -139,6 +140,8 @@ export interface Order {
   id: string;
   orderNumber: string;
   status: OrderStatus;
+  orderType?: OrderType;
+  paymentStatus?: PaymentStatus;
   items: OrderItem[];
   totalPrice: number;
   customerName: string;
@@ -148,12 +151,17 @@ export interface Order {
   courierETA?: number;
   receivedAt: string;
   prepTimeMinutes: number;
+  estimatedPrepTimeMinutes?: number;
+  acceptedAt?: string;
   prepStartedAt?: string;
   readyAt?: string;
   pickedUpAt?: string;
+  inTransitAt?: string;
   deliveredAt?: string;
+  completedAt?: string;
+  cancelledAt?: string;
+  cancellationReason?: string;
   specialNotes?: string;
-  declineReason?: DeclineReason;
 }
 
 export interface UpdateOrderStatusRequest {

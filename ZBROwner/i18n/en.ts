@@ -63,24 +63,30 @@ export default {
 
   // Order statuses
   orderStatus: {
-    received: 'Received',
-    confirmed: 'Confirmed',
+    created: 'Created',
+    accepted: 'Accepted',
     preparing: 'Preparing',
     ready: 'Ready',
     picked_up: 'Picked Up',
+    in_transit: 'In Transit',
     delivered: 'Delivered',
+    completed: 'Completed',
     cancelled: 'Cancelled',
+    refunded: 'Refunded',
   },
 
   // Status badge labels
   statusBadge: {
     new: 'New',
-    confirmed: 'Confirmed',
+    accepted: 'Accepted',
     preparing: 'Preparing',
     ready: 'Ready',
     pickedUp: 'Picked Up',
+    inTransit: 'In Transit',
     delivered: 'Delivered',
+    completed: 'Completed',
     cancelled: 'Cancelled',
+    refunded: 'Refunded',
   },
 
   // Pill switch

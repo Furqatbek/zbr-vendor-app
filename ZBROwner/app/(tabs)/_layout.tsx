@@ -60,7 +60,7 @@ const bellStyles = StyleSheet.create({
 export default function TabLayout() {
   const t = useT();
   const orders = useStore((s) => s.orders);
-  const newOrderCount = orders.filter((o) => o.status === 'received').length;
+  const newOrderCount = orders.filter((o) => o.status === 'created').length;
   const insets = useSafeAreaInsets();
 
   // Ensure tab bar sits above the device's system navigation area

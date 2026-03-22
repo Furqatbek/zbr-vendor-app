@@ -59,23 +59,29 @@ export default {
   },
 
   orderStatus: {
-    received: 'Получен',
-    confirmed: 'Подтверждён',
+    created: 'Создан',
+    accepted: 'Принят',
     preparing: 'Готовится',
     ready: 'Готов',
     picked_up: 'Забран',
+    in_transit: 'В пути',
     delivered: 'Доставлен',
+    completed: 'Завершён',
     cancelled: 'Отменён',
+    refunded: 'Возвращён',
   },
 
   statusBadge: {
     new: 'Новый',
-    confirmed: 'Подтверждён',
+    accepted: 'Принят',
     preparing: 'Готовится',
     ready: 'Готов',
     pickedUp: 'Забран',
+    inTransit: 'В пути',
     delivered: 'Доставлен',
+    completed: 'Завершён',
     cancelled: 'Отменён',
+    refunded: 'Возвращён',
   },
 
   pillSwitch: {

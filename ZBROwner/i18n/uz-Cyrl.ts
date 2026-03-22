@@ -59,23 +59,29 @@ export default {
   },
 
   orderStatus: {
-    received: 'Қабул қилинди',
-    confirmed: 'Тасдиқланди',
+    created: 'Яратилди',
+    accepted: 'Қабул қилинди',
     preparing: 'Тайёрланмоқда',
     ready: 'Тайёр',
     picked_up: 'Олиб кетилди',
+    in_transit: 'Йўлда',
     delivered: 'Етказилди',
+    completed: 'Якунланди',
     cancelled: 'Бекор қилинди',
+    refunded: 'Қайтарилди',
   },
 
   statusBadge: {
     new: 'Янги',
-    confirmed: 'Тасдиқланди',
+    accepted: 'Қабул қилинди',
     preparing: 'Тайёрланмоқда',
     ready: 'Тайёр',
     pickedUp: 'Олиб кетилди',
+    inTransit: 'Йўлда',
     delivered: 'Етказилди',
+    completed: 'Якунланди',
     cancelled: 'Бекор қилинди',
+    refunded: 'Қайтарилди',
   },
 
   pillSwitch: {
