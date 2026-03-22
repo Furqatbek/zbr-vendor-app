@@ -50,7 +50,7 @@ export default function MoreScreen() {
   type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
   const settingsItems: { icon: IoniconsName; label: string; route: string; subtitle: string }[] = [
-    { icon: 'storefront-outline', label: t('more.restaurantProfile'), route: '/settings/profile', subtitle: restaurant?.address?.split(',')[0] ?? '' },
+    { icon: 'storefront-outline', label: t('more.restaurantProfile'), route: '/settings/profile', subtitle: restaurant?.addressLine1 ?? '' },
     { icon: 'time-outline', label: t('more.workingHours'), route: '/settings/working-hours', subtitle: isOpen ? t('more.currentlyOpen') : t('more.currentlyClosed') },
     { icon: 'card-outline', label: t('more.paymentSettings'), route: '/settings/payments', subtitle: t('more.balancePayouts') },
     { icon: 'notifications-outline', label: t('more.notificationPrefs'), route: '/settings/notifications', subtitle: t('more.manageAlerts') },
@@ -69,7 +69,7 @@ export default function MoreScreen() {
         </View>
         <View style={styles.restaurantInfo}>
           <Text style={styles.restaurantName}>{restaurant?.name ?? ''}</Text>
-          <Text style={styles.restaurantAddress} numberOfLines={1}>{restaurant?.address ?? ''}</Text>
+          <Text style={styles.restaurantAddress} numberOfLines={1}>{restaurant?.fullAddress ?? ''}</Text>
         </View>
         <PillSwitch isOn={isOpen} onToggle={handleToggleOpen} />
       </View>
@@ -93,7 +93,7 @@ export default function MoreScreen() {
                   </View>
                   <View style={styles.menuInfo}>
                     <Text style={[styles.menuLabel, isSelected && styles.switcherLabelActive]}>{r.name}</Text>
-                    <Text style={styles.menuSubtitle} numberOfLines={1}>{r.address}</Text>
+                    <Text style={styles.menuSubtitle} numberOfLines={1}>{r.addressLine1}</Text>
                   </View>
                   {isSelected && (
                     <Ionicons name="checkmark-circle" size={22} color={Colors.accent} />

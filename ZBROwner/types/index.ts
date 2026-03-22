@@ -44,20 +44,39 @@ export interface ApiResponse {
 
 export interface Restaurant {
   id: number;
+  ownerId: number;
   name: string;
-  address: string;
+  slug: string;
+  description: string;
   phone: string;
   email: string;
-  description: string;
-  cuisine: string;
-  avgPrepTime: number;
-  deliveryRadius: number;
+  fullAddress: string;
+  addressLine1: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  status: string;
+  featured: boolean;
+  acceptsDelivery: boolean;
+  acceptsTakeaway: boolean;
+  acceptsDineIn: boolean;
+  minimumOrder: number;
+  deliveryFee: number;
+  deliveryRadiusKm: number;
+  averagePrepTimeMinutes: number;
   isOpen: boolean;
+  isCurrentlyOpen: boolean;
+  averageRating: number;
+  totalRatings: number;
+  totalOrders: number;
+  createdAt: string;
 }
 
 export interface MyRestaurantsResponse {
   success: boolean;
-  message: string;
   data: Restaurant[];
 }
 

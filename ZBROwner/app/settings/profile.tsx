@@ -14,12 +14,11 @@ export default function RestaurantProfileScreen() {
 
   const fields = [
     { label: t('profile.restaurantName'), value: restaurant?.name ?? '', icon: 'storefront-outline' as const },
-    { label: t('profile.address'), value: restaurant?.address ?? '', icon: 'location-outline' as const },
+    { label: t('profile.address'), value: restaurant?.fullAddress ?? '', icon: 'location-outline' as const },
     { label: t('profile.phone'), value: restaurant?.phone ?? '', icon: 'call-outline' as const },
     { label: t('profile.email'), value: restaurant?.email ?? '', icon: 'mail-outline' as const },
-    { label: t('profile.cuisineType'), value: restaurant?.cuisine ?? '', icon: 'restaurant-outline' as const },
-    { label: t('profile.avgPrepTime'), value: restaurant ? t('profile.minutesUnit', { count: restaurant.avgPrepTime }) : '', icon: 'time-outline' as const },
-    { label: t('profile.deliveryRadius'), value: restaurant ? t('profile.kmUnit', { count: restaurant.deliveryRadius }) : '', icon: 'navigate-outline' as const },
+    { label: t('profile.avgPrepTime'), value: restaurant ? t('profile.minutesUnit', { count: restaurant.averagePrepTimeMinutes }) : '', icon: 'time-outline' as const },
+    { label: t('profile.deliveryRadius'), value: restaurant ? t('profile.kmUnit', { count: restaurant.deliveryRadiusKm }) : '', icon: 'navigate-outline' as const },
   ];
 
   return (
@@ -30,7 +29,7 @@ export default function RestaurantProfileScreen() {
           <Ionicons name="restaurant" size={40} color={Colors.accent} />
         </View>
         <Text style={styles.restaurantName}>{restaurant?.name ?? ''}</Text>
-        <Text style={styles.cuisine}>{restaurant?.cuisine ?? ''}</Text>
+        <Text style={styles.cuisine}>{restaurant?.slug ?? ''}</Text>
       </View>
 
       {/* Description */}
