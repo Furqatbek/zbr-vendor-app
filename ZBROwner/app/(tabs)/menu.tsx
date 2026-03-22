@@ -217,19 +217,21 @@ export default function MenuScreen() {
 
   const renderItem = ({ item }: { item: MenuItem }) => (
     <Card style={styles.itemCard}>
-      <TouchableOpacity style={styles.itemRow} onPress={() => openEditItem(item)} activeOpacity={0.7}>
-        <View style={styles.itemImagePlaceholder}>
-          {item.imageUrl ? <Ionicons name="image" size={24} color={Colors.accent} /> : <Ionicons name="image-outline" size={24} color={Colors.gray400} />}
-        </View>
-        <View style={styles.infoFlex}>
-          <Text style={styles.titleText}>{item.name}</Text>
-          {item.description ? <Text style={styles.subtitleText} numberOfLines={1}>{item.description}</Text> : null}
-          <View style={styles.priceRow}>
-            <Text style={styles.priceText}>{t('common.currency', { amount: item.price.toFixed(2) })}</Text>
-            {item.onSale && item.originalPrice ? <Text style={styles.originalPrice}>{t('common.currency', { amount: item.originalPrice.toFixed(2) })}</Text> : null}
-            {item.featured ? <View style={styles.featuredBadge}><Text style={styles.featuredText}>{t('menu.featured')}</Text></View> : null}
+      <View style={styles.itemRow}>
+        <Pressable style={styles.itemPressable} onPress={() => openEditItem(item)}>
+          <View style={styles.itemImagePlaceholder}>
+            {item.imageUrl ? <Ionicons name="image" size={24} color={Colors.accent} /> : <Ionicons name="image-outline" size={24} color={Colors.gray400} />}
           </View>
-        </View>
+          <View style={styles.infoFlex}>
+            <Text style={styles.titleText}>{item.name}</Text>
+            {item.description ? <Text style={styles.subtitleText} numberOfLines={1}>{item.description}</Text> : null}
+            <View style={styles.priceRow}>
+              <Text style={styles.priceText}>{t('common.currency', { amount: item.price.toFixed(2) })}</Text>
+              {item.onSale && item.originalPrice ? <Text style={styles.originalPrice}>{t('common.currency', { amount: item.originalPrice.toFixed(2) })}</Text> : null}
+              {item.featured ? <View style={styles.featuredBadge}><Text style={styles.featuredText}>{t('menu.featured')}</Text></View> : null}
+            </View>
+          </View>
+        </Pressable>
         <View style={styles.itemActions}>
           <Switch
             value={item.inStock}
@@ -237,11 +239,11 @@ export default function MenuScreen() {
             trackColor={{ false: Colors.dangerLight, true: Colors.successLight }}
             thumbColor={item.inStock ? Colors.success : Colors.danger}
           />
-          <TouchableOpacity onPress={() => handleDeleteItem(item)} style={styles.actionBtn}>
+          <Pressable onPress={() => handleDeleteItem(item)} style={styles.actionBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons name="trash-outline" size={16} color={Colors.danger} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
-      </TouchableOpacity>
+      </View>
     </Card>
   );
 
@@ -548,6 +550,7 @@ const styles = StyleSheet.create({
   // Item card
   itemCard: { marginBottom: Spacing.sm },
   itemRow: { flexDirection: 'row', alignItems: 'center' },
+  itemPressable: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   itemImagePlaceholder: { width: 56, height: 56, borderRadius: BorderRadius.chip, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
   priceRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: Spacing.sm },
   priceText: { ...Typography.subhead, color: Colors.accent, fontWeight: '600' },
