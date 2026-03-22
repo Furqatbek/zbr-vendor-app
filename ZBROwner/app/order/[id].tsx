@@ -120,31 +120,6 @@ export default function OrderDetailScreen() {
     ]);
   };
 
-  const handleCancel = () => {
-    const reasons = [
-      { label: t('orders.reasonOutOfStock'), value: 'Out of stock' },
-      { label: t('orders.reasonTooBusy'), value: 'Too busy' },
-      { label: t('orders.reasonOther'), value: 'Other' },
-    ];
-    Alert.alert(t('orderDetail.cancelOrder'), t('orderDetail.cancelOrderConfirm'), [
-      ...reasons.map((r) => ({
-        text: r.label,
-        style: 'destructive' as const,
-        onPress: async () => {
-          try {
-            await declineOrder(order.id, r.value);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          } catch {
-            Alert.alert(t('common.error'), t('orders.declineFailed'));
-          }
-        },
-      })),
-      { text: t('common.cancel'), style: 'cancel' as const },
-    ]);
-  };
-
-  const isTerminal = ['delivered', 'completed', 'cancelled', 'refunded'].includes(order.status);
-
   const handleSubmitRating = () => {
     if (courierStars > 0) {
       submitCourierRating({
@@ -374,12 +349,6 @@ export default function OrderDetailScreen() {
           </TouchableOpacity>
         </View>
       )}
-      {!isTerminal && order.status !== 'created' && (
-        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel} activeOpacity={0.8}>
-          <Ionicons name="close-circle-outline" size={20} color={Colors.danger} />
-          <Text style={styles.cancelButtonText}>{t('orderDetail.cancelOrder')}</Text>
-        </TouchableOpacity>
-      )}
 
       {/* Quick Contact */}
       <Card style={styles.contactSection}>
@@ -549,8 +518,6 @@ const styles = StyleSheet.create({
   acceptButtonText: { ...Typography.headline, color: Colors.white },
   declineButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.danger, borderRadius: BorderRadius.button, paddingVertical: 14, gap: Spacing.sm, minHeight: 48 },
   declineButtonText: { ...Typography.headline, color: Colors.white },
-  cancelButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.danger, borderRadius: BorderRadius.button, paddingVertical: 12, gap: Spacing.sm, marginBottom: Spacing.base, minHeight: 48 },
-  cancelButtonText: { ...Typography.subhead, color: Colors.danger, fontWeight: '600' },
   contactSection: { marginBottom: Spacing.base },
   contactCard: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.gray100, minHeight: 56 },
   contactIcon: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
