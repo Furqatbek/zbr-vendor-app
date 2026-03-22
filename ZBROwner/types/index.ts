@@ -42,6 +42,25 @@ export interface ApiResponse {
   message: string;
 }
 
+export interface Restaurant {
+  id: number;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  description: string;
+  cuisine: string;
+  avgPrepTime: number;
+  deliveryRadius: number;
+  isOpen: boolean;
+}
+
+export interface MyRestaurantsResponse {
+  success: boolean;
+  message: string;
+  data: Restaurant[];
+}
+
 export type OrderStatus =
   | 'received'
   | 'confirmed'

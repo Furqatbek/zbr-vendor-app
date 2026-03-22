@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
 import { useStore } from '../../store';
 import { useAuthStore } from '../../store/authStore';
+import { toggleRestaurantOpen } from '../../services/api';
 import type { Order, DeclineReason } from '../../types';
 import Card from '../../components/Card';
 import StatusBadge from '../../components/StatusBadge';
@@ -30,7 +31,18 @@ export default function OrdersScreen() {
     isOpen, setOpen,
     orders, acceptOrder, declineOrder, updateOrderStatus,
   } = useStore();
-  const userName = useAuthStore((s) => s.user?.fullName ?? '');
+  const restaurant = useAuthStore((s) => s.restaurant);
+
+  const handleToggleOpen = useCallback(async () => {
+    const newStatus = !isOpen;
+    if (!restaurant?.id) return;
+    try {
+      await toggleRestaurantOpen(restaurant.id, newStatus);
+      setOpen(newStatus);
+    } catch {
+      // API failed — don't update local state
+    }
+  }, [isOpen, restaurant?.id, setOpen]);
 
   const { refreshing, handleRefresh } = useRefresh();
 
@@ -69,12 +81,12 @@ export default function OrdersScreen() {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <View>
-          <Text style={styles.restaurantName}>{userName}</Text>
+          <Text style={styles.restaurantName}>{restaurant?.name ?? ''}</Text>
           <Text style={styles.dateText}>
             {new Date().toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
           </Text>
         </View>
-        <PillSwitch isOn={isOpen} onToggle={() => setOpen(!isOpen)} />
+        <PillSwitch isOn={isOpen} onToggle={handleToggleOpen} />
       </View>
 
       {/* Revenue Snapshot */}

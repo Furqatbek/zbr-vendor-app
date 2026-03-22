@@ -1,5 +1,5 @@
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
-import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse } from '../types';
+import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse } from '../types';
 
 let getAccessToken: () => string | null = () => null;
 let getRefreshToken: () => string | null = () => null;
@@ -135,5 +135,17 @@ export function confirmPasswordReset(token: string, newPassword: string): Promis
   return apiFetch<ApiResponse>(ENDPOINTS.passwordResetConfirm, {
     method: 'POST',
     body: JSON.stringify({ token, newPassword }),
+  });
+}
+
+// ── Restaurant API ──
+
+export function fetchMyRestaurants(): Promise<MyRestaurantsResponse> {
+  return apiFetch<MyRestaurantsResponse>(ENDPOINTS.myRestaurants);
+}
+
+export function toggleRestaurantOpen(restaurantId: number, isOpen: boolean): Promise<ApiResponse> {
+  return apiFetch<ApiResponse>(ENDPOINTS.restaurantToggleOpen(restaurantId) + `?isOpen=${isOpen}`, {
+    method: 'PATCH',
   });
 }

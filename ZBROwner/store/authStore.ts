@@ -1,16 +1,19 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { AuthUser, AuthTokens, RefreshResponse } from '../types';
-import { configureAuth, login as apiLogin, logout as apiLogout } from '../services/api';
+import type { AuthUser, AuthTokens, RefreshResponse, Restaurant } from '../types';
+import { configureAuth, login as apiLogin, logout as apiLogout, fetchMyRestaurants } from '../services/api';
+import { useStore } from './index';
 
 const STORAGE_KEYS = {
   ACCESS_TOKEN: 'auth_access_token',
   REFRESH_TOKEN: 'auth_refresh_token',
   USER: 'auth_user',
+  RESTAURANT: 'auth_restaurant',
 } as const;
 
 interface AuthStore {
   user: AuthUser | null;
+  restaurant: Restaurant | null;
   accessToken: string | null;
   refreshToken: string | null;
   isLoading: boolean;
@@ -20,6 +23,7 @@ interface AuthStore {
   login: (emailOrPhone: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   clearSession: () => void;
+  loadRestaurant: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => {
@@ -42,6 +46,7 @@ export const useAuthStore = create<AuthStore>((set, get) => {
 
   return {
     user: null,
+    restaurant: null,
     accessToken: null,
     refreshToken: null,
     isLoading: false,
@@ -49,20 +54,32 @@ export const useAuthStore = create<AuthStore>((set, get) => {
 
     initialize: async () => {
       try {
-        const [accessToken, refreshToken, userJson] = await Promise.all([
+        const [accessToken, refreshToken, userJson, restaurantJson] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN),
           AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN),
           AsyncStorage.getItem(STORAGE_KEYS.USER),
+          AsyncStorage.getItem(STORAGE_KEYS.RESTAURANT),
         ]);
 
         const user = userJson ? JSON.parse(userJson) : null;
+        const restaurant: Restaurant | null = restaurantJson ? JSON.parse(restaurantJson) : null;
 
         set({
           accessToken,
           refreshToken,
           user,
+          restaurant,
           isInitialized: true,
         });
+
+        if (restaurant) {
+          useStore.getState().setOpen(restaurant.isOpen);
+        }
+
+        // Refresh restaurant data from API if logged in
+        if (accessToken && user) {
+          get().loadRestaurant();
+        }
       } catch {
         set({ isInitialized: true });
       }
@@ -88,9 +105,28 @@ export const useAuthStore = create<AuthStore>((set, get) => {
           user,
           isLoading: false,
         });
+
+        // Fetch restaurant data after login
+        await get().loadRestaurant();
       } catch (error) {
         set({ isLoading: false });
         throw error;
+      }
+    },
+
+    loadRestaurant: async () => {
+      try {
+        const response = await fetchMyRestaurants();
+        const restaurant = response.data?.[0] ?? null;
+
+        set({ restaurant });
+
+        if (restaurant) {
+          await AsyncStorage.setItem(STORAGE_KEYS.RESTAURANT, JSON.stringify(restaurant));
+          useStore.getState().setOpen(restaurant.isOpen);
+        }
+      } catch {
+        // Non-fatal — restaurant data will be missing but app still works
       }
     },
 
@@ -111,9 +147,11 @@ export const useAuthStore = create<AuthStore>((set, get) => {
         STORAGE_KEYS.ACCESS_TOKEN,
         STORAGE_KEYS.REFRESH_TOKEN,
         STORAGE_KEYS.USER,
+        STORAGE_KEYS.RESTAURANT,
       ]);
       set({
         user: null,
+        restaurant: null,
         accessToken: null,
         refreshToken: null,
       });

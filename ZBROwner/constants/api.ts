@@ -14,6 +14,10 @@ export const ENDPOINTS = {
   passwordReset: '/api/v1/auth/password-reset',
   passwordResetConfirm: '/api/v1/auth/password-reset/confirm',
 
+  // Restaurant
+  myRestaurants: '/api/v1/restaurants/my',
+  restaurantToggleOpen: (id: number) => `/api/v1/restaurants/${id}/toggle-open`,
+
   // WebSocket
   ws: `${WS_BASE_URL}/ws/vendor`,
 } as const;
