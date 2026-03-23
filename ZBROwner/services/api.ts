@@ -424,6 +424,25 @@ export function markAllNotificationsRead(userId: number, role?: NotificationRole
   return apiFetch<MarkAllReadResponse>(ENDPOINTS.notificationMarkAllRead + `?${params}`, { method: 'PATCH' });
 }
 
+// ── Device Token API ──
+
+export function registerDeviceToken(data: {
+  token: string;
+  platform: 'ANDROID' | 'IOS';
+  deviceId: string;
+}): Promise<ApiResponse> {
+  return apiFetch<ApiResponse>(ENDPOINTS.deviceToken, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function unregisterDeviceToken(deviceId: string): Promise<ApiResponse> {
+  return apiFetch<ApiResponse>(ENDPOINTS.deviceToken + `?deviceId=${encodeURIComponent(deviceId)}`, {
+    method: 'DELETE',
+  });
+}
+
 // ── Ratings / Reviews API ──
 
 export function fetchRatings(

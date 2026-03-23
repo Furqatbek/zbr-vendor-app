@@ -29,7 +29,7 @@ type MessageHandler = (message: WSMessage) => void;
 const MAX_RETRIES = 5;
 const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000];
 
-export function createStompClient(restaurantId: number) {
+export function createStompClient(restaurantId: number, userId?: number) {
   let client: Client | null = null;
   let handlers: MessageHandler[] = [];
   let subscriptions: StompSubscription[] = [];
@@ -76,6 +76,17 @@ export function createStompClient(restaurantId: number) {
           },
         );
         subscriptions.push(notifSub);
+
+        // Subscribe to user notifications topic
+        if (userId) {
+          const userNotifSub = client!.subscribe(
+            `/topic/users/${userId}/notifications`,
+            (msg: IMessage) => {
+              dispatch({ type: 'notification', payload: parseBody(msg.body) });
+            },
+          );
+          subscriptions.push(userNotifSub);
+        }
       },
 
       onStompError: (frame) => {

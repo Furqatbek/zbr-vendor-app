@@ -38,6 +38,7 @@ export const ENDPOINTS = {
   notificationUnreadCount: (userId: number) => `/api/v1/notifications/user/${userId}/unread-count`,
   notificationMarkRead: (id: number) => `/api/v1/notifications/${id}/read`,
   notificationMarkAllRead: '/api/v1/notifications/read-all',
+  deviceToken: '/api/v1/notifications/device-token',
 
   // Analytics
   ratings: (restaurantId: number) => `/api/v1/analytics/cx/ratings/restaurant/${restaurantId}`,

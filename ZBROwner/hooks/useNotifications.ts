@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Application from 'expo-application';
 import {
   registerForPushNotifications,
   addNotificationReceivedListener,
@@ -7,12 +9,21 @@ import {
   sendLocalNotification,
 } from '../utils/notifications';
 import { createStompClient } from '../utils/websocket';
+import { registerDeviceToken } from '../services/api';
 import { useStore } from '../store';
 import { useAuthStore } from '../store/authStore';
 
+function getDeviceId(): string {
+  if (Platform.OS === 'android') {
+    return Application.getAndroidId() ?? 'android-unknown';
+  }
+  // iOS: applicationId is stable per install
+  return Application.applicationId ?? 'ios-unknown';
+}
+
 /**
  * Call once in root layout. Handles:
- * 1. Push permission request + token registration
+ * 1. Push permission request + token registration with backend
  * 2. Foreground / tap notification listeners
  * 3. STOMP WebSocket connection for real-time order events
  */
@@ -21,6 +32,7 @@ export function useNotifications() {
   const setPushToken = useStore((s) => s.setPushToken);
   const pushToken = useStore((s) => s.pushToken);
   const restaurant = useAuthStore((s) => s.restaurant);
+  const user = useAuthStore((s) => s.user);
   const accessToken = useAuthStore((s) => s.accessToken);
   const stompRef = useRef<ReturnType<typeof createStompClient> | null>(null);
 
@@ -49,14 +61,30 @@ export function useNotifications() {
     tryRegister();
   }, [setPushToken]);
 
-  // 2. Notification listeners
+  // 1b. Register push token with backend when token + auth are available
   useEffect(() => {
-    const receivedSub = addNotificationReceivedListener((_notification) => {
-      // notification received while app is in foreground – handled by the OS via setNotificationHandler
+    if (!pushToken || !accessToken) return;
+
+    const platform = Platform.OS === 'ios' ? 'IOS' : 'ANDROID';
+    const deviceId = getDeviceId();
+
+    registerDeviceToken({ token: pushToken, platform, deviceId }).catch(() => {
+      // Non-fatal – backend won't send push but app still works
+    });
+  }, [pushToken, accessToken]);
+
+  // 2. Notification listeners – handle push payload from backend
+  useEffect(() => {
+    const receivedSub = addNotificationReceivedListener((notification) => {
+      const data = notification.request.content.data as Record<string, any> | undefined;
+      if (data?.type === 'NEW_ORDER_RECEIVED') {
+        // Refresh orders when push arrives while app is in foreground
+        useStore.getState().loadOrders();
+      }
     });
 
     const responseSub = addNotificationResponseListener((response) => {
-      const data = response.notification.request.content.data as Record<string, string> | undefined;
+      const data = response.notification.request.content.data as Record<string, any> | undefined;
       if (data?.orderId) {
         router.push(`/order/${data.orderId}`);
       }
@@ -77,7 +105,7 @@ export function useNotifications() {
       stompRef.current.disconnect();
     }
 
-    const stomp = createStompClient(restaurant.id);
+    const stomp = createStompClient(restaurant.id, user?.id);
     stompRef.current = stomp;
 
     stomp.connect(accessToken);
@@ -111,5 +139,5 @@ export function useNotifications() {
       unsubscribe();
       stomp.disconnect();
     };
-  }, [restaurant?.id, accessToken]);
+  }, [restaurant?.id, user?.id, accessToken]);
 }

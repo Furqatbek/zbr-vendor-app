@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AuthUser, AuthTokens, RefreshResponse, Restaurant } from '../types';
-import { configureAuth, login as apiLogin, logout as apiLogout, fetchMyRestaurants } from '../services/api';
+import { Platform } from 'react-native';
+import * as Application from 'expo-application';
+import { configureAuth, login as apiLogin, logout as apiLogout, fetchMyRestaurants, unregisterDeviceToken } from '../services/api';
 import { useStore } from './index';
 
 const STORAGE_KEYS = {
@@ -142,6 +144,15 @@ export const useAuthStore = create<AuthStore>((set, get) => {
 
     logout: async () => {
       const { refreshToken } = get();
+      // Unregister device token so backend stops sending push notifications
+      try {
+        const deviceId = Platform.OS === 'android'
+          ? (Application.getAndroidId() ?? 'android-unknown')
+          : (Application.applicationId ?? 'ios-unknown');
+        await unregisterDeviceToken(deviceId);
+      } catch {
+        // Non-fatal
+      }
       try {
         if (refreshToken) {
           await apiLogout(refreshToken);
@@ -149,6 +160,7 @@ export const useAuthStore = create<AuthStore>((set, get) => {
       } catch {
         // Proceed with local logout even if API call fails
       }
+      useStore.getState().setPushToken(null);
       get().clearSession();
     },
 
