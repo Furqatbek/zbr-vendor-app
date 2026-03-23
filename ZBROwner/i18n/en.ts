@@ -75,6 +75,14 @@ export default {
     refunded: 'Refunded',
   },
 
+  // New order alert
+  newOrderAlert: {
+    title: 'New Order!',
+    accept: 'Accept',
+    decline: 'Decline',
+    viewDetails: 'View Details',
+  },
+
   // Status badge labels
   statusBadge: {
     new: 'New',

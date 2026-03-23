@@ -71,6 +71,13 @@ export default {
     refunded: 'Қайтарилди',
   },
 
+  newOrderAlert: {
+    title: 'Янги буюртма!',
+    accept: 'Қабул қилиш',
+    decline: 'Рад этиш',
+    viewDetails: 'Батафсил',
+  },
+
   statusBadge: {
     new: 'Янги',
     accepted: 'Қабул қилинди',

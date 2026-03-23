@@ -75,11 +75,18 @@ export function useNotifications() {
 
   // 2. Notification listeners – handle push payload from backend
   useEffect(() => {
-    const receivedSub = addNotificationReceivedListener((notification) => {
+    const receivedSub = addNotificationReceivedListener(async (notification) => {
       const data = notification.request.content.data as Record<string, any> | undefined;
       if (data?.type === 'NEW_ORDER_RECEIVED') {
-        // Refresh orders when push arrives while app is in foreground
-        useStore.getState().loadOrders();
+        const store = useStore.getState();
+        await store.loadOrders();
+        const orderId = data.orderId ? String(data.orderId) : null;
+        const newOrder = orderId
+          ? useStore.getState().orders.find((o) => o.id === orderId)
+          : useStore.getState().orders.find((o) => o.status === 'created');
+        if (newOrder && !store.showOrderAlert) {
+          useStore.getState().triggerOrderAlert(newOrder);
+        }
       }
     });
 
@@ -110,27 +117,40 @@ export function useNotifications() {
 
     stomp.connect(accessToken);
 
-    const unsubscribe = stomp.onMessage((message) => {
+    const unsubscribe = stomp.onMessage(async (message) => {
+      const store = useStore.getState();
       switch (message.type) {
-        case 'new_order':
+        case 'new_order': {
+          // Refresh the orders list first so we have the new order data
+          await store.loadOrders();
+          const payload = message.payload as Record<string, any> | undefined;
+          const orderId = payload?.id ? String(payload.id) : payload?.orderId ? String(payload.orderId) : null;
+          // Find the new order in the refreshed list, or use the payload
+          const newOrder = orderId
+            ? useStore.getState().orders.find((o) => o.id === orderId)
+            : useStore.getState().orders.find((o) => o.status === 'created');
+          if (newOrder) {
+            // Full-screen alert with alarm sound
+            useStore.getState().triggerOrderAlert(newOrder);
+          }
+          // Also fire a local notification for when app is backgrounded/locked
           sendLocalNotification(
             'New Order',
-            'You have a new order waiting to be accepted.',
+            newOrder
+              ? `${newOrder.orderNumber} – ${newOrder.customerName}`
+              : 'You have a new order waiting.',
             'orders',
           );
-          useStore.getState().loadOrders();
           break;
+        }
         case 'order_update':
-          useStore.getState().loadOrders();
+          store.loadOrders();
           break;
         case 'kitchen_ticket':
-          // Kitchen display update – refresh orders for ticket data
-          useStore.getState().loadOrders();
+          store.loadOrders();
           break;
         case 'notification':
-          useStore.getState().setUnreadNotifCount(
-            useStore.getState().unreadNotifCount + 1,
-          );
+          store.setUnreadNotifCount(store.unreadNotifCount + 1);
           break;
       }
     });

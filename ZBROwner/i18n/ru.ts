@@ -71,6 +71,13 @@ export default {
     refunded: 'Возвращён',
   },
 
+  newOrderAlert: {
+    title: 'Новый заказ!',
+    accept: 'Принять',
+    decline: 'Отклонить',
+    viewDetails: 'Подробнее',
+  },
+
   statusBadge: {
     new: 'Новый',
     accepted: 'Принят',

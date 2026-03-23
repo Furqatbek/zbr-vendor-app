@@ -46,6 +46,12 @@ interface AppStore {
   staffMembers: StaffMember[];
   toggleStaffActive: (staffId: string) => void;
 
+  // New Order Alert
+  incomingOrder: Order | null;
+  showOrderAlert: boolean;
+  triggerOrderAlert: (order: Order) => void;
+  dismissOrderAlert: () => void;
+
   // Push Notifications
   pushToken: string | null;
   setPushToken: (token: string | null) => void;
@@ -287,6 +293,11 @@ export const useStore = create<AppStore>((set, get) => ({
         m.id === staffId ? { ...m, isActive: !m.isActive } : m
       ),
     })),
+
+  incomingOrder: null,
+  showOrderAlert: false,
+  triggerOrderAlert: (order) => set({ incomingOrder: order, showOrderAlert: true }),
+  dismissOrderAlert: () => set({ showOrderAlert: false, incomingOrder: null }),
 
   pushToken: null,
   setPushToken: (token) => set({ pushToken: token }),

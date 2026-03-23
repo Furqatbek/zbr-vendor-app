@@ -1,14 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import { Colors } from '../constants/theme';
 import I18nProvider from '../i18n/I18nProvider';
 import { useI18n } from '../i18n';
 import { useNotifications } from '../hooks/useNotifications';
 import { useAuthStore } from '../store/authStore';
+import { useStore } from '../store';
+import NewOrderAlert from '../components/NewOrderAlert';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isInitialized, initialize } = useAuthStore();
@@ -42,11 +44,55 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function OrderAlertOverlay() {
+  const router = useRouter();
+  const incomingOrder = useStore((s) => s.incomingOrder);
+  const showOrderAlert = useStore((s) => s.showOrderAlert);
+  const dismissOrderAlert = useStore((s) => s.dismissOrderAlert);
+  const acceptOrder = useStore((s) => s.acceptOrder);
+  const declineOrder = useStore((s) => s.declineOrder);
+
+  const handleAccept = useCallback(async (orderId: string) => {
+    dismissOrderAlert();
+    try {
+      await acceptOrder(orderId);
+    } catch {
+      // Already handled in store
+    }
+  }, [acceptOrder, dismissOrderAlert]);
+
+  const handleDecline = useCallback(async (orderId: string) => {
+    dismissOrderAlert();
+    try {
+      await declineOrder(orderId, 'Declined by vendor');
+    } catch {
+      // Already handled in store
+    }
+  }, [declineOrder, dismissOrderAlert]);
+
+  const handleView = useCallback((orderId: string) => {
+    dismissOrderAlert();
+    router.push(`/order/${orderId}`);
+  }, [dismissOrderAlert, router]);
+
+  return (
+    <NewOrderAlert
+      order={incomingOrder}
+      visible={showOrderAlert}
+      onAccept={handleAccept}
+      onDecline={handleDecline}
+      onView={handleView}
+    />
+  );
+}
+
 function AppStack() {
   const { t } = useI18n();
   useNotifications();
 
   return (
+    <>
+    <OrderAlertOverlay />
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.white } }}>
       <Stack.Screen name="login" />
       <Stack.Screen name="forgot-password" />
@@ -97,6 +143,7 @@ function AppStack() {
         options={{ headerShown: true, title: t('screenTitles.about'), headerTintColor: Colors.accent }}
       />
     </Stack>
+    </>
   );
 }
 

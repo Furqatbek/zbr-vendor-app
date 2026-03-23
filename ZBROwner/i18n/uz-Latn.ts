@@ -71,6 +71,13 @@ export default {
     refunded: 'Qaytarildi',
   },
 
+  newOrderAlert: {
+    title: 'Yangi buyurtma!',
+    accept: 'Qabul qilish',
+    decline: 'Rad etish',
+    viewDetails: 'Batafsil',
+  },
+
   statusBadge: {
     new: 'Yangi',
     accepted: 'Qabul qilindi',
