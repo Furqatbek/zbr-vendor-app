@@ -190,6 +190,12 @@ export default function OrdersScreen() {
             <Text style={styles.notesText} numberOfLines={1}>{order.deliveryInstructions}</Text>
           </View>
         )}
+        {order.deliveryFee != null && order.deliveryFee > 0 && (
+          <View style={styles.notesRow}>
+            <Ionicons name="bicycle-outline" size={14} color={Colors.gray500} />
+            <Text style={styles.notesText}>{t('orderDetail.deliveryFee')}: {t('common.currency', { amount: order.deliveryFee.toFixed(2) })}</Text>
+          </View>
+        )}
         <Text style={styles.totalPrice}>{t('common.currency', { amount: order.totalPrice.toFixed(2) })}</Text>
       </TouchableOpacity>
       <SlideToAction
@@ -212,6 +218,12 @@ export default function OrdersScreen() {
         <Text style={styles.itemsSummary} numberOfLines={2}>
           {order.items.map((i) => `${i.quantity}x ${i.name}`).join(', ')}
         </Text>
+        {order.deliveryFee != null && order.deliveryFee > 0 && (
+          <View style={styles.notesRow}>
+            <Ionicons name="bicycle-outline" size={14} color={Colors.gray500} />
+            <Text style={styles.notesText}>{t('orderDetail.deliveryFee')}: {t('common.currency', { amount: order.deliveryFee.toFixed(2) })}</Text>
+          </View>
+        )}
         <Text style={styles.totalPrice}>{t('common.currency', { amount: order.totalPrice.toFixed(2) })}</Text>
       </TouchableOpacity>
       <TouchableOpacity
@@ -236,6 +248,12 @@ export default function OrdersScreen() {
         <Text style={styles.itemsSummary} numberOfLines={2}>
           {order.items.map((i) => `${i.quantity}x ${i.name}`).join(', ')}
         </Text>
+        {order.deliveryFee != null && order.deliveryFee > 0 && (
+          <View style={styles.notesRow}>
+            <Ionicons name="bicycle-outline" size={14} color={Colors.gray500} />
+            <Text style={styles.notesText}>{t('orderDetail.deliveryFee')}: {t('common.currency', { amount: order.deliveryFee.toFixed(2) })}</Text>
+          </View>
+        )}
         {order.courierName && (
           <View style={styles.courierRow}>
             <Ionicons name="bicycle-outline" size={16} color={Colors.accent} />

@@ -191,7 +191,7 @@ export default function OrderDetailScreen() {
         )}
         {order.paymentStatus && (
           <View style={styles.infoRow}>
-            <Ionicons name="card-outline" size={18} color={Colors.gray500} />
+            <Ionicons name="cash-outline" size={18} color={Colors.gray500} />
             <Text style={styles.infoLabel}>{t('orderDetail.paymentStatus')}</Text>
             <Text style={styles.infoValue}>{order.paymentStatus}</Text>
           </View>
@@ -295,12 +295,6 @@ export default function OrderDetailScreen() {
           <Text style={styles.summaryLabel}>{t('orderDetail.subtotal')}</Text>
           <Text style={styles.summaryValue}>{t('common.currency', { amount: order.subtotal.toFixed(2) })}</Text>
         </View>
-        {order.tax != null && order.tax > 0 && (
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>{t('orderDetail.tax')}</Text>
-            <Text style={styles.summaryValue}>{t('common.currency', { amount: order.tax.toFixed(2) })}</Text>
-          </View>
-        )}
         {order.deliveryFee != null && order.deliveryFee > 0 && (
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>{t('orderDetail.deliveryFee')}</Text>
