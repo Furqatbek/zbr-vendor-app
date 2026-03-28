@@ -323,11 +323,12 @@ export function deleteMenuItem(restaurantId: number, itemId: number): Promise<Ap
   });
 }
 
-export async function uploadMenuItemImage(restaurantId: number, itemId: number, imageUri: string, assetMimeType?: string): Promise<MenuItemResponse> {
+/**
+ * Generic multipart image upload with auth + token refresh.
+ */
+async function uploadImage<T>(endpoint: string, imageUri: string, assetMimeType?: string): Promise<T> {
   const token = getAccessToken();
 
-  // Derive extension from the asset's actual MIME type (provided by ImagePicker)
-  // rather than parsing the URI, which may contain no extension or a mangled one.
   const mimeToExt: Record<string, string> = {
     'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
   };
@@ -335,37 +336,34 @@ export async function uploadMenuItemImage(restaurantId: number, itemId: number, 
   const mimeType = assetMimeType ?? 'image/jpeg';
   const filename = `image.${ext}`;
 
-  // Convert the local URI to an actual Blob/File so FormData sends real file
-  // bytes instead of "[object Object]"
   const blobResponse = await fetch(imageUri);
   const blob = await blobResponse.blob();
   const file = new File([blob], filename, { type: mimeType });
 
-  const formData = new FormData();
-  formData.append('file', file);
+  const makeFormData = () => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return fd;
+  };
 
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  let res = await fetch(`${API_BASE_URL}${ENDPOINTS.menuItemImage(restaurantId, itemId)}`, {
+  let res = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     headers,
-    body: formData,
+    body: makeFormData(),
   });
 
-  // Handle 401/403 with token refresh, same as apiFetch
   if (res.status === 401 || res.status === 403) {
     const refreshed = token ? await tryRefreshToken() : false;
     if (refreshed) {
       const newToken = getAccessToken();
       if (newToken) headers['Authorization'] = `Bearer ${newToken}`;
-      // Rebuild FormData since body may have been consumed
-      const newFormData = new FormData();
-      newFormData.append('file', file);
-      res = await fetch(`${API_BASE_URL}${ENDPOINTS.menuItemImage(restaurantId, itemId)}`, {
+      res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers,
-        body: newFormData,
+        body: makeFormData(),
       });
     } else {
       onSessionExpired();
@@ -378,6 +376,22 @@ export async function uploadMenuItemImage(restaurantId: number, itemId: number, 
     throw new Error(body?.message ?? `Upload failed: ${res.status}`);
   }
   return res.json();
+}
+
+export function uploadMenuItemImage(restaurantId: number, itemId: number, imageUri: string, assetMimeType?: string): Promise<MenuItemResponse> {
+  return uploadImage<MenuItemResponse>(ENDPOINTS.menuItemImage(restaurantId, itemId), imageUri, assetMimeType);
+}
+
+export function uploadRestaurantLogo(restaurantId: number, imageUri: string, assetMimeType?: string): Promise<UpdateRestaurantResponse> {
+  return uploadImage<UpdateRestaurantResponse>(ENDPOINTS.restaurantLogo(restaurantId), imageUri, assetMimeType);
+}
+
+export function uploadRestaurantCoverImage(restaurantId: number, imageUri: string, assetMimeType?: string): Promise<UpdateRestaurantResponse> {
+  return uploadImage<UpdateRestaurantResponse>(ENDPOINTS.restaurantCoverImage(restaurantId), imageUri, assetMimeType);
+}
+
+export function uploadConsumerProfilePicture(imageUri: string, assetMimeType?: string): Promise<ApiResponse> {
+  return uploadImage<ApiResponse>(ENDPOINTS.consumerProfilePicture, imageUri, assetMimeType);
 }
 
 // ── Notifications API ──

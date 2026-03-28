@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator,
+  View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView,
+  Platform, ActivityIndicator, Image, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 import { useAuthStore } from '../../store/authStore';
-import { updateRestaurant } from '../../services/api';
+import { updateRestaurant, uploadRestaurantLogo, uploadRestaurantCoverImage } from '../../services/api';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
 import type { UpdateRestaurantRequest } from '../../types';
@@ -28,6 +30,8 @@ export default function RestaurantProfileScreen() {
   const [form, setForm] = useState<UpdateRestaurantRequest>({});
   const [saving, setSaving] = useState(false);
   const [edited, setEdited] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   useEffect(() => {
     if (restaurant) {
@@ -76,6 +80,34 @@ export default function RestaurantProfileScreen() {
     }
   };
 
+  const pickAndUploadImage = async (type: 'logo' | 'cover') => {
+    if (!restaurant) return;
+
+    const setUploading = type === 'logo' ? setUploadingLogo : setUploadingCover;
+    const aspect: [number, number] = type === 'logo' ? [1, 1] : [16, 9];
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect,
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    setUploading(true);
+    try {
+      const uploadFn = type === 'logo' ? uploadRestaurantLogo : uploadRestaurantCoverImage;
+      await uploadFn(restaurant.id, asset.uri, asset.mimeType ?? undefined);
+      await loadRestaurants();
+    } catch (e: any) {
+      Alert.alert('Upload failed', e?.message ?? 'Could not upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const fields: Field[] = [
     { key: 'name', label: t('profile.restaurantName'), icon: 'storefront-outline' },
     { key: 'description', label: t('profile.aboutSection'), icon: 'document-text-outline', multiline: true },
@@ -96,11 +128,55 @@ export default function RestaurantProfileScreen() {
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {/* Avatar */}
-        <View style={styles.avatarSection}>
-          <View style={styles.avatar}>
-            <Ionicons name="restaurant" size={40} color={Colors.accent} />
+        {/* Cover Image */}
+        <TouchableOpacity
+          style={styles.coverSection}
+          onPress={() => pickAndUploadImage('cover')}
+          activeOpacity={0.8}
+          disabled={uploadingCover}
+        >
+          {restaurant?.coverImageUrl ? (
+            <Image source={{ uri: restaurant.coverImageUrl }} style={styles.coverImage} />
+          ) : (
+            <View style={styles.coverPlaceholder}>
+              <Ionicons name="image-outline" size={32} color={Colors.gray400} />
+              <Text style={styles.coverPlaceholderText}>Tap to add cover image</Text>
+            </View>
+          )}
+          {uploadingCover && (
+            <View style={styles.coverOverlay}>
+              <ActivityIndicator color={Colors.white} size="small" />
+            </View>
+          )}
+          <View style={styles.coverEditBadge}>
+            <Ionicons name="camera" size={14} color={Colors.white} />
           </View>
+        </TouchableOpacity>
+
+        {/* Logo / Avatar */}
+        <View style={styles.avatarSection}>
+          <TouchableOpacity
+            style={styles.avatarWrapper}
+            onPress={() => pickAndUploadImage('logo')}
+            activeOpacity={0.8}
+            disabled={uploadingLogo}
+          >
+            {restaurant?.logoUrl ? (
+              <Image source={{ uri: restaurant.logoUrl }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatar}>
+                <Ionicons name="restaurant" size={40} color={Colors.accent} />
+              </View>
+            )}
+            {uploadingLogo && (
+              <View style={styles.avatarOverlay}>
+                <ActivityIndicator color={Colors.white} size="small" />
+              </View>
+            )}
+            <View style={styles.avatarEditBadge}>
+              <Ionicons name="camera" size={12} color={Colors.white} />
+            </View>
+          </TouchableOpacity>
           <Text style={styles.restaurantName}>{restaurant?.name ?? ''}</Text>
         </View>
 
@@ -151,11 +227,35 @@ export default function RestaurantProfileScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   screen: { flex: 1, backgroundColor: Colors.gray50 },
-  content: { padding: Spacing.base, paddingBottom: 100 },
-  avatarSection: { alignItems: 'center', marginBottom: Spacing.xl },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.accentLight, justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.md },
-  restaurantName: { ...Typography.title2, color: Colors.black },
-  fieldsCard: { padding: 0, marginBottom: Spacing.xl },
+  content: { paddingBottom: 100 },
+
+  // Cover image
+  coverSection: { width: '100%', height: 180, backgroundColor: Colors.gray200, position: 'relative' },
+  coverImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  coverPlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  coverPlaceholderText: { ...Typography.caption1, color: Colors.gray400, marginTop: Spacing.xs },
+  coverOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  coverEditBadge: {
+    position: 'absolute', bottom: Spacing.sm, right: Spacing.sm,
+    width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+
+  // Logo / Avatar
+  avatarSection: { alignItems: 'center', marginTop: -40, marginBottom: Spacing.lg, paddingHorizontal: Spacing.base },
+  avatarWrapper: { position: 'relative' },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.accentLight, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: Colors.white },
+  avatarImage: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: Colors.white },
+  avatarOverlay: { ...StyleSheet.absoluteFillObject, borderRadius: 40, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  avatarEditBadge: {
+    position: 'absolute', bottom: 0, right: 0,
+    width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.accent,
+    justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: Colors.white,
+  },
+  restaurantName: { ...Typography.title2, color: Colors.black, marginTop: Spacing.sm },
+
+  // Fields
+  fieldsCard: { padding: 0, marginHorizontal: Spacing.base, marginBottom: Spacing.xl },
   fieldRow: { flexDirection: 'row', alignItems: 'flex-start', padding: Spacing.base, minHeight: 56 },
   fieldBorder: { borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
   fieldIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.accentLight, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md, marginTop: 2 },
@@ -163,7 +263,7 @@ const styles = StyleSheet.create({
   fieldLabel: { ...Typography.caption1, color: Colors.gray500, marginBottom: 4 },
   fieldInput: { ...Typography.body, color: Colors.black, padding: 0, margin: 0, minHeight: 24 },
   fieldInputMultiline: { minHeight: 60, textAlignVertical: 'top' },
-  saveButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.accent, borderRadius: BorderRadius.button, paddingVertical: Spacing.md, gap: Spacing.sm, minHeight: 48 },
+  saveButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.accent, borderRadius: BorderRadius.button, paddingVertical: Spacing.md, gap: Spacing.sm, minHeight: 48, marginHorizontal: Spacing.base },
   saveButtonDisabled: { opacity: 0.5 },
   saveButtonText: { ...Typography.headline, color: Colors.white },
 });

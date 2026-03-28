@@ -24,6 +24,9 @@ export const ENDPOINTS = {
   menuItem: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}`,
   menuItemStock: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}/stock`,
   menuItemImage: (restaurantId: number, itemId: number) => `/api/v1/restaurants/${restaurantId}/menu/items/${itemId}/image`,
+  restaurantLogo: (restaurantId: number) => `/api/v1/restaurants/${restaurantId}/logo`,
+  restaurantCoverImage: (restaurantId: number) => `/api/v1/restaurants/${restaurantId}/cover-image`,
+  consumerProfilePicture: '/api/v1/consumers/profile/picture',
 
   // Orders
   restaurantOrders: (restaurantId: number) => `/api/v1/orders/restaurant/${restaurantId}`,

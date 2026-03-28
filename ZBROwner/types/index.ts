@@ -74,6 +74,9 @@ export interface Restaurant {
   averageRating: number;
   totalRatings: number;
   totalOrders: number;
+  logoUrl?: string;
+  coverImageUrl?: string;
+  profilePictureUrl?: string;
   createdAt: string;
 }
 
