@@ -20,6 +20,7 @@ export default {
     helpCenter: 'Help Center',
     about: 'About',
     notificationInbox: 'Notifications',
+    integration: 'Restaurant Integration',
   },
 
   // Common
@@ -313,6 +314,8 @@ export default {
     appVersion: 'ZBR Owner v1.0.0',
     myRestaurants: 'My Restaurants',
     language: 'Language',
+    integration: 'Restaurant Integration',
+    integrationSubtitle: 'Connect to Restos POS',
   },
 
   // Restaurant profile
@@ -478,6 +481,47 @@ export default {
     emailInvalid: 'Please enter a valid email address',
     passwordRequired: 'Password is required',
     loginFailed: 'Login failed. Please check your credentials.',
+  },
+
+  // Restaurant Integration (Restos)
+  integration: {
+    connectTitle: 'Connect Restaurant System',
+    connectSubtitle: 'Sync your menu from Restos POS',
+    baseUrlLabel: 'Restos Base URL',
+    externalIdLabel: 'Your Restaurant ID in Restos',
+    apiKeyLabel: 'API Key (optional)',
+    previewMenu: 'Preview Menu',
+    importMenu: 'Import Menu',
+    syncMenu: 'Sync Menu',
+    syncHelper: 'Pulls the latest prices, stock, and new items from Restos.',
+    maintenance: 'Maintenance',
+
+    previewTitle: 'Menu Preview',
+    previewSummary: '{{categories}} categories · {{products}} products',
+    emptyCategory: 'No products in this category',
+    confirmImport: 'Confirm Import',
+
+    resultTitle: 'Menu Imported Successfully',
+    categoriesCreated: 'categories created',
+    categoriesUpdated: 'categories updated',
+    productsCreated: 'products created',
+    productsUpdated: 'products updated',
+    productsSkipped: 'products skipped',
+    warnings: 'Warnings',
+    errorsLabel: 'Errors',
+    viewMyMenu: 'View My Menu',
+
+    pickRestaurantTitle: 'Select Restaurant',
+    pickRestaurantSubtitle: 'You have multiple restaurants. Choose which one to import the menu to.',
+
+    validationTitle: 'Missing Information',
+    errBaseUrlRequired: 'Please enter the Restos base URL.',
+    errExternalIdRequired: 'Please enter a valid Restaurant ID.',
+    errorTitle: 'Import Failed',
+    errNoRestaurant: 'Create your restaurant profile first.',
+    errUnreachable: 'Could not reach Restos. Check your URL.',
+    errForbidden: 'Only restaurant owners can import menus.',
+    errGeneric: 'Something went wrong. Please try again.',
   },
 
   forgotPassword: {

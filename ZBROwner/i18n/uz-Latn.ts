@@ -18,6 +18,7 @@ export default {
     helpCenter: 'Yordam markazi',
     about: 'Ilova haqida',
     notificationInbox: 'Bildirishnomalar',
+    integration: 'Restoran integratsiyasi',
   },
 
   common: {
@@ -299,6 +300,8 @@ export default {
     appVersion: 'ZBR Owner v1.0.0',
     myRestaurants: 'Mening restoranlarim',
     language: 'Til',
+    integration: 'Restoran integratsiyasi',
+    integrationSubtitle: 'Restos POS bilan ulanish',
   },
 
   profile: {
@@ -456,6 +459,46 @@ export default {
     emailInvalid: "To'g'ri elektron pochta manzilini kiriting",
     passwordRequired: 'Parol talab qilinadi',
     loginFailed: 'Kirish xatosi. Ma\'lumotlarni tekshiring.',
+  },
+
+  integration: {
+    connectTitle: 'Restoran tizimini ulash',
+    connectSubtitle: 'Menyuingizni Restos POS tizimidan sinxronlang',
+    baseUrlLabel: 'Restos asosiy URL',
+    externalIdLabel: 'Restos-dagi restoran ID raqami',
+    apiKeyLabel: 'API kalit (ixtiyoriy)',
+    previewMenu: 'Menyuni koʻrish',
+    importMenu: 'Import qilish',
+    syncMenu: 'Sinxronlash',
+    syncHelper: 'Restos-dan yangi narxlar, qoldiqlar va mahsulotlarni tortib oladi.',
+    maintenance: 'Texnik xizmat',
+
+    previewTitle: 'Menyu koʻrinishi',
+    previewSummary: '{{categories}} kategoriya · {{products}} mahsulot',
+    emptyCategory: 'Bu kategoriyada mahsulot yoʻq',
+    confirmImport: 'Importni tasdiqlash',
+
+    resultTitle: 'Menyu muvaffaqiyatli import qilindi',
+    categoriesCreated: 'kategoriya yaratildi',
+    categoriesUpdated: 'kategoriya yangilandi',
+    productsCreated: 'mahsulot yaratildi',
+    productsUpdated: 'mahsulot yangilandi',
+    productsSkipped: 'mahsulot oʻtkazib yuborildi',
+    warnings: 'Ogohlantirishlar',
+    errorsLabel: 'Xatoliklar',
+    viewMyMenu: 'Menyuni koʻrish',
+
+    pickRestaurantTitle: 'Restoranni tanlang',
+    pickRestaurantSubtitle: 'Sizda bir nechta restoran bor. Menyu qaysisiga import qilinsin?',
+
+    validationTitle: 'Maʼlumot yetishmayapti',
+    errBaseUrlRequired: 'Iltimos, Restos asosiy URL-ni kiriting.',
+    errExternalIdRequired: 'Iltimos, toʻgʻri restoran ID raqamini kiriting.',
+    errorTitle: 'Import muvaffaqiyatsiz',
+    errNoRestaurant: 'Avval restoran profilingizni yarating.',
+    errUnreachable: 'Restos bilan bogʻlanib boʻlmadi. URL-ni tekshiring.',
+    errForbidden: 'Faqat restoran egalari menyu import qila oladi.',
+    errGeneric: 'Xatolik yuz berdi. Qayta urinib koʻring.',
   },
 
   forgotPassword: {

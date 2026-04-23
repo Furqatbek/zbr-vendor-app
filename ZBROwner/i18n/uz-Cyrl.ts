@@ -18,6 +18,7 @@ export default {
     helpCenter: 'Ёрдам маркази',
     about: 'Илова ҳақида',
     notificationInbox: 'Билдиришномалар',
+    integration: 'Ресторан интеграцияси',
   },
 
   common: {
@@ -299,6 +300,8 @@ export default {
     appVersion: 'ZBR Owner v1.0.0',
     myRestaurants: 'Менинг ресторанларим',
     language: 'Тил',
+    integration: 'Ресторан интеграцияси',
+    integrationSubtitle: 'Restos POS билан уланиш',
   },
 
   profile: {
@@ -456,6 +459,46 @@ export default {
     emailInvalid: 'Тўғри электрон почта манзилини киритинг',
     passwordRequired: 'Парол талаб қилинади',
     loginFailed: 'Кириш хатоси. Маълумотларни текширинг.',
+  },
+
+  integration: {
+    connectTitle: 'Ресторан тизимини улаш',
+    connectSubtitle: 'Менюингизни Restos POS тизимидан синхронланг',
+    baseUrlLabel: 'Restos асосий URL',
+    externalIdLabel: 'Restos-даги ресторан ID рақами',
+    apiKeyLabel: 'API калит (ихтиёрий)',
+    previewMenu: 'Менюни кўриш',
+    importMenu: 'Импорт қилиш',
+    syncMenu: 'Синхронлаш',
+    syncHelper: 'Restos-дан янги нархлар, қолдиқлар ва маҳсулотларни тортиб олади.',
+    maintenance: 'Техник хизмат',
+
+    previewTitle: 'Меню кўриниши',
+    previewSummary: '{{categories}} категория · {{products}} маҳсулот',
+    emptyCategory: 'Бу категорияда маҳсулот йўқ',
+    confirmImport: 'Импортни тасдиқлаш',
+
+    resultTitle: 'Меню муваффақиятли импорт қилинди',
+    categoriesCreated: 'категория яратилди',
+    categoriesUpdated: 'категория янгиланди',
+    productsCreated: 'маҳсулот яратилди',
+    productsUpdated: 'маҳсулот янгиланди',
+    productsSkipped: 'маҳсулот ўтказиб юборилди',
+    warnings: 'Огоҳлантиришлар',
+    errorsLabel: 'Хатоликлар',
+    viewMyMenu: 'Менюни кўриш',
+
+    pickRestaurantTitle: 'Ресторанни танланг',
+    pickRestaurantSubtitle: 'Сизда бир нечта ресторан бор. Меню қайсисига импорт қилинсин?',
+
+    validationTitle: 'Маълумот етишмаяпти',
+    errBaseUrlRequired: 'Илтимос, Restos асосий URL-ни киритинг.',
+    errExternalIdRequired: 'Илтимос, тўғри ресторан ID рақамини киритинг.',
+    errorTitle: 'Импорт муваффақиятсиз',
+    errNoRestaurant: 'Аввал ресторан профилингизни яратинг.',
+    errUnreachable: 'Restos билан боғланиб бўлмади. URL-ни текширинг.',
+    errForbidden: 'Фақат ресторан эгалари меню импорт қила олади.',
+    errGeneric: 'Хатолик юз берди. Қайта уриниб кўринг.',
   },
 
   forgotPassword: {

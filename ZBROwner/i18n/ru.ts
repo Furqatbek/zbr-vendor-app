@@ -18,6 +18,7 @@ export default {
     helpCenter: 'Центр помощи',
     about: 'О приложении',
     notificationInbox: 'Уведомления',
+    integration: 'Интеграция ресторана',
   },
 
   common: {
@@ -299,6 +300,8 @@ export default {
     appVersion: 'ZBR Owner v1.0.0',
     myRestaurants: 'Мои рестораны',
     language: 'Язык',
+    integration: 'Интеграция ресторана',
+    integrationSubtitle: 'Подключиться к Restos POS',
   },
 
   profile: {
@@ -456,6 +459,46 @@ export default {
     emailInvalid: 'Введите корректный адрес эл. почты',
     passwordRequired: 'Укажите пароль',
     loginFailed: 'Ошибка входа. Проверьте данные.',
+  },
+
+  integration: {
+    connectTitle: 'Подключить систему ресторана',
+    connectSubtitle: 'Синхронизируйте меню с Restos POS',
+    baseUrlLabel: 'Базовый URL Restos',
+    externalIdLabel: 'ID вашего ресторана в Restos',
+    apiKeyLabel: 'API-ключ (необязательно)',
+    previewMenu: 'Просмотр меню',
+    importMenu: 'Импортировать',
+    syncMenu: 'Синхронизировать',
+    syncHelper: 'Подтянет актуальные цены, остатки и новые позиции из Restos.',
+    maintenance: 'Обслуживание',
+
+    previewTitle: 'Предпросмотр меню',
+    previewSummary: '{{categories}} категорий · {{products}} товаров',
+    emptyCategory: 'В этой категории нет товаров',
+    confirmImport: 'Подтвердить импорт',
+
+    resultTitle: 'Меню успешно импортировано',
+    categoriesCreated: 'категорий создано',
+    categoriesUpdated: 'категорий обновлено',
+    productsCreated: 'товаров создано',
+    productsUpdated: 'товаров обновлено',
+    productsSkipped: 'товаров пропущено',
+    warnings: 'Предупреждения',
+    errorsLabel: 'Ошибки',
+    viewMyMenu: 'Открыть меню',
+
+    pickRestaurantTitle: 'Выберите ресторан',
+    pickRestaurantSubtitle: 'У вас несколько ресторанов. Выберите, в какой импортировать меню.',
+
+    validationTitle: 'Не хватает данных',
+    errBaseUrlRequired: 'Пожалуйста, введите базовый URL Restos.',
+    errExternalIdRequired: 'Пожалуйста, введите корректный ID ресторана.',
+    errorTitle: 'Импорт не выполнен',
+    errNoRestaurant: 'Сначала создайте профиль ресторана.',
+    errUnreachable: 'Не удалось подключиться к Restos. Проверьте URL.',
+    errForbidden: 'Только владельцы ресторанов могут импортировать меню.',
+    errGeneric: 'Что-то пошло не так. Попробуйте ещё раз.',
   },
 
   forgotPassword: {

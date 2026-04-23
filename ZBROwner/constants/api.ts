@@ -28,6 +28,10 @@ export const ENDPOINTS = {
   restaurantCoverImage: (restaurantId: number) => `/api/v1/restaurants/${restaurantId}/cover-image`,
   consumerProfilePicture: '/api/v1/consumers/profile/picture',
 
+  // Restos integration
+  restosPreviewMenu: '/api/v1/restos/preview-menu',
+  restosImportMenu: '/api/v1/restos/import-menu',
+
   // Orders
   restaurantOrders: (restaurantId: number) => `/api/v1/orders/restaurant/${restaurantId}`,
   restaurantActiveOrders: (restaurantId: number) => `/api/v1/orders/restaurant/${restaurantId}/active`,

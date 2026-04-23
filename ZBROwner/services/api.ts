@@ -1,5 +1,5 @@
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
-import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, RestaurantOrdersResponse, RawApiOrder, CancelOrderRequest, Order, OrderItem, OrderStatus, PayoutsResponse, FinancialReportResponse } from '../types';
+import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, RestaurantOrdersResponse, RawApiOrder, CancelOrderRequest, Order, OrderItem, OrderStatus, PayoutsResponse, FinancialReportResponse, RestosPreviewRequest, RestosPreviewResponse, RestosImportRequest, RestosImportResponse } from '../types';
 
 let getAccessToken: () => string | null = () => null;
 let getRefreshToken: () => string | null = () => null;
@@ -500,5 +500,21 @@ export function fetchFinancialReport(
 export function deleteMenuItemImage(restaurantId: number, itemId: number): Promise<ApiResponse> {
   return apiFetch<ApiResponse>(ENDPOINTS.menuItemImage(restaurantId, itemId), {
     method: 'DELETE',
+  });
+}
+
+// ── Restos Integration API ──
+
+export function previewRestosMenu(data: RestosPreviewRequest): Promise<RestosPreviewResponse> {
+  return apiFetch<RestosPreviewResponse>(ENDPOINTS.restosPreviewMenu, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function importRestosMenu(data: RestosImportRequest): Promise<RestosImportResponse> {
+  return apiFetch<RestosImportResponse>(ENDPOINTS.restosImportMenu, {
+    method: 'POST',
+    body: JSON.stringify(data),
   });
 }

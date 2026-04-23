@@ -573,3 +573,58 @@ export interface ContactCard {
   phone?: string;
   imageUrl?: string;
 }
+
+// Restos integration
+export interface RestosPreviewRequest {
+  baseUrl: string;
+  externalRestaurantId: number;
+  apiKey?: string;
+}
+
+export interface RestosImportRequest {
+  baseUrl: string;
+  externalRestaurantId: number;
+  apiKey?: string;
+  localRestaurantId?: number;
+  overwriteExisting?: boolean;
+}
+
+export interface RestosPreviewProduct {
+  id?: string | number;
+  externalId?: string | number;
+  name: string;
+  description?: string;
+  price?: number;
+  imageUrl?: string;
+  inStock?: boolean;
+}
+
+export interface RestosPreviewCategory {
+  id?: string | number;
+  externalId?: string | number;
+  name: string;
+  description?: string;
+  products: RestosPreviewProduct[];
+}
+
+export interface RestosPreviewResponse {
+  success: boolean;
+  message?: string;
+  data: RestosPreviewCategory[];
+}
+
+export interface RestosImportResult {
+  categoriesCreated: number;
+  categoriesUpdated: number;
+  productsCreated: number;
+  productsUpdated: number;
+  productsSkipped: number;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface RestosImportResponse {
+  success: boolean;
+  message: string;
+  data: RestosImportResult;
+}
