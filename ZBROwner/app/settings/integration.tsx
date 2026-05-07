@@ -8,10 +8,12 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 import { useAuthStore } from '../../store/authStore';
-import { previewRestosMenu, importRestosMenu } from '../../services/api';
+import { previewRestosMenu, importRestosMenu, fetchMenuCategories } from '../../services/api';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
 import type { RestosPreviewCategory, RestosImportResult } from '../../types';
+
+const normalizeName = (s: string | undefined | null) => (s ?? '').trim().toLowerCase();
 
 const STORAGE_KEY = 'restos_integration_config';
 
@@ -58,6 +60,8 @@ export default function RestaurantIntegrationScreen() {
 
   const [preview, setPreview] = useState<RestosPreviewCategory[] | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [existingProductNames, setExistingProductNames] = useState<Set<string>>(new Set());
+  const [existingCategoryNames, setExistingCategoryNames] = useState<Set<string>>(new Set());
 
   const [importResult, setImportResult] = useState<RestosImportResult | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -134,11 +138,42 @@ export default function RestaurantIntegrationScreen() {
     }
   };
 
+  const loadExistingMenu = async () => {
+    const targetId = localRestaurantId ?? restaurant?.id;
+    if (!targetId) {
+      setExistingProductNames(new Set());
+      setExistingCategoryNames(new Set());
+      return;
+    }
+    try {
+      const res = await fetchMenuCategories(targetId);
+      const cats = res.data ?? [];
+      const productNames = new Set<string>();
+      const categoryNames = new Set<string>();
+      for (const c of cats) {
+        const cn = normalizeName(c.name);
+        if (cn) categoryNames.add(cn);
+        for (const it of c.items ?? []) {
+          const pn = normalizeName(it.name);
+          if (pn) productNames.add(pn);
+        }
+      }
+      setExistingProductNames(productNames);
+      setExistingCategoryNames(categoryNames);
+    } catch {
+      setExistingProductNames(new Set());
+      setExistingCategoryNames(new Set());
+    }
+  };
+
   const handlePreview = async () => {
     if (!validateInputs()) return;
     setLoadingPreview(true);
     try {
-      const res = await previewRestosMenu(buildRequestBase());
+      const [res] = await Promise.all([
+        previewRestosMenu(buildRequestBase()),
+        loadExistingMenu(),
+      ]);
       setPreview(res.data ?? []);
       setShowPreview(true);
       persistConfig(hasImported);
@@ -151,6 +186,10 @@ export default function RestaurantIntegrationScreen() {
 
   const runImport = async (overwrite: boolean) => {
     if (!validateInputs()) return;
+    if (showPreview && totalProducts > 0 && newProducts === 0 && !overwrite) {
+      Alert.alert(t('integration.errorTitle'), t('integration.errAllDuplicates'));
+      return;
+    }
     setLoadingImport(true);
     try {
       const res = await importRestosMenu({
@@ -163,6 +202,7 @@ export default function RestaurantIntegrationScreen() {
       setShowPreview(false);
       setHasImported(true);
       persistConfig(true);
+      loadExistingMenu();
     } catch (err) {
       handleApiError(err);
     } finally {
@@ -174,6 +214,11 @@ export default function RestaurantIntegrationScreen() {
   const handleSync = () => runImport(true);
 
   const totalProducts = preview?.reduce((sum, c) => sum + (c.products?.length ?? 0), 0) ?? 0;
+  const duplicateProducts = preview?.reduce(
+    (sum, c) => sum + (c.products ?? []).filter((p) => existingProductNames.has(normalizeName(p.name))).length,
+    0,
+  ) ?? 0;
+  const newProducts = totalProducts - duplicateProducts;
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -307,33 +352,63 @@ export default function RestaurantIntegrationScreen() {
             <Text style={styles.previewSummaryText}>
               {t('integration.previewSummary', { categories: preview?.length ?? 0, products: totalProducts })}
             </Text>
+            {duplicateProducts > 0 && (
+              <Text style={styles.previewDuplicateText}>
+                {t('integration.previewDuplicateSummary', { duplicates: duplicateProducts, newCount: newProducts })}
+              </Text>
+            )}
           </View>
 
           <ScrollView style={styles.flex} contentContainerStyle={styles.modalBody}>
-            {(preview ?? []).map((cat, ci) => (
-              <Card key={`cat-${ci}`} style={styles.previewCategoryCard}>
-                <Text style={styles.previewCategoryName}>{cat.name}</Text>
-                {cat.description ? (
-                  <Text style={styles.previewCategoryDesc}>{cat.description}</Text>
-                ) : null}
-                {(cat.products ?? []).map((p, pi) => (
-                  <View key={`p-${ci}-${pi}`} style={[styles.previewProductRow, pi > 0 && styles.productBorder]}>
-                    <View style={styles.flex}>
-                      <Text style={styles.previewProductName}>{p.name}</Text>
-                      {p.description ? <Text style={styles.previewProductDesc} numberOfLines={2}>{p.description}</Text> : null}
-                    </View>
-                    {typeof p.price === 'number' && (
-                      <Text style={styles.previewProductPrice}>
-                        {t('common.currency', { amount: p.price.toFixed(2) })}
-                      </Text>
+            {(preview ?? []).map((cat, ci) => {
+              const categoryExists = existingCategoryNames.has(normalizeName(cat.name));
+              return (
+                <Card key={`cat-${ci}`} style={styles.previewCategoryCard}>
+                  <View style={styles.previewCategoryHeader}>
+                    <Text style={styles.previewCategoryName}>{cat.name}</Text>
+                    {categoryExists && (
+                      <View style={styles.duplicateBadge}>
+                        <Text style={styles.duplicateBadgeText}>{t('integration.alreadyImported')}</Text>
+                      </View>
                     )}
                   </View>
-                ))}
-                {(cat.products?.length ?? 0) === 0 && (
-                  <Text style={styles.previewEmpty}>{t('integration.emptyCategory')}</Text>
-                )}
-              </Card>
-            ))}
+                  {cat.description ? (
+                    <Text style={styles.previewCategoryDesc}>{cat.description}</Text>
+                  ) : null}
+                  {(cat.products ?? []).map((p, pi) => {
+                    const productExists = existingProductNames.has(normalizeName(p.name));
+                    return (
+                      <View
+                        key={`p-${ci}-${pi}`}
+                        style={[
+                          styles.previewProductRow,
+                          pi > 0 && styles.productBorder,
+                          productExists && styles.previewProductRowDuplicate,
+                        ]}
+                      >
+                        <View style={styles.flex}>
+                          <Text style={[styles.previewProductName, productExists && styles.previewProductNameDuplicate]}>
+                            {p.name}
+                          </Text>
+                          {productExists && (
+                            <Text style={styles.duplicateInlineLabel}>{t('integration.alreadyImported')}</Text>
+                          )}
+                          {p.description ? <Text style={styles.previewProductDesc} numberOfLines={2}>{p.description}</Text> : null}
+                        </View>
+                        {typeof p.price === 'number' && (
+                          <Text style={styles.previewProductPrice}>
+                            {t('common.currency', { amount: p.price.toFixed(2) })}
+                          </Text>
+                        )}
+                      </View>
+                    );
+                  })}
+                  {(cat.products?.length ?? 0) === 0 && (
+                    <Text style={styles.previewEmpty}>{t('integration.emptyCategory')}</Text>
+                  )}
+                </Card>
+              );
+            })}
           </ScrollView>
 
           <View style={styles.modalFooter}>
@@ -515,9 +590,16 @@ const styles = StyleSheet.create({
 
   previewSummary: { padding: Spacing.base, backgroundColor: Colors.accentLight },
   previewSummaryText: { ...Typography.subhead, color: Colors.accent, textAlign: 'center' },
+  previewDuplicateText: { ...Typography.caption1, color: Colors.warning, textAlign: 'center', marginTop: 4 },
 
   previewCategoryCard: { marginBottom: Spacing.md, padding: Spacing.base },
-  previewCategoryName: { ...Typography.headline, color: Colors.black, marginBottom: 4 },
+  previewCategoryHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: 4 },
+  previewCategoryName: { ...Typography.headline, color: Colors.black, flex: 1 },
+  duplicateBadge: { backgroundColor: Colors.warningLight, paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: BorderRadius.chip },
+  duplicateBadgeText: { ...Typography.caption2, color: Colors.warning, fontWeight: '600' as const },
+  duplicateInlineLabel: { ...Typography.caption2, color: Colors.warning, marginTop: 2, fontWeight: '600' as const },
+  previewProductRowDuplicate: { opacity: 0.55 },
+  previewProductNameDuplicate: { textDecorationLine: 'line-through' },
   previewCategoryDesc: { ...Typography.caption1, color: Colors.gray500, marginBottom: Spacing.sm },
   previewProductRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.sm, gap: Spacing.sm },
   productBorder: { borderTopWidth: 1, borderTopColor: Colors.gray100 },

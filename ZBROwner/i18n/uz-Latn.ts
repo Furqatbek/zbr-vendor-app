@@ -475,8 +475,11 @@ export default {
 
     previewTitle: 'Menyu koʻrinishi',
     previewSummary: '{{categories}} kategoriya · {{products}} mahsulot',
+    previewDuplicateSummary: '{{duplicates}} ta menyuda mavjud · {{newCount}} ta yangi import qilinadi',
+    alreadyImported: 'Allaqachon import qilingan',
     emptyCategory: 'Bu kategoriyada mahsulot yoʻq',
     confirmImport: 'Importni tasdiqlash',
+    errAllDuplicates: 'Koʻrinishdagi barcha mahsulotlar menyuda allaqachon mavjud. Yangilash uchun «Sinxronizatsiya» dan foydalaning.',
 
     resultTitle: 'Menyu muvaffaqiyatli import qilindi',
     categoriesCreated: 'kategoriya yaratildi',

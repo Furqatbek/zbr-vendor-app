@@ -498,8 +498,11 @@ export default {
 
     previewTitle: 'Menu Preview',
     previewSummary: '{{categories}} categories · {{products}} products',
+    previewDuplicateSummary: '{{duplicates}} already in your menu · {{newCount}} new will be imported',
+    alreadyImported: 'Already imported',
     emptyCategory: 'No products in this category',
     confirmImport: 'Confirm Import',
+    errAllDuplicates: 'All items in the preview already exist in your menu. Use Sync to update them.',
 
     resultTitle: 'Menu Imported Successfully',
     categoriesCreated: 'categories created',

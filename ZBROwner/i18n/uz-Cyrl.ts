@@ -475,8 +475,11 @@ export default {
 
     previewTitle: 'Меню кўриниши',
     previewSummary: '{{categories}} категория · {{products}} маҳсулот',
+    previewDuplicateSummary: '{{duplicates}} та менюда мавжуд · {{newCount}} та янги импорт қилинади',
+    alreadyImported: 'Аллақачон импорт қилинган',
     emptyCategory: 'Бу категорияда маҳсулот йўқ',
     confirmImport: 'Импортни тасдиқлаш',
+    errAllDuplicates: 'Кўринишдаги барча маҳсулотлар менюда аллақачон мавжуд. Янгилаш учун «Синхронизация» дан фойдаланинг.',
 
     resultTitle: 'Меню муваффақиятли импорт қилинди',
     categoriesCreated: 'категория яратилди',

@@ -475,8 +475,11 @@ export default {
 
     previewTitle: 'Предпросмотр меню',
     previewSummary: '{{categories}} категорий · {{products}} товаров',
+    previewDuplicateSummary: '{{duplicates}} уже в вашем меню · {{newCount}} новых будет импортировано',
+    alreadyImported: 'Уже импортировано',
     emptyCategory: 'В этой категории нет товаров',
     confirmImport: 'Подтвердить импорт',
+    errAllDuplicates: 'Все товары из предпросмотра уже есть в вашем меню. Используйте «Синхронизировать», чтобы их обновить.',
 
     resultTitle: 'Меню успешно импортировано',
     categoriesCreated: 'категорий создано',
