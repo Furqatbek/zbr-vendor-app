@@ -18,7 +18,7 @@ function NotificationBell() {
   // Fetch once on mount
   useEffect(() => {
     if (!user) return;
-    fetchUnreadCount(user.id)
+    fetchUnreadCount(user.id, 'RESTAURANT')
       .then((res) => setUnreadNotifCount(res.unreadCount))
       .catch(() => {});
   }, [user]);

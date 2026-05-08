@@ -63,6 +63,7 @@ export default function NotificationsScreen() {
     try {
       const pageNum = reset ? 0 : page;
       const res = await fetchMyNotifications({
+        role: 'RESTAURANT',
         category: filter === 'all' ? undefined : filter as NotificationCategory,
         page: pageNum,
         pageSize: 20,
@@ -102,7 +103,7 @@ export default function NotificationsScreen() {
   const refreshUnreadCount = async () => {
     if (!user) return;
     try {
-      const res = await fetchUnreadCount(user.id);
+      const res = await fetchUnreadCount(user.id, 'RESTAURANT');
       setUnreadCount(res.unreadCount);
     } catch { /* ignore */ }
   };

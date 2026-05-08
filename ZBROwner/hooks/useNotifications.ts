@@ -121,19 +121,22 @@ export function useNotifications() {
       const store = useStore.getState();
       switch (message.type) {
         case 'new_order': {
-          // Refresh the orders list first so we have the new order data
-          await store.loadOrders();
+          // The restaurant orders topic now also carries status changes
+          // (accept/ready/cancelled/etc). Only treat status === 'created'
+          // as an actual new order so we don't fire the alarm on a cancel.
           const payload = message.payload as Record<string, any> | undefined;
+          const rawStatus: unknown = payload?.status ?? payload?.order?.status;
+          const status = typeof rawStatus === 'string' ? rawStatus.toLowerCase() : undefined;
+          await store.loadOrders();
+          if (status && status !== 'created') break;
+
           const orderId = payload?.id ? String(payload.id) : payload?.orderId ? String(payload.orderId) : null;
-          // Find the new order in the refreshed list, or use the payload
           const newOrder = orderId
             ? useStore.getState().orders.find((o) => o.id === orderId)
             : useStore.getState().orders.find((o) => o.status === 'created');
           if (newOrder) {
-            // Full-screen alert with alarm sound
             useStore.getState().triggerOrderAlert(newOrder);
           }
-          // Also fire a local notification for when app is backgrounded/locked
           sendLocalNotification(
             'New Order',
             newOrder
