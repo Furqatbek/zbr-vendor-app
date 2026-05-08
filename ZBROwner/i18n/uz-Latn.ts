@@ -471,7 +471,9 @@ export default {
     longitude: 'Uzunlik',
     helper: '6 tagacha kasr raqamlaridan foydalaning. Koordinatalarni Google Maps yoki Yandex Xaritalardan nusxalashingiz mumkin.',
     detect: 'Mening joylashuvim',
-    showOnMap: 'Xaritada koʻrsatish',
+    pickOnMap: 'Xaritadan tanlash',
+    mapHint: 'Pinni bosing yoki suring',
+    mapUnsupportedWeb: 'Xaritadan tanlash faqat mobil ilovada ishlaydi. Vebda koordinatalarni qoʻlda kiriting.',
     save: 'Joylashuvni saqlash',
     savedTitle: 'Joylashuv yangilandi',
     savedMessage: 'Restoran koordinatalari saqlandi.',
@@ -484,7 +486,6 @@ export default {
     permissionTitle: 'Joylashuvga ruxsat',
     permissionDenied: 'Joriy koordinatalarni aniqlash uchun ZBR Owner joylashuvga ruxsat soʻraydi. Tizim sozlamalaridan yoqing.',
     detectFailed: 'Joylashuvni aniqlab boʻlmadi. Tashqarida qayta urinib koʻring yoki GPS ni tekshiring.',
-    openMapFailed: 'Xaritalar ilovasini ochib boʻlmadi.',
   },
 
   integration: {

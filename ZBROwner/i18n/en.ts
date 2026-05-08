@@ -494,7 +494,9 @@ export default {
     longitude: 'Longitude',
     helper: 'Use up to 6 decimal places. You can copy coordinates from Google Maps or Yandex Maps.',
     detect: 'Use My Location',
-    showOnMap: 'Show on Map',
+    pickOnMap: 'Pick on Map',
+    mapHint: 'Tap or drag the pin',
+    mapUnsupportedWeb: 'The map picker is only available on the mobile app. Type coordinates here on web.',
     save: 'Save Location',
     savedTitle: 'Location Updated',
     savedMessage: 'Your restaurant coordinates were saved.',
@@ -507,7 +509,6 @@ export default {
     permissionTitle: 'Location Permission',
     permissionDenied: 'ZBR Owner needs location access to detect your current coordinates. Enable it in system settings.',
     detectFailed: 'Could not get your location. Please try again outdoors or check your GPS.',
-    openMapFailed: 'Could not open the maps app.',
   },
 
   integration: {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView,
-  Platform, ActivityIndicator, Alert, Linking,
+  Platform, ActivityIndicator, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -9,6 +9,7 @@ import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme
 import { useAuthStore } from '../../store/authStore';
 import { updateRestaurant } from '../../services/api';
 import Card from '../../components/Card';
+import MapPicker from '../../components/MapPicker';
 import { useT } from '../../i18n';
 
 const formatCoord = (n: number | undefined | null): string =>
@@ -41,6 +42,7 @@ export default function RestaurantLocationScreen() {
   const [saving, setSaving] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [edited, setEdited] = useState(false);
+  const [pickerVisible, setPickerVisible] = useState(false);
 
   useEffect(() => {
     if (restaurant) {
@@ -84,34 +86,19 @@ export default function RestaurantLocationScreen() {
     }
   };
 
-  const handleShowOnMap = async () => {
-    const v = validateCoords(parseCoord(latitude), parseCoord(longitude));
-    if (!v.ok) {
-      Alert.alert(t('location.invalidTitle'), t(v.messageKey as any));
+  const handlePickOnMap = () => {
+    if (Platform.OS === 'web') {
+      Alert.alert(t('location.errorTitle'), t('location.mapUnsupportedWeb'));
       return;
     }
-    const label = encodeURIComponent(restaurant?.name ?? 'Restaurant');
-    const coords = `${v.lat},${v.lng}`;
+    setPickerVisible(true);
+  };
 
-    const nativeUrl = Platform.select({
-      ios: `maps:?q=${label}&ll=${coords}`,
-      android: `geo:${coords}?q=${coords}(${label})`,
-      default: '',
-    });
-    const webUrl = `https://www.google.com/maps/search/?api=1&query=${coords}`;
-
-    try {
-      if (nativeUrl) {
-        const supported = await Linking.canOpenURL(nativeUrl);
-        if (supported) {
-          await Linking.openURL(nativeUrl);
-          return;
-        }
-      }
-      await Linking.openURL(webUrl);
-    } catch {
-      Alert.alert(t('location.errorTitle'), t('location.openMapFailed'));
-    }
+  const handleMapConfirm = (coords: { lat: number; lng: number }) => {
+    setLatitude(String(coords.lat));
+    setLongitude(String(coords.lng));
+    setEdited(true);
+    setPickerVisible(false);
   };
 
   const handleSave = async () => {
@@ -199,11 +186,11 @@ export default function RestaurantLocationScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.secondaryButton]}
-            onPress={handleShowOnMap}
+            onPress={handlePickOnMap}
             activeOpacity={0.8}
           >
             <Ionicons name="map-outline" size={18} color={Colors.accent} />
-            <Text style={styles.secondaryButtonText}>{t('location.showOnMap')}</Text>
+            <Text style={styles.secondaryButtonText}>{t('location.pickOnMap')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -225,6 +212,14 @@ export default function RestaurantLocationScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      <MapPicker
+        visible={pickerVisible}
+        initialLat={parseCoord(latitude)}
+        initialLng={parseCoord(longitude)}
+        onConfirm={handleMapConfirm}
+        onClose={() => setPickerVisible(false)}
+      />
     </KeyboardAvoidingView>
   );
 }
