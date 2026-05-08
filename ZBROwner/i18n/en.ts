@@ -493,6 +493,8 @@ export default {
     latitude: 'Latitude',
     longitude: 'Longitude',
     helper: 'Use up to 6 decimal places. You can copy coordinates from Google Maps or Yandex Maps.',
+    detect: 'Use My Location',
+    showOnMap: 'Show on Map',
     save: 'Save Location',
     savedTitle: 'Location Updated',
     savedMessage: 'Your restaurant coordinates were saved.',
@@ -502,6 +504,10 @@ export default {
     invalidNumeric: 'Latitude and longitude must be numbers.',
     invalidLatRange: 'Latitude must be between -90 and 90.',
     invalidLngRange: 'Longitude must be between -180 and 180.',
+    permissionTitle: 'Location Permission',
+    permissionDenied: 'ZBR Owner needs location access to detect your current coordinates. Enable it in system settings.',
+    detectFailed: 'Could not get your location. Please try again outdoors or check your GPS.',
+    openMapFailed: 'Could not open the maps app.',
   },
 
   integration: {

@@ -40,6 +40,12 @@
           "defaultChannel": "orders"
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow ZBR Owner to use your location to set the restaurant's coordinates."
+        }
+      ],
       "@react-native-community/datetimepicker"
     ]
   }
