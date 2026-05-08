@@ -12,6 +12,7 @@ export default {
   screenTitles: {
     orderDetail: 'Order Detail',
     restaurantProfile: 'Restaurant Profile',
+    restaurantLocation: 'Restaurant Location',
     paymentSettings: 'Payment Settings',
     notifications: 'Notifications',
     staffAccounts: 'Staff Accounts',
@@ -298,6 +299,8 @@ export default {
     staffOnline: 'Staff Online',
     settingsManagement: 'Settings & Management',
     restaurantProfile: 'Restaurant Profile',
+    restaurantLocation: 'Restaurant Location',
+    restaurantLocationSubtitle: 'Update map coordinates',
     paymentSettings: 'Payment Settings',
     balancePayouts: 'Balance & payouts',
     notificationPrefs: 'Notification Preferences',
@@ -484,6 +487,23 @@ export default {
   },
 
   // Restaurant Integration (Restos)
+  location: {
+    title: 'Fixed Location',
+    subtitle: 'These coordinates are used to place your restaurant on the map.',
+    latitude: 'Latitude',
+    longitude: 'Longitude',
+    helper: 'Use up to 6 decimal places. You can copy coordinates from Google Maps or Yandex Maps.',
+    save: 'Save Location',
+    savedTitle: 'Location Updated',
+    savedMessage: 'Your restaurant coordinates were saved.',
+    errorTitle: 'Save Failed',
+    errorGeneric: 'Could not save the location. Please try again.',
+    invalidTitle: 'Invalid Coordinates',
+    invalidNumeric: 'Latitude and longitude must be numbers.',
+    invalidLatRange: 'Latitude must be between -90 and 90.',
+    invalidLngRange: 'Longitude must be between -180 and 180.',
+  },
+
   integration: {
     connectTitle: 'Connect Restaurant System',
     connectSubtitle: 'Sync your menu from Restos POS',

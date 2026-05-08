@@ -10,6 +10,7 @@ export default {
   screenTitles: {
     orderDetail: 'Детали заказа',
     restaurantProfile: 'Профиль ресторана',
+    restaurantLocation: 'Местоположение ресторана',
     paymentSettings: 'Настройки оплаты',
     notifications: 'Уведомления',
     staffAccounts: 'Сотрудники',
@@ -284,6 +285,8 @@ export default {
     staffOnline: 'Сотрудники онлайн',
     settingsManagement: 'Настройки и управление',
     restaurantProfile: 'Профиль ресторана',
+    restaurantLocation: 'Местоположение ресторана',
+    restaurantLocationSubtitle: 'Координаты на карте',
     paymentSettings: 'Настройки оплаты',
     balancePayouts: 'Баланс и выплаты',
     notificationPrefs: 'Настройки уведомлений',
@@ -459,6 +462,23 @@ export default {
     emailInvalid: 'Введите корректный адрес эл. почты',
     passwordRequired: 'Укажите пароль',
     loginFailed: 'Ошибка входа. Проверьте данные.',
+  },
+
+  location: {
+    title: 'Фиксированное местоположение',
+    subtitle: 'Эти координаты используются для отображения ресторана на карте.',
+    latitude: 'Широта',
+    longitude: 'Долгота',
+    helper: 'До 6 знаков после запятой. Координаты можно скопировать из Google Maps или Yandex Карт.',
+    save: 'Сохранить местоположение',
+    savedTitle: 'Местоположение обновлено',
+    savedMessage: 'Координаты ресторана сохранены.',
+    errorTitle: 'Не удалось сохранить',
+    errorGeneric: 'Не удалось сохранить местоположение. Попробуйте ещё раз.',
+    invalidTitle: 'Некорректные координаты',
+    invalidNumeric: 'Широта и долгота должны быть числами.',
+    invalidLatRange: 'Широта должна быть от -90 до 90.',
+    invalidLngRange: 'Долгота должна быть от -180 до 180.',
   },
 
   integration: {

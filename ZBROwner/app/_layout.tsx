@@ -115,6 +115,10 @@ function AppStack() {
         options={{ headerShown: true, title: t('screenTitles.restaurantProfile'), headerTintColor: Colors.accent }}
       />
       <Stack.Screen
+        name="settings/location"
+        options={{ headerShown: true, title: t('screenTitles.restaurantLocation'), headerTintColor: Colors.accent }}
+      />
+      <Stack.Screen
         name="settings/integration"
         options={{ headerShown: true, title: t('screenTitles.integration'), headerTintColor: Colors.accent }}
       />

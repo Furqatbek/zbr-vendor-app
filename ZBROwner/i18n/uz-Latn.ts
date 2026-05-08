@@ -10,6 +10,7 @@ export default {
   screenTitles: {
     orderDetail: 'Buyurtma tafsilotlari',
     restaurantProfile: 'Restoran profili',
+    restaurantLocation: 'Restoran joylashuvi',
     paymentSettings: 'To\'lov sozlamalari',
     notifications: 'Bildirishnomalar',
     staffAccounts: 'Xodimlar',
@@ -284,6 +285,8 @@ export default {
     staffOnline: 'Xodimlar onlayn',
     settingsManagement: 'Sozlamalar va boshqaruv',
     restaurantProfile: 'Restoran profili',
+    restaurantLocation: 'Restoran joylashuvi',
+    restaurantLocationSubtitle: 'Xarita koordinatalari',
     paymentSettings: 'To\'lov sozlamalari',
     balancePayouts: 'Balans va to\'lovlar',
     notificationPrefs: 'Bildirishnoma sozlamalari',
@@ -459,6 +462,23 @@ export default {
     emailInvalid: "To'g'ri elektron pochta manzilini kiriting",
     passwordRequired: 'Parol talab qilinadi',
     loginFailed: 'Kirish xatosi. Ma\'lumotlarni tekshiring.',
+  },
+
+  location: {
+    title: 'Belgilangan joylashuv',
+    subtitle: 'Bu koordinatalar restoraningizni xaritada koʻrsatish uchun ishlatiladi.',
+    latitude: 'Kenglik',
+    longitude: 'Uzunlik',
+    helper: '6 tagacha kasr raqamlaridan foydalaning. Koordinatalarni Google Maps yoki Yandex Xaritalardan nusxalashingiz mumkin.',
+    save: 'Joylashuvni saqlash',
+    savedTitle: 'Joylashuv yangilandi',
+    savedMessage: 'Restoran koordinatalari saqlandi.',
+    errorTitle: 'Saqlab boʻlmadi',
+    errorGeneric: 'Joylashuvni saqlab boʻlmadi. Qaytadan urinib koʻring.',
+    invalidTitle: 'Notoʻgʻri koordinatalar',
+    invalidNumeric: 'Kenglik va uzunlik raqam boʻlishi kerak.',
+    invalidLatRange: 'Kenglik -90 va 90 oraligʻida boʻlishi kerak.',
+    invalidLngRange: 'Uzunlik -180 va 180 oraligʻida boʻlishi kerak.',
   },
 
   integration: {

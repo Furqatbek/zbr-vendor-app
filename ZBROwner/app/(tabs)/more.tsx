@@ -52,6 +52,7 @@ export default function MoreScreen() {
 
   const settingsItems: { icon: IoniconsName; label: string; route: string; subtitle: string }[] = [
     { icon: 'storefront-outline', label: t('more.restaurantProfile'), route: '/settings/profile', subtitle: restaurant?.addressLine1 ?? '' },
+    { icon: 'location-outline', label: t('more.restaurantLocation'), route: '/settings/location', subtitle: t('more.restaurantLocationSubtitle') },
     { icon: 'sync-outline', label: t('more.integration'), route: '/settings/integration', subtitle: t('more.integrationSubtitle') },
 // Card payment hidden – no online payment integration yet
     // { icon: 'card-outline', label: t('more.paymentSettings'), route: '/settings/payments', subtitle: t('more.balancePayouts') },

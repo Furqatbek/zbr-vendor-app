@@ -10,6 +10,7 @@ export default {
   screenTitles: {
     orderDetail: 'Буюртма тафсилотлари',
     restaurantProfile: 'Ресторан профили',
+    restaurantLocation: 'Ресторан жойлашуви',
     paymentSettings: 'Тўлов созламалари',
     notifications: 'Билдиришномалар',
     staffAccounts: 'Ходимлар',
@@ -284,6 +285,8 @@ export default {
     staffOnline: 'Ходимлар онлайн',
     settingsManagement: 'Созламалар ва бошқарув',
     restaurantProfile: 'Ресторан профили',
+    restaurantLocation: 'Ресторан жойлашуви',
+    restaurantLocationSubtitle: 'Харита координаталари',
     paymentSettings: 'Тўлов созламалари',
     balancePayouts: 'Баланс ва тўловлар',
     notificationPrefs: 'Билдиришнома созламалари',
@@ -459,6 +462,23 @@ export default {
     emailInvalid: 'Тўғри электрон почта манзилини киритинг',
     passwordRequired: 'Парол талаб қилинади',
     loginFailed: 'Кириш хатоси. Маълумотларни текширинг.',
+  },
+
+  location: {
+    title: 'Белгиланган жойлашув',
+    subtitle: 'Бу координаталар ресторанингизни харитада кўрсатиш учун ишлатилади.',
+    latitude: 'Кенглик',
+    longitude: 'Узунлик',
+    helper: '6 тагача каср рақамларидан фойдаланинг. Координаталарни Google Maps ёки Yandex Хариталардан нусха олиш мумкин.',
+    save: 'Жойлашувни сақлаш',
+    savedTitle: 'Жойлашув янгиланди',
+    savedMessage: 'Ресторан координаталари сақланди.',
+    errorTitle: 'Сақлаб бўлмади',
+    errorGeneric: 'Жойлашувни сақлаб бўлмади. Қайтадан уриниб кўринг.',
+    invalidTitle: 'Нотўғри координаталар',
+    invalidNumeric: 'Кенглик ва узунлик рақам бўлиши керак.',
+    invalidLatRange: 'Кенглик -90 ва 90 оралиғида бўлиши керак.',
+    invalidLngRange: 'Узунлик -180 ва 180 оралиғида бўлиши керак.',
   },
 
   integration: {
