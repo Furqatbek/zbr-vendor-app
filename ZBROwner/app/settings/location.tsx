@@ -87,10 +87,6 @@ export default function RestaurantLocationScreen() {
   };
 
   const handlePickOnMap = () => {
-    if (Platform.OS === 'web') {
-      Alert.alert(t('location.errorTitle'), t('location.mapUnsupportedWeb'));
-      return;
-    }
     setPickerVisible(true);
   };
 
