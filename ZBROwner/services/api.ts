@@ -157,6 +157,18 @@ export function toggleRestaurantOpen(restaurantId: number, isOpen: boolean): Pro
   });
 }
 
+export function updateRestaurantLocation(
+  restaurantId: number,
+  latitude: number,
+  longitude: number,
+): Promise<UpdateRestaurantResponse> {
+  const params = new URLSearchParams({ latitude: String(latitude), longitude: String(longitude) });
+  return apiFetch<UpdateRestaurantResponse>(
+    `${ENDPOINTS.restaurantLocation(restaurantId)}?${params}`,
+    { method: 'PATCH' },
+  );
+}
+
 // ── Orders API ──
 
 export function updateOrderStatus(orderId: string, data: UpdateOrderStatusRequest): Promise<OrderResponse> {

@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 import { useAuthStore } from '../../store/authStore';
-import { updateRestaurant } from '../../services/api';
+import { updateRestaurantLocation } from '../../services/api';
 import Card from '../../components/Card';
 import MapPicker from '../../components/MapPicker';
 import { useT } from '../../i18n';
@@ -108,28 +108,7 @@ export default function RestaurantLocationScreen() {
 
     setSaving(true);
     try {
-      await updateRestaurant(restaurant.id, {
-        name: restaurant.name,
-        description: restaurant.description,
-        phone: restaurant.phone,
-        email: restaurant.email,
-        addressLine1: restaurant.addressLine1,
-        city: restaurant.city,
-        state: restaurant.state,
-        postalCode: restaurant.postalCode,
-        country: restaurant.country,
-        acceptsDelivery: restaurant.acceptsDelivery,
-        acceptsTakeaway: restaurant.acceptsTakeaway,
-        acceptsDineIn: restaurant.acceptsDineIn,
-        minimumOrder: restaurant.minimumOrder,
-        deliveryFee: restaurant.deliveryFee,
-        deliveryRadiusKm: restaurant.deliveryRadiusKm,
-        averagePrepTimeMinutes: restaurant.averagePrepTimeMinutes,
-        opensAt: restaurant.opensAt,
-        closesAt: restaurant.closesAt,
-        latitude: v.lat,
-        longitude: v.lng,
-      });
+      await updateRestaurantLocation(restaurant.id, v.lat, v.lng);
       await loadRestaurants();
       setEdited(false);
       Alert.alert(t('location.savedTitle'), t('location.savedMessage'));

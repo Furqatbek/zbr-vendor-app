@@ -18,6 +18,7 @@ export const ENDPOINTS = {
   myRestaurants: '/api/v1/restaurants/my',
   restaurant: (id: number) => `/api/v1/restaurants/${id}`,
   restaurantToggleOpen: (id: number) => `/api/v1/restaurants/${id}/toggle-open`,
+  restaurantLocation: (id: number) => `/api/v1/restaurants/${id}/location`,
   menuCategories: (restaurantId: number) => `/api/v1/restaurants/${restaurantId}/menu/categories`,
   menuCategory: (restaurantId: number, categoryId: number) => `/api/v1/restaurants/${restaurantId}/menu/categories/${categoryId}`,
   menuItems: (restaurantId: number) => `/api/v1/restaurants/${restaurantId}/menu/items`,
