@@ -405,6 +405,30 @@ export interface RatingsResponse {
   periodEnd: string;
 }
 
+// Raw shape returned by GET /restaurants/{id}/reviews
+export interface ReviewDto {
+  id: number;
+  orderId?: number;
+  consumerId?: number;
+  consumerName?: string;
+  restaurantId: number;
+  courierId?: number;
+  restaurantRating?: number;
+  foodRating?: number;
+  courierRating?: number;
+  comment?: string;
+  tags?: string;
+  createdAt: string;
+}
+
+export interface ReviewsPageResponse {
+  content: ReviewDto[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
 // Notifications
 export type NotificationRole = 'CUSTOMER' | 'COURIER' | 'RESTAURANT' | 'ADMIN' | 'SUPPORT' | 'FINANCE' | 'OPERATIONS' | 'ALL';
 export type NotificationCategory = 'ORDER' | 'FINANCE' | 'SUPPORT' | 'SYSTEM' | 'PROMOTION' | 'ACCOUNT' | 'DELIVERY' | 'RESTAURANT_OPS' | 'ALERT';

@@ -50,6 +50,7 @@ export const ENDPOINTS = {
 
   // Analytics
   ratings: (restaurantId: number) => `/api/v1/analytics/cx/ratings/restaurant/${restaurantId}`,
+  restaurantReviews: (restaurantId: number) => `/api/v1/restaurants/${restaurantId}/reviews`,
   payouts: (restaurantId: number) => `/api/v1/analytics/financial/restaurants/${restaurantId}/payouts`,
   financialReport: (restaurantId: number) => `/api/v1/restaurants/${restaurantId}/financial-report`,
 

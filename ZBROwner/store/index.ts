@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Order, Review, RevenueData, OrderStatus, CourierRating, StaffMember, FinancialReportData } from '../types';
-import { fetchRatings, fetchRestaurantOrders, fetchActiveOrders, updateOrderStatus as apiUpdateOrderStatus, cancelOrder as apiCancelOrder, fetchFinancialReport } from '../services/api';
+import { fetchRatings, fetchRestaurantReviews, fetchRestaurantOrders, fetchActiveOrders, updateOrderStatus as apiUpdateOrderStatus, cancelOrder as apiCancelOrder, fetchFinancialReport } from '../services/api';
 import { useAuthStore } from './authStore';
 
 interface AppStore {
@@ -189,20 +189,40 @@ export const useStore = create<AppStore>((set, get) => ({
       const now = new Date();
       const startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString();
       const endDate = now.toISOString();
-      const res = await fetchRatings(restaurant.id, startDate, endDate, { includeDistribution: true });
-      // Compute average from distribution
-      const dist = res.distribution ?? {};
-      let totalWeighted = 0;
-      let totalCount = 0;
-      for (const [star, count] of Object.entries(dist)) {
-        totalWeighted += Number(star) * count;
-        totalCount += count;
+      const [ratingsRes, reviewsRes] = await Promise.all([
+        fetchRatings(restaurant.id, startDate, endDate, { includeDistribution: true }).catch(() => null),
+        fetchRestaurantReviews(restaurant.id, 0, 50).catch(() => null),
+      ]);
+
+      if (ratingsRes) {
+        const dist = ratingsRes.distribution ?? {};
+        let totalWeighted = 0;
+        let totalCount = 0;
+        for (const [star, count] of Object.entries(dist)) {
+          totalWeighted += Number(star) * count;
+          totalCount += count;
+        }
+        set({
+          averageRating: totalCount > 0 ? totalWeighted / totalCount : 0,
+          totalRatings: ratingsRes.ratingCount,
+          ratingDistribution: dist,
+        });
       }
-      set({
-        averageRating: totalCount > 0 ? totalWeighted / totalCount : 0,
-        totalRatings: res.ratingCount,
-        ratingDistribution: dist,
-      });
+
+      if (reviewsRes) {
+        const reviews: Review[] = (reviewsRes.content ?? []).map((dto) => ({
+          id: String(dto.id),
+          customerName: dto.consumerName ?? 'Anonymous',
+          rating: dto.restaurantRating ?? dto.foodRating ?? 0,
+          date: dto.createdAt,
+          comment: dto.comment ?? '',
+          orderItems: [],
+          platform: 'ZBR',
+          replied: false,
+          replyText: undefined,
+        }));
+        set({ reviews });
+      }
     } catch {
       // Non-fatal – keep existing data
     } finally {

@@ -1,5 +1,5 @@
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
-import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, RestaurantOrdersResponse, RawApiOrder, CancelOrderRequest, Order, OrderItem, OrderStatus, PayoutsResponse, FinancialReportResponse, RestosPreviewRequest, RestosPreviewResponse, RestosImportRequest, RestosImportResponse } from '../types';
+import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, ReviewsPageResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, RestaurantOrdersResponse, RawApiOrder, CancelOrderRequest, Order, OrderItem, OrderStatus, PayoutsResponse, FinancialReportResponse, RestosPreviewRequest, RestosPreviewResponse, RestosImportRequest, RestosImportResponse } from '../types';
 
 let getAccessToken: () => string | null = () => null;
 let getRefreshToken: () => string | null = () => null;
@@ -485,6 +485,15 @@ export function fetchRatings(
     includeTopRestaurants: String(options?.includeTopRestaurants ?? false),
   });
   return apiFetch<RatingsResponse>(ENDPOINTS.ratings(restaurantId) + `?${params}`);
+}
+
+export function fetchRestaurantReviews(
+  restaurantId: number,
+  page = 0,
+  size = 20,
+): Promise<ReviewsPageResponse> {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  return apiFetch<ReviewsPageResponse>(ENDPOINTS.restaurantReviews(restaurantId) + `?${params}`);
 }
 
 // ── Payouts API ──
