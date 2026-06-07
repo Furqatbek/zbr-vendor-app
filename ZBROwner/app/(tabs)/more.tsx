@@ -57,7 +57,6 @@ export default function MoreScreen() {
 // Card payment hidden – no online payment integration yet
     // { icon: 'card-outline', label: t('more.paymentSettings'), route: '/settings/payments', subtitle: t('more.balancePayouts') },
     { icon: 'notifications-outline', label: t('more.notificationPrefs'), route: '/settings/notifications', subtitle: t('more.manageAlerts') },
-    { icon: 'people-outline', label: t('more.staffAccounts'), route: '/settings/staff', subtitle: t('more.activeMembers', { count: stats.activeStaff }) },
     { icon: 'document-text-outline', label: t('more.orderHistory'), route: '/settings/order-history', subtitle: t('more.totalOrders', { count: orders.length }) },
     { icon: 'help-circle-outline', label: t('more.helpCenter'), route: '/settings/help', subtitle: t('more.faqSupport') },
     { icon: 'information-circle-outline', label: t('more.about'), route: '/settings/about', subtitle: 'v1.0.0' },
