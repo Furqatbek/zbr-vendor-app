@@ -194,35 +194,39 @@ export const useStore = create<AppStore>((set, get) => ({
         fetchRestaurantReviews(restaurant.id, 0, 50).catch(() => null),
       ]);
 
-      if (ratingsRes) {
-        const dist = ratingsRes.distribution ?? {};
-        let totalWeighted = 0;
-        let totalCount = 0;
-        for (const [star, count] of Object.entries(dist)) {
-          totalWeighted += Number(star) * count;
-          totalCount += count;
-        }
-        set({
-          averageRating: totalCount > 0 ? totalWeighted / totalCount : 0,
-          totalRatings: ratingsRes.ratingCount,
-          ratingDistribution: dist,
-        });
-      }
+      // The restaurant object (from /restaurants/my) is the source of truth
+      // for the headline average + total rating count.
+      set({
+        averageRating: restaurant.averageRating ?? 0,
+        totalRatings: restaurant.totalRatings ?? 0,
+      });
 
-      if (reviewsRes) {
-        const reviews: Review[] = (reviewsRes.content ?? []).map((dto) => ({
-          id: String(dto.id),
-          customerName: dto.consumerName ?? 'Anonymous',
-          rating: dto.restaurantRating ?? dto.foodRating ?? 0,
-          date: dto.createdAt,
-          comment: dto.comment ?? '',
-          orderItems: [],
-          platform: 'ZBR',
-          replied: false,
-          replyText: undefined,
-        }));
-        set({ reviews });
+      const reviews: Review[] = (reviewsRes?.content ?? []).map((dto) => ({
+        id: String(dto.id),
+        customerName: dto.consumerName ?? 'Anonymous',
+        rating: dto.restaurantRating ?? dto.foodRating ?? 0,
+        date: dto.createdAt,
+        comment: dto.comment ?? '',
+        orderItems: [],
+        platform: 'ZBR',
+        replied: false,
+        replyText: undefined,
+      }));
+      set({ reviews });
+
+      // Prefer the analytics distribution; if it's empty, derive the bars
+      // from the fetched reviews so the chart isn't blank.
+      let dist = ratingsRes?.distribution ?? {};
+      const hasDist = Object.values(dist).some((c) => c > 0);
+      if (!hasDist && reviews.length > 0) {
+        const derived: Record<string, number> = {};
+        for (const r of reviews) {
+          const star = String(Math.round(r.rating));
+          derived[star] = (derived[star] ?? 0) + 1;
+        }
+        dist = derived;
       }
+      set({ ratingDistribution: dist });
     } catch {
       // Non-fatal – keep existing data
     } finally {
