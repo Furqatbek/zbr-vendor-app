@@ -487,13 +487,16 @@ export function fetchRatings(
   return apiFetch<RatingsResponse>(ENDPOINTS.ratings(restaurantId) + `?${params}`);
 }
 
-export function fetchRestaurantReviews(
+export async function fetchRestaurantReviews(
   restaurantId: number,
   page = 0,
   size = 20,
 ): Promise<ReviewsPageResponse> {
   const params = new URLSearchParams({ page: String(page), size: String(size) });
-  return apiFetch<ReviewsPageResponse>(ENDPOINTS.restaurantReviews(restaurantId) + `?${params}`);
+  const res = await apiFetch<{ success: boolean; data: ReviewsPageResponse }>(
+    ENDPOINTS.restaurantReviews(restaurantId) + `?${params}`,
+  );
+  return res.data;
 }
 
 // ── Payouts API ──
