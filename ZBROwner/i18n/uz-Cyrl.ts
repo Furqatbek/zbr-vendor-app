@@ -282,6 +282,7 @@ export default {
     activeOrders: 'Фаол буюртмалар',
     todaysRevenue: 'Бугунги даромад',
     avgRating: 'Ўртача баҳо',
+    todaysOrders: 'Бугунги буюртмалар',
     staffOnline: 'Ходимлар онлайн',
     settingsManagement: 'Созламалар ва бошқарув',
     restaurantProfile: 'Ресторан профили',

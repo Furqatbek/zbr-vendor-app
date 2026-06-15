@@ -282,6 +282,7 @@ export default {
     activeOrders: 'Активные заказы',
     todaysRevenue: 'Выручка за сегодня',
     avgRating: 'Средний рейтинг',
+    todaysOrders: 'Заказы за сегодня',
     staffOnline: 'Сотрудники онлайн',
     settingsManagement: 'Настройки и управление',
     restaurantProfile: 'Профиль ресторана',

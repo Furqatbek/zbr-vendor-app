@@ -296,6 +296,7 @@ export default {
     activeOrders: 'Active Orders',
     todaysRevenue: "Today's Revenue",
     avgRating: 'Avg Rating',
+    todaysOrders: "Today's Orders",
     staffOnline: 'Staff Online',
     settingsManagement: 'Settings & Management',
     restaurantProfile: 'Restaurant Profile',

@@ -282,6 +282,7 @@ export default {
     activeOrders: 'Faol buyurtmalar',
     todaysRevenue: 'Bugungi daromad',
     avgRating: 'O\'rtacha baho',
+    todaysOrders: 'Bugungi buyurtmalar',
     staffOnline: 'Xodimlar onlayn',
     settingsManagement: 'Sozlamalar va boshqaruv',
     restaurantProfile: 'Restoran profili',

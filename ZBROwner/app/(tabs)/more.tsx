@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -15,17 +15,38 @@ import type { Locale } from '../../i18n';
 import { useRefresh } from '../../hooks/useRefresh';
 
 export default function MoreScreen() {
-  const { isOpen, setOpen, orders: _orders, reviews, revenueData, staffMembers } = useStore();
-  const orders = _orders ?? [];
+  const isOpen = useStore((s) => s.isOpen);
+  const setOpen = useStore((s) => s.setOpen);
+  const orders = useStore((s) => s.orders) ?? [];
+  const revenueData = useStore((s) => s.revenueData);
+  const loadOrders = useStore((s) => s.loadOrders);
+  const loadReviews = useStore((s) => s.loadReviews);
+  const loadFinancialReport = useStore((s) => s.loadFinancialReport);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, locale, setLocale } = useI18n();
-  const { refreshing, handleRefresh } = useRefresh();
   const authLogout = useAuthStore((s) => s.logout);
   const restaurant = useAuthStore((s) => s.restaurant);
   const restaurants = useAuthStore((s) => s.restaurants);
   const selectRestaurant = useAuthStore((s) => s.selectRestaurant);
+  const loadRestaurants = useAuthStore((s) => s.loadRestaurants);
   const [showLogout, setShowLogout] = useState(false);
+
+  const refreshAll = async () => {
+    await Promise.all([
+      loadRestaurants().catch(() => {}),
+      loadOrders().catch(() => {}),
+      loadReviews().catch(() => {}),
+      loadFinancialReport().catch(() => {}),
+    ]);
+  };
+  const { refreshing, handleRefresh } = useRefresh(refreshAll);
+
+  useEffect(() => {
+    if (!restaurant?.id) return;
+    refreshAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurant?.id]);
 
   const handleToggleOpen = async () => {
     const newStatus = !isOpen;
@@ -41,12 +62,12 @@ export default function MoreScreen() {
   const locales: Locale[] = ['en', 'ru', 'uz-Latn', 'uz-Cyrl'];
 
   const stats = useMemo(() => {
+    const activeOrders = orders.filter((o) =>
+      ['created', 'accepted', 'preparing', 'ready'].includes(o.status),
+    );
     const todayOrders = orders.filter((o) => o.status !== 'cancelled');
-    const activeOrders = orders.filter((o) => ['received', 'preparing', 'ready'].includes(o.status));
-    const avgRating = reviews.length > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
-    const activeStaff = staffMembers.filter((s) => s.isActive).length;
-    return { todayOrders: todayOrders.length, activeOrders: activeOrders.length, avgRating, activeStaff };
-  }, [orders, reviews, staffMembers]);
+    return { todayOrders: todayOrders.length, activeOrders: activeOrders.length };
+  }, [orders]);
 
   type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -121,13 +142,13 @@ export default function MoreScreen() {
         </Card>
         <Card style={styles.statCard}>
           <Ionicons name="star" size={20} color={Colors.warning} />
-          <Text style={styles.statValue}>{stats.avgRating.toFixed(1)}</Text>
+          <Text style={styles.statValue}>{(restaurant?.averageRating ?? 0).toFixed(1)}</Text>
           <Text style={styles.statLabel}>{t('more.avgRating')}</Text>
         </Card>
         <Card style={styles.statCard}>
-          <Ionicons name="people" size={20} color={Colors.accent} />
-          <Text style={styles.statValue}>{stats.activeStaff}</Text>
-          <Text style={styles.statLabel}>{t('more.staffOnline')}</Text>
+          <Ionicons name="bag-check" size={20} color={Colors.accent} />
+          <Text style={styles.statValue}>{stats.todayOrders}</Text>
+          <Text style={styles.statLabel}>{t('more.todaysOrders')}</Text>
         </Card>
       </View>
 
