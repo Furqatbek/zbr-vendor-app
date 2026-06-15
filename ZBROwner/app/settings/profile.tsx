@@ -102,7 +102,13 @@ export default function RestaurantProfileScreen() {
       await uploadFn(restaurant.id, asset.uri, asset.mimeType ?? undefined);
       await loadRestaurants();
     } catch (e: any) {
-      Alert.alert('Upload failed', e?.message ?? 'Could not upload image');
+      const msg = e?.message ?? 'Could not upload image';
+      console.error(`[profile] ${type} upload failed:`, e);
+      Alert.alert('Upload failed', msg);
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.alert === 'function') {
+        // react-native-web's Alert.alert can no-op; ensure the user sees the error.
+        window.alert(`Upload failed: ${msg}`);
+      }
     } finally {
       setUploading(false);
     }

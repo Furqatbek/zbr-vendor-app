@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
 import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, ReviewsPageResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, RestaurantOrdersResponse, RawApiOrder, CancelOrderRequest, Order, OrderItem, OrderStatus, PayoutsResponse, FinancialReportResponse, RestosPreviewRequest, RestosPreviewResponse, RestosImportRequest, RestosImportResponse } from '../types';
 
@@ -337,24 +338,32 @@ export function deleteMenuItem(restaurantId: number, itemId: number): Promise<Ap
 
 /**
  * Generic multipart image upload with auth + token refresh.
+ * Works on web (Blob/File API) and React Native (RN's special
+ * { uri, name, type } FormData entry).
  */
 async function uploadImage<T>(endpoint: string, imageUri: string, assetMimeType?: string): Promise<T> {
   const token = getAccessToken();
 
   const mimeToExt: Record<string, string> = {
-    'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
+    'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
   };
-  const ext = (assetMimeType && mimeToExt[assetMimeType]) ?? 'jpg';
-  const mimeType = assetMimeType ?? 'image/jpeg';
-  const filename = `image.${ext}`;
 
-  const blobResponse = await fetch(imageUri);
-  const blob = await blobResponse.blob();
-  const file = new File([blob], filename, { type: mimeType });
-
-  const makeFormData = () => {
+  const makeFormData = async (): Promise<FormData> => {
     const fd = new FormData();
-    fd.append('file', file);
+    if (Platform.OS === 'web') {
+      // Fetch the local URI (data:, blob:, or http: from the picker) into a blob,
+      // then prefer the blob's detected MIME over the picker hint, since some
+      // browsers omit asset.mimeType.
+      const blob = await (await fetch(imageUri)).blob();
+      const mimeType = assetMimeType || blob.type || 'image/jpeg';
+      const ext = mimeToExt[mimeType.toLowerCase()] ?? 'jpg';
+      fd.append('file', blob, `image.${ext}`);
+    } else {
+      const mimeType = assetMimeType || 'image/jpeg';
+      const ext = mimeToExt[mimeType.toLowerCase()] ?? 'jpg';
+      // RN's FormData accepts this shape directly; do NOT use Blob/File on native.
+      fd.append('file', { uri: imageUri, name: `image.${ext}`, type: mimeType } as any);
+    }
     return fd;
   };
 
@@ -364,7 +373,7 @@ async function uploadImage<T>(endpoint: string, imageUri: string, assetMimeType?
   let res = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     headers,
-    body: makeFormData(),
+    body: await makeFormData(),
   });
 
   if (res.status === 401 || res.status === 403) {
@@ -375,7 +384,7 @@ async function uploadImage<T>(endpoint: string, imageUri: string, assetMimeType?
       res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers,
-        body: makeFormData(),
+        body: await makeFormData(),
       });
     } else {
       onSessionExpired();
