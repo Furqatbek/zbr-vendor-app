@@ -10,8 +10,9 @@
  *                                        (incl. server-initiated auto-cancel,
  *                                        auto-complete, refunds)
  *   /topic/restaurants/{id}/kitchen    – kitchen display tickets
- *   /user/queue/notifications          – personal notifications
- *   /topic/users/{userId}/notifications – user notifications topic
+ *   /topic/users/{userId}/notifications – per-user notifications (canonical;
+ *                                        the backend never publishes to the
+ *                                        old /user/queue/notifications)
  *   /topic/orders/{orderId}            – order-specific status updates
  *
  * Authentication: JWT token passed via Authorization header on CONNECT.
@@ -82,16 +83,7 @@ export function createStompClient(restaurantId: number, userId?: number) {
         );
         subscriptions.push(kitchenSub);
 
-        // Subscribe to personal notifications (user-specific queue)
-        const notifSub = client!.subscribe(
-          '/user/queue/notifications',
-          (msg: IMessage) => {
-            dispatch({ type: 'notification', payload: parseBody(msg.body) });
-          },
-        );
-        subscriptions.push(notifSub);
-
-        // Subscribe to user notifications topic
+        // Subscribe to per-user notifications (canonical destination)
         if (userId) {
           const userNotifSub = client!.subscribe(
             `/topic/users/${userId}/notifications`,

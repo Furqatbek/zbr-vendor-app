@@ -235,6 +235,7 @@ export interface RawApiOrder {
   restaurantName?: string;
   courierId?: number;
   courierName?: string;
+  courierPhone?: string;
   orderType: string;
   status: string;
   paymentStatus?: string;

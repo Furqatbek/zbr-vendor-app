@@ -236,6 +236,13 @@ function normalizeStatus(raw: RawApiOrder): OrderStatus {
   return lower as OrderStatus;
 }
 
+function minutesUntil(iso?: string): number | undefined {
+  if (!iso) return undefined;
+  const ms = new Date(iso).getTime() - Date.now();
+  if (Number.isNaN(ms) || ms <= 0) return undefined;
+  return Math.round(ms / 60000);
+}
+
 function mapApiOrder(raw: RawApiOrder): Order {
   return {
     id: String(raw.id),
@@ -255,6 +262,11 @@ function mapApiOrder(raw: RawApiOrder): Order {
     deliveryAddress: raw.deliveryAddress,
     deliveryInstructions: raw.deliveryInstructions,
     courierName: raw.courierName,
+    courierPhone: raw.courierPhone,
+    // Backend sends an absolute ETA (estimatedDeliveryTime, set when the
+    // restaurant accepts with a prep time); the UI chips want minutes-from-now.
+    // Computed at map time — orders re-fetch on every WS event, so drift is small.
+    courierETA: minutesUntil(raw.estimatedDeliveryTime),
     receivedAt: raw.createdAt,
     prepTimeMinutes: raw.estimatedPrepTimeMinutes ?? 0,
     estimatedPrepTimeMinutes: raw.estimatedPrepTimeMinutes,
