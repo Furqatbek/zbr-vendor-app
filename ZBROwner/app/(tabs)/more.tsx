@@ -65,7 +65,7 @@ export default function MoreScreen() {
     const activeOrders = orders.filter((o) =>
       ['created', 'accepted', 'preparing', 'ready'].includes(o.status),
     );
-    const todayOrders = orders.filter((o) => o.status !== 'cancelled');
+    const todayOrders = orders.filter((o) => o.status !== 'cancelled' && o.status !== 'refunded');
     return { todayOrders: todayOrders.length, activeOrders: activeOrders.length };
   }, [orders]);
 

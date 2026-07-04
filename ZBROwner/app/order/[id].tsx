@@ -67,6 +67,10 @@ export default function OrderDetailScreen() {
 
   const statusSteps = getStatusSteps(order.orderType);
   const currentStepIndex = statusSteps.indexOf(order.status);
+  // Terminal statuses can now arrive from the server on its own (auto-cancel,
+  // ready-timeout refund). They are not part of the kitchen step arrays, so
+  // the stepper must not render as interactive for them.
+  const isTerminal = order.status === 'cancelled' || order.status === 'refunded';
 
   const handleStatusChange = (newStatus: OrderStatus) => {
     Alert.alert(t('orderDetail.updateStatus'), t('orderDetail.changeStatusTo', { status: t(STATUS_LABEL_KEYS[newStatus] as any) }), [
@@ -147,13 +151,29 @@ export default function OrderDetailScreen() {
         <StatusBadge status={order.status} />
       </View>
 
-      {/* Status Stepper */}
+      {/* Status Stepper / Terminal Banner */}
+      {isTerminal ? (
+        <Card style={styles.stepperCard}>
+          <Text style={styles.sectionTitle}>{t('orderDetail.orderProgress')}</Text>
+          <View style={styles.terminalRow}>
+            <Ionicons
+              name={order.status === 'refunded' ? 'arrow-undo-circle' : 'close-circle'}
+              size={22}
+              color={Colors.danger}
+            />
+            <Text style={styles.terminalText}>{t(STATUS_LABEL_KEYS[order.status] as any)}</Text>
+          </View>
+          {order.cancellationReason ? (
+            <Text style={styles.terminalReason}>{order.cancellationReason}</Text>
+          ) : null}
+        </Card>
+      ) : (
       <Card style={styles.stepperCard}>
         <Text style={styles.sectionTitle}>{t('orderDetail.orderProgress')}</Text>
         {statusSteps.map((step, index) => {
-          const isCompleted = index <= currentStepIndex;
+          const isCompleted = currentStepIndex >= 0 && index <= currentStepIndex;
           const isCurrent = index === currentStepIndex;
-          const isNext = index === currentStepIndex + 1;
+          const isNext = currentStepIndex >= 0 && index === currentStepIndex + 1;
           return (
             <TouchableOpacity
               key={step}
@@ -178,6 +198,7 @@ export default function OrderDetailScreen() {
           );
         })}
       </Card>
+      )}
 
       {/* Order Info */}
       <Card style={styles.infoCard}>
@@ -467,6 +488,9 @@ const styles = StyleSheet.create({
   timeText: { ...Typography.footnote, color: Colors.gray500, marginTop: 2 },
   stepperCard: { marginBottom: Spacing.base },
   sectionTitle: { ...Typography.headline, color: Colors.black, marginBottom: Spacing.md },
+  terminalRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  terminalText: { ...Typography.headline, color: Colors.danger },
+  terminalReason: { ...Typography.subhead, color: Colors.gray500, marginTop: Spacing.sm },
   stepRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, minHeight: 44 },
   stepDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.gray200, justifyContent: 'center', alignItems: 'center', zIndex: 1 },
   stepDotActive: { backgroundColor: Colors.accent },

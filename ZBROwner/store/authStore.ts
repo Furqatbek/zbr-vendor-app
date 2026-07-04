@@ -35,13 +35,22 @@ export const useAuthStore = create<AuthStore>((set, get) => {
   configureAuth({
     getAccessToken: () => get().accessToken,
     getRefreshToken: () => get().refreshToken,
-    onTokenRefreshed: (data: RefreshResponse['data']) => {
+    onTokenRefreshed: async (data: RefreshResponse['data']) => {
       set({
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
       });
-      AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.accessToken);
-      AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken);
+      // Await persistence: the old refresh token may already be invalidated
+      // server-side, so losing the rotated pair (app killed mid-write) would
+      // force a re-login on next launch.
+      try {
+        await AsyncStorage.multiSet([
+          [STORAGE_KEYS.ACCESS_TOKEN, data.accessToken],
+          [STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken],
+        ]);
+      } catch {
+        // Non-fatal: in-memory tokens remain valid for this session
+      }
     },
     onSessionExpired: () => {
       get().clearSession();

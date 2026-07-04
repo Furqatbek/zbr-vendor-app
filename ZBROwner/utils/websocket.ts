@@ -6,18 +6,23 @@
  *   - SockJS:    ws://host/ws-sockjs
  *
  * Topics the restaurant frontend subscribes to:
- *   /topic/restaurants/{id}/orders  – new incoming orders
- *   /topic/restaurants/{id}/kitchen – kitchen display tickets
- *   /user/queue/notifications       – personal notifications
- *   /topic/orders/{orderId}         – order-specific status updates
+ *   /topic/restaurants/{id}/orders     – new orders AND every status change
+ *                                        (incl. server-initiated auto-cancel,
+ *                                        auto-complete, refunds)
+ *   /topic/restaurants/{id}/kitchen    – kitchen display tickets
+ *   /user/queue/notifications          – personal notifications
+ *   /topic/users/{userId}/notifications – user notifications topic
+ *   /topic/orders/{orderId}            – order-specific status updates
  *
  * Authentication: JWT token passed via Authorization header on CONNECT.
+ * The token is re-read on every (re)connect attempt via the getToken
+ * callback, so reconnects after a token refresh use the fresh JWT.
  */
 
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import { WS_BASE_URL, ENDPOINTS } from '../constants/api';
 
-export type WSMessageType = 'new_order' | 'order_update' | 'kitchen_ticket' | 'notification';
+export type WSMessageType = 'new_order' | 'order_update' | 'kitchen_ticket' | 'notification' | 'connected';
 
 export interface WSMessage {
   type: WSMessageType;
@@ -25,9 +30,11 @@ export interface WSMessage {
 }
 
 type MessageHandler = (message: WSMessage) => void;
+type TokenGetter = () => string | null;
 
-const MAX_RETRIES = 5;
-const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000];
+// Fixed delay, unlimited retries: backend deploys drain gracefully and expect
+// clients to simply keep retrying until the new instance accepts connections.
+const RECONNECT_DELAY_MS = 2000;
 
 export function createStompClient(restaurantId: number, userId?: number) {
   let client: Client | null = null;
@@ -35,22 +42,29 @@ export function createStompClient(restaurantId: number, userId?: number) {
   let subscriptions: StompSubscription[] = [];
   let intentionalClose = false;
 
-  function connect(token: string | null) {
+  function connect(getToken: TokenGetter) {
     intentionalClose = false;
 
     const wsUrl = `${WS_BASE_URL}${ENDPOINTS.ws}`;
 
     client = new Client({
       webSocketFactory: () => new WebSocket(wsUrl),
-      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
-      reconnectDelay: RECONNECT_DELAYS[0],
+      reconnectDelay: RECONNECT_DELAY_MS,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
+
+      // Runs before every (re)connect attempt — rebuild the CONNECT headers
+      // with the current token so a refresh mid-session doesn't strand the
+      // client in a reconnect loop with an expired JWT.
+      beforeConnect: () => {
+        const token = getToken();
+        client!.connectHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+      },
 
       onConnect: () => {
         subscriptions = [];
 
-        // Subscribe to new orders for this restaurant
+        // Subscribe to new orders + all status changes for this restaurant
         const ordersSub = client!.subscribe(
           `/topic/restaurants/${restaurantId}/orders`,
           (msg: IMessage) => {
@@ -87,6 +101,11 @@ export function createStompClient(restaurantId: number, userId?: number) {
           );
           subscriptions.push(userNotifSub);
         }
+
+        // Tell listeners the (re)connect completed. Status changes pushed
+        // while the socket was down (deploy drain, network blip) were lost;
+        // the handler re-fetches orders to close that gap.
+        dispatch({ type: 'connected' });
       },
 
       onStompError: (frame) => {

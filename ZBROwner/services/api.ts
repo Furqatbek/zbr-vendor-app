@@ -4,7 +4,7 @@ import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyResta
 
 let getAccessToken: () => string | null = () => null;
 let getRefreshToken: () => string | null = () => null;
-let onTokenRefreshed: (data: RefreshResponse['data']) => void = () => {};
+let onTokenRefreshed: (data: RefreshResponse['data']) => void | Promise<void> = () => {};
 let onSessionExpired: () => void = () => {};
 
 /**
@@ -14,7 +14,7 @@ let onSessionExpired: () => void = () => {};
 export function configureAuth(config: {
   getAccessToken: () => string | null;
   getRefreshToken: () => string | null;
-  onTokenRefreshed: (data: RefreshResponse['data']) => void;
+  onTokenRefreshed: (data: RefreshResponse['data']) => void | Promise<void>;
   onSessionExpired: () => void;
 }) {
   getAccessToken = config.getAccessToken;
@@ -45,7 +45,7 @@ async function tryRefreshToken(): Promise<boolean> {
 
       const data: RefreshResponse = await res.json();
       if (data.success) {
-        onTokenRefreshed(data.data);
+        await onTokenRefreshed(data.data);
         return true;
       }
       return false;
@@ -94,6 +94,11 @@ export async function apiFetch<T>(
         ...options,
         headers,
       });
+      if (res.status === 401 || res.status === 403) {
+        // Fresh token immediately rejected — session is unrecoverable.
+        onSessionExpired();
+        throw new Error('Session expired');
+      }
     } else {
       onSessionExpired();
       throw new Error('Session expired');
@@ -204,11 +209,38 @@ function mapApiOrderItem(raw: RawApiOrder['items'][number]): OrderItem {
   };
 }
 
+const KNOWN_STATUSES: ReadonlySet<string> = new Set<OrderStatus>([
+  'created', 'accepted', 'preparing', 'ready', 'picked_up',
+  'in_transit', 'delivered', 'completed', 'cancelled', 'refunded',
+]);
+
+/**
+ * Normalize a raw backend status into the OrderStatus union.
+ * COURIER_ASSIGNED is a courier sub-state, not a kitchen state: the courier
+ * may accept before the kitchen finishes, so the order must stay in the
+ * kitchen pipeline (accepted/preparing/ready by timestamps) with kitchen
+ * actions available. Unknown future statuses fall back to a warn + pass-through
+ * so they at least render via StatusBadge's fallback instead of vanishing.
+ */
+function normalizeStatus(raw: RawApiOrder): OrderStatus {
+  const upper = raw.status.toUpperCase();
+  if (upper === 'COURIER_ASSIGNED') {
+    if (raw.pickedUpAt) return 'picked_up';
+    if (raw.readyAt) return 'ready';
+    if (raw.acceptedAt) return 'preparing';
+    return 'accepted';
+  }
+  const lower = raw.status.toLowerCase();
+  if (KNOWN_STATUSES.has(lower)) return lower as OrderStatus;
+  console.warn(`[api] Unknown order status from backend: ${raw.status}`);
+  return lower as OrderStatus;
+}
+
 function mapApiOrder(raw: RawApiOrder): Order {
   return {
     id: String(raw.id),
     orderNumber: raw.externalOrderNo,
-    status: raw.status.toLowerCase() as OrderStatus,
+    status: normalizeStatus(raw),
     orderType: raw.orderType as Order['orderType'],
     paymentStatus: raw.paymentStatus as Order['paymentStatus'],
     items: raw.items.map(mapApiOrderItem),
@@ -386,6 +418,10 @@ async function uploadImage<T>(endpoint: string, imageUri: string, assetMimeType?
         headers,
         body: await makeFormData(),
       });
+      if (res.status === 401 || res.status === 403) {
+        onSessionExpired();
+        throw new Error('Session expired');
+      }
     } else {
       onSessionExpired();
       throw new Error('Session expired');

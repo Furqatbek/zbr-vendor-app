@@ -115,7 +115,9 @@ export function useNotifications() {
     const stomp = createStompClient(restaurant.id, user?.id);
     stompRef.current = stomp;
 
-    stomp.connect(accessToken);
+    // Token getter: the client re-reads this before every (re)connect
+    // attempt, so reconnects always carry the current JWT.
+    stomp.connect(() => useAuthStore.getState().accessToken);
 
     const unsubscribe = stomp.onMessage(async (message) => {
       const store = useStore.getState();
@@ -152,6 +154,12 @@ export function useNotifications() {
         case 'kitchen_ticket':
           store.loadOrders();
           break;
+        case 'connected':
+          // (Re)connected — status changes pushed during the gap (deploy
+          // drain, network blip, server auto-cancel/complete/refund) were
+          // never delivered, so re-sync the orders list.
+          store.loadOrders();
+          break;
         case 'notification':
           store.setUnreadNotifCount(store.unreadNotifCount + 1);
           break;
@@ -162,5 +170,7 @@ export function useNotifications() {
       unsubscribe();
       stomp.disconnect();
     };
-  }, [restaurant?.id, user?.id, accessToken]);
+    // accessToken intentionally omitted: the token getter reads fresh state on
+    // every (re)connect, so a refresh no longer requires a socket teardown.
+  }, [restaurant?.id, user?.id]);
 }

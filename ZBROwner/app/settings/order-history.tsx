@@ -26,8 +26,10 @@ export default function OrderHistoryScreen() {
   );
 
   const stats = useMemo(() => {
-    const delivered = orders.filter((o) => o.status === 'delivered');
-    const cancelled = orders.filter((o) => o.status === 'cancelled');
+    // DELIVERED auto-completes server-side, so count both as fulfilled.
+    // REFUNDED is a terminal "sale didn't stick" outcome like cancelled.
+    const delivered = orders.filter((o) => o.status === 'delivered' || o.status === 'completed');
+    const cancelled = orders.filter((o) => o.status === 'cancelled' || o.status === 'refunded');
     const total = delivered.reduce((s, o) => s + o.totalPrice, 0);
     return { delivered: delivered.length, cancelled: cancelled.length, total };
   }, [orders]);
