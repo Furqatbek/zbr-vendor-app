@@ -526,6 +526,7 @@ export default {
 
     validationTitle: 'Не хватает данных',
     errBaseUrlRequired: 'Пожалуйста, введите базовый URL Restos.',
+    errBaseUrlInvalid: 'Введите корректный публичный https:// URL сервера Restos.',
     errExternalIdRequired: 'Пожалуйста, введите корректный ID ресторана.',
     errorTitle: 'Импорт не выполнен',
     errNoRestaurant: 'Сначала создайте профиль ресторана.',

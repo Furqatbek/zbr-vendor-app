@@ -526,6 +526,7 @@ export default {
 
     validationTitle: 'Маълумот етишмаяпти',
     errBaseUrlRequired: 'Илтимос, Restos асосий URL-ни киритинг.',
+    errBaseUrlInvalid: 'Restos сервери учун тўғри оммавий https:// URL киритинг.',
     errExternalIdRequired: 'Илтимос, тўғри ресторан ID рақамини киритинг.',
     errorTitle: 'Импорт муваффақиятсиз',
     errNoRestaurant: 'Аввал ресторан профилингизни яратинг.',

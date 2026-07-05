@@ -526,6 +526,7 @@ export default {
 
     validationTitle: 'Maʼlumot yetishmayapti',
     errBaseUrlRequired: 'Iltimos, Restos asosiy URL-ni kiriting.',
+    errBaseUrlInvalid: 'Restos serveri uchun to\'g\'ri ommaviy https:// URL kiriting.',
     errExternalIdRequired: 'Iltimos, toʻgʻri restoran ID raqamini kiriting.',
     errorTitle: 'Import muvaffaqiyatsiz',
     errNoRestaurant: 'Avval restoran profilingizni yarating.',

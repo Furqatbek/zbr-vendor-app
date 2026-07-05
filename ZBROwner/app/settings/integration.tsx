@@ -12,6 +12,7 @@ import { previewRestosMenu, importRestosMenu, fetchMenuCategories } from '../../
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
 import type { RestosPreviewCategory, RestosImportResult } from '../../types';
+import { isSafeExternalUrl } from '../../utils/urlSafety';
 
 const normalizeName = (s: string | undefined | null) => (s ?? '').trim().toLowerCase();
 
@@ -97,6 +98,12 @@ export default function RestaurantIntegrationScreen() {
   const validateInputs = (): boolean => {
     if (!baseUrl.trim()) {
       Alert.alert(t('integration.validationTitle'), t('integration.errBaseUrlRequired'));
+      return false;
+    }
+    if (!isSafeExternalUrl(baseUrl)) {
+      // Reject non-http(s) schemes and internal/metadata hosts before the
+      // backend fetches the URL server-side (SSRF defense-in-depth).
+      Alert.alert(t('integration.validationTitle'), t('integration.errBaseUrlInvalid'));
       return false;
     }
     const parsed = externalRestaurantId.trim();

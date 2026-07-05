@@ -92,8 +92,12 @@ export function useNotifications() {
 
     const responseSub = addNotificationResponseListener((response) => {
       const data = response.notification.request.content.data as Record<string, any> | undefined;
-      if (data?.orderId) {
-        router.push(`/order/${data.orderId}`);
+      // Validate the id before interpolating it into a route path — a spoofed
+      // local notification / crafted deep link shouldn't be able to steer
+      // navigation with arbitrary path segments. Order ids are numeric strings.
+      const orderId = data?.orderId != null ? String(data.orderId) : '';
+      if (/^\d+$/.test(orderId)) {
+        router.push(`/order/${orderId}`);
       }
     });
 

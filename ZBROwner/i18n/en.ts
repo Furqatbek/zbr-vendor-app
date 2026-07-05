@@ -549,6 +549,7 @@ export default {
 
     validationTitle: 'Missing Information',
     errBaseUrlRequired: 'Please enter the Restos base URL.',
+    errBaseUrlInvalid: 'Enter a valid public https:// URL for your Restos server.',
     errExternalIdRequired: 'Please enter a valid Restaurant ID.',
     errorTitle: 'Import Failed',
     errNoRestaurant: 'Create your restaurant profile first.',
