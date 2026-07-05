@@ -16,7 +16,7 @@ fixed, and the soft-launch hardening is done; see the progress log.
 | Config & deployment | 2 → 7 | Env-based hosts, deps installed, `eas.json` added; needs real TLS host |
 | Security | 3 → 6 | Tokens in keystore, logs stripped; SSRF/deep-link hardening pending |
 | Resilience | 4 → 7 | Error boundary, error/retry UI, crash guards, race fix all in |
-| Testing & quality | 3 → 4 | `tsc` now clean; still zero tests, no CI |
+| Testing & quality | 3 → 6 | CI gate live, `tsc` clean, first 20 tests; broader coverage + lint pending |
 | Feature correctness | 5 → 7 | Fake-success features gated off; core flows solid |
 
 ### Progress log
@@ -26,12 +26,16 @@ fixed, and the soft-launch hardening is done; see the progress log.
 - **Tier 1 — all items resolved** (`85275a0`, `e8d87f6`, `d13baee`, `2dc4e3b`,
   `e158dc5`): crash guards, error/retry UI, silent-failure fixes, fake-feature
   gating, optimistic-race fix, WS alarm dedupe.
+- **Tier 2 — started** (`c5f90c2`): jest harness + 20 passing tests (API mapping
+  + order state machine incl. the race guard) + GitHub Actions CI (typecheck +
+  test on every PR). Remaining: runtime schema validation, broader test
+  coverage, ESLint, security hardening (SSRF/deep-link), `noUncheckedIndexedAccess`.
 - **Bonus:** fixed 4 pre-existing TypeScript compile errors (`479244d`) — the
   project now type-checks clean (`npx tsc --noEmit` passes), including a real
   runtime bug in the menu remove-image button.
 
-**Rough remaining timeline:** Tier 2 (~2–3 weeks) for real confidence (tests, CI,
-runtime validation, security hardening).
+**Rough remaining timeline:** ~1–2 weeks to finish Tier 2 (broaden tests, runtime
+validation, security hardening) — plus the external TLS backend host.
 
 ---
 
@@ -121,18 +125,22 @@ backend endpoint lands. (`d13baee`)
 
 ## TIER 2 — Real confidence (before scaling up)
 
-- [ ] **Zero automated tests** — no runner, no `test` script, no `__tests__`. An app
-  that mutates orders and computes payouts has no regression net. Start with the
-  order state machine (`store` accept/decline/status) and the `api.ts` mapping layer.
+- [~] **Automated tests** — harness established (`jest-expo`) with the first two
+  suites: `__tests__/api.mapping.test.ts` (status normalization incl.
+  COURIER_ASSIGNED, ETA math, safe order mapping) and
+  `__tests__/store.orders.test.ts` (optimistic accept/decline/status + rollback,
+  the pending-merge race guard, error flag). 20 tests passing. (`c5f90c2`)
+  **Still to cover:** financial-report math, reviews mapping, auth refresh flow,
+  component render smoke tests.
 - [ ] **API boundary blind-cast** — `services/api.ts:114` `return data as T`; enum
   fields cast unchecked (`orderType`, `paymentStatus`, `status`). A renamed field or
   null-where-number crashes deep in render. Add runtime validation (zod/io-ts) at
-  the boundary.
-- [ ] **No quality gates** — no ESLint/Prettier config, no `.github/workflows`. Nothing
-  runs `tsc --noEmit`/lint/test on PRs. (`more.tsx:48` even has an
-  `eslint-disable` for an ESLint that isn't installed.) Add CI.
-  *(Update: `npx tsc --noEmit` now passes clean as of `479244d`, so a typecheck
-  gate can be wired immediately.)*
+  the boundary. *(The order-mapping layer is now null-tolerant + unit-tested,
+  which de-risks the most common path; full schema validation still pending.)*
+- [x] **Quality gate (CI)** — added `.github/workflows/ci.yml` running `npm ci`,
+  `npm run typecheck`, and `npm run test:ci` on every PR. `tsc --noEmit` is clean.
+  (`c5f90c2`) *(ESLint/Prettier config still not added; the stray
+  `eslint-disable` in `more.tsx:48` remains a no-op until ESLint is installed.)*
 - [ ] **`noUncheckedIndexedAccess` off** — `tsconfig.json`; record lookups
   (`STATUS_LABEL_KEYS[order.status]`, `ROLE_COLORS[role]`) resolve to `undefined`
   with no compile warning, and the mapping layer explicitly passes unknown statuses
