@@ -11,6 +11,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import { useAuthStore } from '../store/authStore';
 import { useStore } from '../store';
 import NewOrderAlert from '../components/NewOrderAlert';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isInitialized, initialize } = useAuthStore();
@@ -157,16 +158,18 @@ function AppStack() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <I18nProvider>
-          <StatusBar style="dark" />
-          <AuthGuard>
-            <AppStack />
-          </AuthGuard>
-        </I18nProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <I18nProvider>
+            <StatusBar style="dark" />
+            <AuthGuard>
+              <AppStack />
+            </AuthGuard>
+          </I18nProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 
