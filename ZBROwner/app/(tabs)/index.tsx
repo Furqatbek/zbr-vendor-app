@@ -72,12 +72,9 @@ export default function OrdersScreen() {
   }, [acceptOrder, t]);
 
   const handleDecline = useCallback(async (orderId: string) => {
-    console.log('[handleDecline] called with orderId:', orderId);
     try {
       await declineOrder(orderId, 'Declined by vendor');
-      console.log('[handleDecline] declineOrder resolved successfully');
     } catch (e) {
-      console.error('[handleDecline] declineOrder failed:', e);
       Alert.alert(t('common.error'), t('orders.declineFailed'));
     }
   }, [declineOrder, t]);

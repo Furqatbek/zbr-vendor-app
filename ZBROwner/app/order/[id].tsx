@@ -102,13 +102,10 @@ export default function OrderDetailScreen() {
   };
 
   const handleDecline = async () => {
-    console.log('[OrderDetail.handleDecline] called for order:', order.id);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     try {
       await declineOrder(order.id, 'Declined by vendor');
-      console.log('[OrderDetail.handleDecline] declineOrder resolved');
     } catch (e) {
-      console.error('[OrderDetail.handleDecline] declineOrder failed:', e);
       Alert.alert(t('common.error'), t('orders.declineFailed'));
     }
   };
