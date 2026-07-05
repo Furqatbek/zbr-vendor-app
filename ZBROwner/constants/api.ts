@@ -1,10 +1,23 @@
 /**
  * API configuration for backend integration.
+ *
+ * Hosts come from EXPO_PUBLIC_* env vars, which Expo inlines into the bundle
+ * at build time. Set them per EAS build profile (see eas.json) or in a local
+ * .env file (see .env.example). The localhost fallback is for local dev only —
+ * production/preview builds MUST set these to an https:// / wss:// host, or
+ * the app cannot reach the backend from a device.
  */
 
-export const API_BASE_URL = 'http://localhost:8080';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8080';
 
-export const WS_BASE_URL = 'ws://localhost:8080';
+export const WS_BASE_URL = process.env.EXPO_PUBLIC_WS_BASE_URL ?? 'ws://localhost:8080';
+
+if (__DEV__ && !process.env.EXPO_PUBLIC_API_BASE_URL) {
+  console.warn(
+    '[api] EXPO_PUBLIC_API_BASE_URL is not set — falling back to localhost. ' +
+    'A device/production build cannot reach localhost; set it in .env or the EAS build profile.',
+  );
+}
 
 export const ENDPOINTS = {
   // Auth
