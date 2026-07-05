@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
+import { financialReportSchema, isStructurallyValidOrder } from './schemas';
 import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, ReviewsPageResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, RestaurantOrdersResponse, RawApiOrder, CancelOrderRequest, Order, OrderItem, OrderStatus, PayoutsResponse, FinancialReportResponse, RestosPreviewRequest, RestosPreviewResponse, RestosImportRequest, RestosImportResponse } from '../types';
 
 let getAccessToken: () => string | null = () => null;
@@ -290,6 +291,12 @@ export function safeMapOrders(raw: RawApiOrder[] | undefined | null): Order[] {
   if (!Array.isArray(raw)) return [];
   const out: Order[] = [];
   for (const r of raw) {
+    // Structural boundary check first — drop records missing id/status/items
+    // with a clear signal instead of relying on a downstream throw.
+    if (!isStructurallyValidOrder(r)) {
+      console.warn('[api] Skipped an order record failing the structural schema');
+      continue;
+    }
     try {
       out.push(mapApiOrder(r));
     } catch (e) {
@@ -586,13 +593,16 @@ export function fetchPayouts(
 
 // ── Financial Report API ──
 
-export function fetchFinancialReport(
+export async function fetchFinancialReport(
   restaurantId: number,
   startDate: string,
   endDate: string,
 ): Promise<FinancialReportResponse> {
   const params = new URLSearchParams({ startDate, endDate });
-  return apiFetch<FinancialReportResponse>(ENDPOINTS.financialReport(restaurantId) + `?${params}`);
+  const res = await apiFetch<FinancialReportResponse>(ENDPOINTS.financialReport(restaurantId) + `?${params}`);
+  // Validate + default the numeric fields so the money screen never receives
+  // undefined/null where it expects a number.
+  return { ...res, data: financialReportSchema.parse(res.data) as FinancialReportResponse['data'] };
 }
 
 export function deleteMenuItemImage(restaurantId: number, itemId: number): Promise<ApiResponse> {
