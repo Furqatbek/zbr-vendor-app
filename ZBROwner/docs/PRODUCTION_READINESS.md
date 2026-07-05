@@ -16,7 +16,7 @@ fixed, and the soft-launch hardening is done; see the progress log.
 | Config & deployment | 2 → 7 | Env-based hosts, deps installed, `eas.json` added; needs real TLS host |
 | Security | 3 → 6 | Tokens in keystore, logs stripped; SSRF/deep-link hardening pending |
 | Resilience | 4 → 7 | Error boundary, error/retry UI, crash guards, race fix all in |
-| Testing & quality | 3 → 8 | CI runs lint+typecheck+31 tests; strict flags on; only runtime schema validation left |
+| Testing & quality | 3 → 8 | CI runs lint+typecheck+37 tests; strict flags on; zod at money/orders boundary |
 | Feature correctness | 5 → 7 | Fake-success features gated off; core flows solid |
 
 ### Progress log
@@ -26,15 +26,16 @@ fixed, and the soft-launch hardening is done; see the progress log.
 - **Tier 1 — all items resolved** (`85275a0`, `e8d87f6`, `d13baee`, `2dc4e3b`,
   `e158dc5`): crash guards, error/retry UI, silent-failure fixes, fake-feature
   gating, optimistic-race fix, WS alarm dedupe.
-- **Tier 2 — largely done:** jest harness + **31 passing tests** (API mapping,
+- **Tier 2 — essentially done:** jest harness + **37 passing tests** (API mapping,
   order state machine incl. the race guard, reviews + financial-report store
-  logic, URL-safety) (`c5f90c2`, `f0a8f0d`, `2bab325`); **CI** running
-  lint→typecheck→test on every PR + **ESLint** (`c5f90c2`, `fb9f92c`); **security
-  hardening** — notification-nav validation, Restos SSRF guard, Restos key to
-  keystore (`2bab325`, `13438fc`); `noUncheckedIndexedAccess` on with its real
-  bugs fixed (`e613924`); i18n `t()` casts removed (`1b7eadd`). **Only two
-  Tier-2 items remain:** runtime schema validation at the API boundary, and cert
-  pinning (which needs the real TLS host).
+  logic, URL-safety, zod schemas) (`c5f90c2`, `f0a8f0d`, `2bab325`, `f78be08`);
+  **CI** running lint→typecheck→test on every PR + **ESLint** (`c5f90c2`,
+  `fb9f92c`); **security hardening** — notification-nav validation, Restos SSRF
+  guard, Restos key to keystore (`2bab325`, `13438fc`);
+  `noUncheckedIndexedAccess` on with its real bugs fixed (`e613924`); i18n `t()`
+  casts removed (`1b7eadd`); **zod runtime validation** at the money/orders
+  boundary (`f78be08`). **The only remaining Tier-2 item is cert pinning, which
+  needs the real TLS host.**
 - **Bonus:** fixed 4 pre-existing TypeScript compile errors (`479244d`) — the
   project now type-checks clean, including a real runtime bug in the menu
   remove-image button.
@@ -137,11 +138,13 @@ backend endpoint lands. (`d13baee`)
   the pending-merge race guard, error flag). 20 tests passing. (`c5f90c2`)
   **Still to cover:** financial-report math, reviews mapping, auth refresh flow,
   component render smoke tests.
-- [ ] **API boundary blind-cast** — `services/api.ts:114` `return data as T`; enum
-  fields cast unchecked (`orderType`, `paymentStatus`, `status`). A renamed field or
-  null-where-number crashes deep in render. Add runtime validation (zod/io-ts) at
-  the boundary. *(The order-mapping layer is now null-tolerant + unit-tested,
-  which de-risks the most common path; full schema validation still pending.)*
+- [x] **API boundary runtime validation** — added zod schemas
+  (`services/schemas.ts`) for the money/orders-critical payloads:
+  `financialReportSchema` defaults every numeric field to 0 / trend arrays to []
+  (applied in `fetchFinancialReport`), and `isStructurallyValidOrder` drops
+  records missing id/status or with a non-array items in `safeMapOrders`
+  (getter-throw-safe). 6 tests. (`f78be08`) *(Remaining payloads still use the
+  `as T` cast; the highest-risk money/orders paths are now validated.)*
 - [x] **Quality gate (CI + lint)** — `.github/workflows/ci.yml` runs `npm ci` →
   lint → typecheck → test on every PR. Added ESLint (flat config extending
   `eslint-config-expo`); lint is error-clean (50 non-blocking warnings remain as
