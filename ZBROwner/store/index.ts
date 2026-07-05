@@ -3,6 +3,21 @@ import type { Order, Review, RevenueData, OrderStatus, CourierRating, StaffMembe
 import { fetchRatings, fetchRestaurantReviews, fetchRestaurantOrders, fetchActiveOrders, updateOrderStatus as apiUpdateOrderStatus, cancelOrder as apiCancelOrder, fetchFinancialReport } from '../services/api';
 import { useAuthStore } from './authStore';
 
+// Order IDs with an in-flight optimistic mutation (accept/decline/status).
+// A WS-driven loadOrders that lands mid-PATCH would otherwise overwrite the
+// optimistic status with stale server state, making the card visibly revert
+// (e.g. "Ready" -> "Preparing"). While an id is pending, loadOrders keeps the
+// local copy; the next refresh after the PATCH resolves picks up the truth.
+const pendingOrderIds = new Set<string>();
+
+function mergePreservingPending(incoming: Order[], current: Order[]): Order[] {
+  if (pendingOrderIds.size === 0) return incoming;
+  const currentById = new Map(current.map((o) => [o.id, o]));
+  return incoming.map((o) =>
+    pendingOrderIds.has(o.id) ? (currentById.get(o.id) ?? o) : o,
+  );
+}
+
 interface AppStore {
   // Restaurant
   isOpen: boolean;
@@ -87,7 +102,7 @@ export const useStore = create<AppStore>((set, get) => ({
     set({ ordersLoading: true });
     try {
       const res = await fetchRestaurantOrders(restaurant.id, { page: 0, size: 100 });
-      set({ orders: res.content });
+      set((s) => ({ orders: mergePreservingPending(res.content, s.orders) }));
     } catch {
       // Non-fatal – keep existing data
     } finally {
@@ -100,7 +115,7 @@ export const useStore = create<AppStore>((set, get) => ({
     set({ ordersLoading: true });
     try {
       const res = await fetchActiveOrders(restaurant.id, { page: 0, size: 100 });
-      set({ orders: res.content });
+      set((s) => ({ orders: mergePreservingPending(res.content, s.orders) }));
     } catch {
       // Non-fatal – keep existing data
     } finally {
@@ -111,6 +126,7 @@ export const useStore = create<AppStore>((set, get) => ({
   acceptOrder: async (orderId, estimatedPrepTimeMinutes) => {
     // Optimistic update — move the card out of "new" immediately
     const prev = get().orders;
+    pendingOrderIds.add(orderId);
     set((s) => ({
       orders: s.orders.map((o) =>
         o.id === orderId ? {
@@ -130,10 +146,13 @@ export const useStore = create<AppStore>((set, get) => ({
       // Rollback on failure
       set({ orders: prev });
       throw e;
+    } finally {
+      pendingOrderIds.delete(orderId);
     }
   },
   declineOrder: async (orderId, reason) => {
     const prev = get().orders;
+    pendingOrderIds.add(orderId);
     set((s) => ({
       orders: s.orders.map((o) =>
         o.id === orderId ? { ...o, status: 'cancelled' as const, cancellationReason: reason, cancelledAt: new Date().toISOString() } : o
@@ -144,10 +163,13 @@ export const useStore = create<AppStore>((set, get) => ({
     } catch (e) {
       set({ orders: prev });
       throw e;
+    } finally {
+      pendingOrderIds.delete(orderId);
     }
   },
   updateOrderStatus: async (orderId, status) => {
     const prev = get().orders;
+    pendingOrderIds.add(orderId);
     set((s) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
@@ -167,6 +189,8 @@ export const useStore = create<AppStore>((set, get) => ({
     } catch (e) {
       set({ orders: prev });
       throw e;
+    } finally {
+      pendingOrderIds.delete(orderId);
     }
   },
 

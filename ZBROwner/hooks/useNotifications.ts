@@ -133,11 +133,18 @@ export function useNotifications() {
           if (status && status !== 'created') break;
 
           const orderId = payload?.id ? String(payload.id) : payload?.orderId ? String(payload.orderId) : null;
+          const latest = useStore.getState();
           const newOrder = orderId
-            ? useStore.getState().orders.find((o) => o.id === orderId)
-            : useStore.getState().orders.find((o) => o.status === 'created');
+            ? latest.orders.find((o) => o.id === orderId)
+            : latest.orders.find((o) => o.status === 'created');
           if (newOrder) {
-            useStore.getState().triggerOrderAlert(newOrder);
+            // Dedupe: a duplicate WS delivery or a reconnect re-emitting the
+            // same created order shouldn't re-trigger the alarm/modal if it's
+            // already showing for that order.
+            const alreadyShowing = latest.showOrderAlert && latest.incomingOrder?.id === newOrder.id;
+            if (!alreadyShowing) {
+              latest.triggerOrderAlert(newOrder);
+            }
           }
           sendLocalNotification(
             'New Order',
