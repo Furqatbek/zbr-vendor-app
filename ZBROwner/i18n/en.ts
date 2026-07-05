@@ -138,6 +138,7 @@ export default {
     acceptFailed: 'Failed to accept order. Please try again.',
     declineFailed: 'Failed to decline order. Please try again.',
     statusUpdateFailed: 'Failed to update order status. Please try again.',
+    toggleOpenFailed: 'Could not change your open/closed status. Please try again.',
   },
 
   // Order detail

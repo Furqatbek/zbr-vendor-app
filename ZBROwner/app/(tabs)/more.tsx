@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, RefreshControl, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -55,7 +55,7 @@ export default function MoreScreen() {
       await toggleRestaurantOpen(restaurant.id, newStatus);
       setOpen(newStatus);
     } catch {
-      // API failed — don't update local state
+      Alert.alert(t('common.error'), t('orders.toggleOpenFailed'));
     }
   };
 

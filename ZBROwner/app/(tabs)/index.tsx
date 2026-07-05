@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Animated,
-  ScrollView, RefreshControl,
+  ScrollView, RefreshControl, ActivityIndicator,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -45,9 +45,11 @@ export default function OrdersScreen() {
       await toggleRestaurantOpen(restaurant.id, newStatus);
       setOpen(newStatus);
     } catch {
-      // API failed — don't update local state
+      // Surface the failure — a silently-stuck switch could make a vendor
+      // think they're Open (receiving orders) when they're not.
+      Alert.alert(t('common.error'), t('orders.toggleOpenFailed'));
     }
-  }, [isOpen, restaurant?.id, setOpen]);
+  }, [isOpen, restaurant?.id, setOpen, t]);
 
   const { refreshing, handleRefresh } = useRefresh(loadOrders);
 
@@ -280,16 +282,22 @@ export default function OrdersScreen() {
         ListHeaderComponent={renderHeader}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons
-              name={segment === 'new' ? 'receipt-outline' : segment === 'preparing' ? 'flame-outline' : 'time-outline'}
-              size={48}
-              color={Colors.gray300}
-            />
-            <Text style={styles.emptyText}>
-              {segment === 'new' ? t('orders.noNewOrders') : segment === 'preparing' ? t('orders.nothingCooking') : t('orders.noOrdersWaiting')}
-            </Text>
-          </View>
+          store.ordersLoading && orders.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <ActivityIndicator size="large" color={Colors.accent} />
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons
+                name={segment === 'new' ? 'receipt-outline' : segment === 'preparing' ? 'flame-outline' : 'time-outline'}
+                size={48}
+                color={Colors.gray300}
+              />
+              <Text style={styles.emptyText}>
+                {segment === 'new' ? t('orders.noNewOrders') : segment === 'preparing' ? t('orders.nothingCooking') : t('orders.noOrdersWaiting')}
+              </Text>
+            </View>
+          )
         }
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
