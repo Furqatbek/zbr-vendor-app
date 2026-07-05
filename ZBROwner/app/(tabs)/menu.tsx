@@ -417,7 +417,7 @@ export default function MenuScreen() {
                         <Ionicons name="camera-outline" size={16} color={Colors.accent} />
                         <Text style={styles.imageBtnText}>{t('menu.changeImage')}</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.imageBtn} onPress={handleDeleteImage}>
+                      <TouchableOpacity style={styles.imageBtn} onPress={() => handleDeleteImage()}>
                         <Ionicons name="trash-outline" size={16} color={Colors.danger} />
                         <Text style={[styles.imageBtnText, { color: Colors.danger }]}>{t('menu.removeImage')}</Text>
                       </TouchableOpacity>

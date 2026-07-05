@@ -1,10 +1,12 @@
 import React, { ReactNode } from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { Colors, Spacing, BorderRadius, Shadows } from '../constants/theme';
 
 interface Props {
   children: ReactNode;
-  style?: ViewStyle;
+  // StyleProp so callers can pass arrays / conditional styles, e.g.
+  // style={[styles.card, !read && styles.unread]}.
+  style?: StyleProp<ViewStyle>;
 }
 
 export default function Card({ children, style }: Props) {

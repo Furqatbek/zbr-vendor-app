@@ -39,13 +39,13 @@ export async function registerForPushNotifications(): Promise<string | null> {
       name: 'Orders',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
-      sound: true,
+      sound: 'default',
     });
 
     await Notifications.setNotificationChannelAsync('updates', {
       name: 'Updates',
       importance: Notifications.AndroidImportance.DEFAULT,
-      sound: true,
+      sound: 'default',
     });
   }
 
