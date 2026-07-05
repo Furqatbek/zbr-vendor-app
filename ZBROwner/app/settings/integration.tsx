@@ -13,15 +13,18 @@ import Card from '../../components/Card';
 import { useT } from '../../i18n';
 import type { RestosPreviewCategory, RestosImportResult } from '../../types';
 import { isSafeExternalUrl } from '../../utils/urlSafety';
+import { getSecureItem, setSecureItem, deleteSecureItem } from '../../utils/secureStorage';
 
 const normalizeName = (s: string | undefined | null) => (s ?? '').trim().toLowerCase();
 
 const STORAGE_KEY = 'restos_integration_config';
+// The partner API key is a credential — keep it in the OS keystore, not in the
+// plaintext AsyncStorage config blob.
+const RESTOS_API_KEY = 'restos_integration_api_key';
 
 interface RestosConfig {
   baseUrl: string;
   externalRestaurantId: string;
-  apiKey: string;
   hasImported: boolean;
 }
 
@@ -72,14 +75,17 @@ export default function RestaurantIntegrationScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        const [raw, storedKey] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEY),
+          getSecureItem(RESTOS_API_KEY),
+        ]);
         if (raw) {
           const cfg: RestosConfig = JSON.parse(raw);
           setBaseUrl(cfg.baseUrl ?? '');
           setExternalRestaurantId(cfg.externalRestaurantId ?? '');
-          setApiKey(cfg.apiKey ?? '');
           setHasImported(!!cfg.hasImported);
         }
+        if (storedKey) setApiKey(storedKey);
       } catch {
         // Non-fatal
       }
@@ -87,9 +93,15 @@ export default function RestaurantIntegrationScreen() {
   }, []);
 
   const persistConfig = async (imported: boolean) => {
-    const cfg: RestosConfig = { baseUrl, externalRestaurantId, apiKey, hasImported: imported };
+    const cfg: RestosConfig = { baseUrl, externalRestaurantId, hasImported: imported };
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+      const key = apiKey.trim();
+      if (key) {
+        await setSecureItem(RESTOS_API_KEY, key);
+      } else {
+        await deleteSecureItem(RESTOS_API_KEY);
+      }
     } catch {
       // Non-fatal
     }
