@@ -16,7 +16,7 @@ fixed, and the soft-launch hardening is done; see the progress log.
 | Config & deployment | 2 → 7 | Env-based hosts, deps installed, `eas.json` added; needs real TLS host |
 | Security | 3 → 6 | Tokens in keystore, logs stripped; SSRF/deep-link hardening pending |
 | Resilience | 4 → 7 | Error boundary, error/retry UI, crash guards, race fix all in |
-| Testing & quality | 3 → 6 | CI gate live, `tsc` clean, first 20 tests; broader coverage + lint pending |
+| Testing & quality | 3 → 7 | CI runs lint+typecheck+31 tests; runtime validation + noUncheckedIndexedAccess pending |
 | Feature correctness | 5 → 7 | Fake-success features gated off; core flows solid |
 
 ### Progress log
@@ -26,16 +26,20 @@ fixed, and the soft-launch hardening is done; see the progress log.
 - **Tier 1 — all items resolved** (`85275a0`, `e8d87f6`, `d13baee`, `2dc4e3b`,
   `e158dc5`): crash guards, error/retry UI, silent-failure fixes, fake-feature
   gating, optimistic-race fix, WS alarm dedupe.
-- **Tier 2 — started** (`c5f90c2`): jest harness + 20 passing tests (API mapping
-  + order state machine incl. the race guard) + GitHub Actions CI (typecheck +
-  test on every PR). Remaining: runtime schema validation, broader test
-  coverage, ESLint, security hardening (SSRF/deep-link), `noUncheckedIndexedAccess`.
+- **Tier 2 — largely done:** jest harness + **31 passing tests** (API mapping,
+  order state machine incl. the race guard, reviews + financial-report store
+  logic, URL-safety) (`c5f90c2`, `f0a8f0d`, `2bab325`); **CI** running
+  lint→typecheck→test on every PR + **ESLint** (`c5f90c2`, `fb9f92c`); **security
+  hardening** — notification-nav validation, Restos SSRF guard, Restos key to
+  keystore (`2bab325`, `13438fc`). Remaining: runtime schema validation at the
+  API boundary, `noUncheckedIndexedAccess` (+ the `menu.tsx` partial-types it
+  surfaces), the `t('key' as any)` casts, and cert pinning (with the TLS host).
 - **Bonus:** fixed 4 pre-existing TypeScript compile errors (`479244d`) — the
-  project now type-checks clean (`npx tsc --noEmit` passes), including a real
-  runtime bug in the menu remove-image button.
+  project now type-checks clean, including a real runtime bug in the menu
+  remove-image button.
 
-**Rough remaining timeline:** ~1–2 weeks to finish Tier 2 (broaden tests, runtime
-validation, security hardening) — plus the external TLS backend host.
+**Rough remaining timeline:** a few days to close out the remaining Tier-2
+items — plus the external TLS backend host, which gates a real launch.
 
 ---
 
@@ -137,25 +141,27 @@ backend endpoint lands. (`d13baee`)
   null-where-number crashes deep in render. Add runtime validation (zod/io-ts) at
   the boundary. *(The order-mapping layer is now null-tolerant + unit-tested,
   which de-risks the most common path; full schema validation still pending.)*
-- [x] **Quality gate (CI)** — added `.github/workflows/ci.yml` running `npm ci`,
-  `npm run typecheck`, and `npm run test:ci` on every PR. `tsc --noEmit` is clean.
-  (`c5f90c2`) *(ESLint/Prettier config still not added; the stray
-  `eslint-disable` in `more.tsx:48` remains a no-op until ESLint is installed.)*
-- [ ] **`noUncheckedIndexedAccess` off** — `tsconfig.json`; record lookups
-  (`STATUS_LABEL_KEYS[order.status]`, `ROLE_COLORS[role]`) resolve to `undefined`
-  with no compile warning, and the mapping layer explicitly passes unknown statuses
-  through. Turn it on.
+- [x] **Quality gate (CI + lint)** — `.github/workflows/ci.yml` runs `npm ci` →
+  lint → typecheck → test on every PR. Added ESLint (flat config extending
+  `eslint-config-expo`); lint is error-clean (50 non-blocking warnings remain as
+  follow-ups). `tsc --noEmit` clean. (`c5f90c2`, `fb9f92c`)
+- [ ] **`noUncheckedIndexedAccess` off** — deferred. Enabling it surfaces ~23
+  errors: ~12 in test files (trivial), and ~11 real ones in `menu.tsx` variant/
+  option editing that indicate genuine partial-type assignments worth fixing
+  carefully (not a rush job). The highest-risk index access (status/label maps,
+  order arrays) is now runtime-null-tolerant and unit-tested. Enable + fix as a
+  focused follow-up.
 - [ ] **83 `t('key' as any)` casts** defeat i18n key-checking — a future key rename
   ships broken UI silently (renders the raw key path). Drop the `as any`.
-- [ ] **No cert/public-key pinning** — land with the TLS fix.
-- [ ] **SSRF vector** — `settings/integration.tsx` forwards a raw user-entered
-  `baseUrl` to the backend to fetch server-side with no scheme/host allowlist.
-  Allowlist client-side + validate server-side.
-- [ ] **Untrusted notification payload drives navigation** —
-  `hooks/useNotifications.ts:96` `router.push('/order/${data.orderId}')` with no
-  validation of `orderId`. Validate before interpolating into a route.
-- [ ] **Restos API key in AsyncStorage plaintext** — `settings/integration.tsx`
-  `persistConfig`. Move to SecureStore with the token fix.
+- [ ] **No cert/public-key pinning** — land with the TLS fix (needs the real host).
+- [x] **SSRF vector** — `settings/integration.tsx` now validates the user-entered
+  `baseUrl` client-side via `utils/urlSafety` (http(s) only; rejects localhost/
+  127.*/169.254.*/10/192.168/172.16-31/*.local/*.internal) before the backend
+  fetches it. Authoritative allowlist still belongs server-side. (`2bab325`)
+- [x] **Untrusted notification payload drives navigation** — `orderId` is now
+  validated as a numeric string before being routed to `/order/${id}`. (`2bab325`)
+- [x] **Restos API key in AsyncStorage plaintext** — moved to `expo-secure-store`;
+  the config blob no longer holds the credential. (`13438fc`)
 
 ---
 
