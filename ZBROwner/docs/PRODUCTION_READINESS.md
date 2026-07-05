@@ -16,7 +16,7 @@ fixed, and the soft-launch hardening is done; see the progress log.
 | Config & deployment | 2 → 7 | Env-based hosts, deps installed, `eas.json` added; needs real TLS host |
 | Security | 3 → 6 | Tokens in keystore, logs stripped; SSRF/deep-link hardening pending |
 | Resilience | 4 → 7 | Error boundary, error/retry UI, crash guards, race fix all in |
-| Testing & quality | 3 → 7 | CI runs lint+typecheck+31 tests; runtime validation + noUncheckedIndexedAccess pending |
+| Testing & quality | 3 → 8 | CI runs lint+typecheck+31 tests; strict flags on; only runtime schema validation left |
 | Feature correctness | 5 → 7 | Fake-success features gated off; core flows solid |
 
 ### Progress log
@@ -31,9 +31,10 @@ fixed, and the soft-launch hardening is done; see the progress log.
   logic, URL-safety) (`c5f90c2`, `f0a8f0d`, `2bab325`); **CI** running
   lint→typecheck→test on every PR + **ESLint** (`c5f90c2`, `fb9f92c`); **security
   hardening** — notification-nav validation, Restos SSRF guard, Restos key to
-  keystore (`2bab325`, `13438fc`). Remaining: runtime schema validation at the
-  API boundary, `noUncheckedIndexedAccess` (+ the `menu.tsx` partial-types it
-  surfaces), the `t('key' as any)` casts, and cert pinning (with the TLS host).
+  keystore (`2bab325`, `13438fc`); `noUncheckedIndexedAccess` on with its real
+  bugs fixed (`e613924`); i18n `t()` casts removed (`1b7eadd`). **Only two
+  Tier-2 items remain:** runtime schema validation at the API boundary, and cert
+  pinning (which needs the real TLS host).
 - **Bonus:** fixed 4 pre-existing TypeScript compile errors (`479244d`) — the
   project now type-checks clean, including a real runtime bug in the menu
   remove-image button.
@@ -145,14 +146,14 @@ backend endpoint lands. (`d13baee`)
   lint → typecheck → test on every PR. Added ESLint (flat config extending
   `eslint-config-expo`); lint is error-clean (50 non-blocking warnings remain as
   follow-ups). `tsc --noEmit` clean. (`c5f90c2`, `fb9f92c`)
-- [ ] **`noUncheckedIndexedAccess` off** — deferred. Enabling it surfaces ~23
-  errors: ~12 in test files (trivial), and ~11 real ones in `menu.tsx` variant/
-  option editing that indicate genuine partial-type assignments worth fixing
-  carefully (not a rush job). The highest-risk index access (status/label maps,
-  order arrays) is now runtime-null-tolerant and unit-tested. Enable + fix as a
-  focused follow-up.
-- [ ] **83 `t('key' as any)` casts** defeat i18n key-checking — a future key rename
-  ships broken UI silently (renders the raw key path). Drop the `as any`.
+- [x] **`noUncheckedIndexedAccess`** — enabled in `tsconfig`. Fixed the real bugs
+  it surfaced: `menu.tsx` variant/option editing spread a possibly-undefined
+  element into an object missing required fields (now reads-then-guards), and
+  `reviews.tsx` wrote to `dist[-1]` (NaN) for a 0-rating. tsc clean with the flag
+  on. (`e613924`)
+- [x] **`t('key' as any)` casts** — removed all ~64 literal-key casts and typed the
+  dynamic-key lookups (`Record<_, TranslationKey>`), so a future key rename now
+  fails the build instead of silently rendering the raw key path. (`1b7eadd`)
 - [ ] **No cert/public-key pinning** — land with the TLS fix (needs the real host).
 - [x] **SSRF vector** — `settings/integration.tsx` now validates the user-entered
   `baseUrl` client-side via `utils/urlSafety` (http(s) only; rejects localhost/
