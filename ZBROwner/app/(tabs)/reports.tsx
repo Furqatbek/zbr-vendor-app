@@ -6,6 +6,7 @@ import { LineChart } from 'react-native-chart-kit';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
 import { FEATURES } from '../../constants/features';
+import ErrorState from '../../components/ErrorState';
 import { useStore } from '../../store';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
@@ -28,7 +29,7 @@ function formatDateShort(date: Date): string {
 
 export default function ReportsScreen() {
   const {
-    financialReport, financialReportLoading, revenueData,
+    financialReport, financialReportLoading, financialReportError, revenueData,
     selectedPeriod, setSelectedPeriod, loadFinancialReport,
     customStartDate, customEndDate, setCustomDateRange,
   } = useStore();
@@ -171,7 +172,11 @@ export default function ReportsScreen() {
         <Text style={styles.exportText}>{t('reports.exportPdf' as any)}</Text>
       </TouchableOpacity>
 
-      {financialReportLoading && !report ? (
+      {financialReportError && !report ? (
+        <View style={styles.empty}>
+          <ErrorState onRetry={loadFinancialReport} />
+        </View>
+      ) : financialReportLoading && !report ? (
         <ActivityIndicator size="large" color={Colors.accent} style={{ marginTop: Spacing['3xl'] }} />
       ) : !report ? (
         <View style={styles.empty}>

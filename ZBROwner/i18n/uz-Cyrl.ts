@@ -42,6 +42,7 @@ export default {
     loading: 'Юкланмоқда...',
     error: 'Хатолик',
     retry: 'Қайта уриниш',
+    loadError: 'Юклаб бўлмади. Алоқани текширинг.',
     search: 'Қидириш',
     filter: 'Филтр',
     all: 'Барчаси',

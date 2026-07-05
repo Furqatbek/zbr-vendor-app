@@ -42,6 +42,7 @@ export default {
     loading: 'Yuklanmoqda...',
     error: 'Xatolik',
     retry: 'Qayta urinish',
+    loadError: 'Yuklab bo\'lmadi. Aloqani tekshiring.',
     search: 'Qidirish',
     filter: 'Filtr',
     all: 'Barchasi',

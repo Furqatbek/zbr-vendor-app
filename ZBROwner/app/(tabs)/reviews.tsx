@@ -12,6 +12,7 @@ import Chip from '../../components/Chip';
 import { useT } from '../../i18n';
 import { useRefresh } from '../../hooks/useRefresh';
 import { FEATURES } from '../../constants/features';
+import ErrorState from '../../components/ErrorState';
 
 type Filter = 'all' | 'positive' | 'negative' | 'unresponded';
 
@@ -23,7 +24,7 @@ const filterKeys: Record<Filter, string> = {
 };
 
 export default function ReviewsScreen() {
-  const { reviews, averageRating, totalRatings, ratingDistribution, reviewsLoading, loadReviews, replyToReview } = useStore();
+  const { reviews, averageRating, totalRatings, ratingDistribution, reviewsLoading, reviewsError, loadReviews, replyToReview } = useStore();
   const t = useT();
   const { refreshing, handleRefresh } = useRefresh(loadReviews);
   const [filter, setFilter] = useState<Filter>('all');
@@ -148,6 +149,14 @@ export default function ReviewsScreen() {
       </View>
     </View>
   );
+
+  if (reviewsError && totalRatings === 0 && reviews.length === 0) {
+    return (
+      <View style={[styles.screen, styles.centered]}>
+        <ErrorState onRetry={loadReviews} />
+      </View>
+    );
+  }
 
   if (reviewsLoading && totalRatings === 0 && reviews.length === 0) {
     return (

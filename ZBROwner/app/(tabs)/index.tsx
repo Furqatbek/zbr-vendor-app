@@ -13,6 +13,7 @@ import { useAuthStore } from '../../store/authStore';
 import { toggleRestaurantOpen } from '../../services/api';
 import type { Order } from '../../types';
 import Card from '../../components/Card';
+import ErrorState from '../../components/ErrorState';
 import StatusBadge from '../../components/StatusBadge';
 import SlideToAction from '../../components/SlideToAction';
 import CountdownTimer from '../../components/CountdownTimer';
@@ -282,7 +283,11 @@ export default function OrdersScreen() {
         ListHeaderComponent={renderHeader}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}
         ListEmptyComponent={
-          store.ordersLoading && orders.length === 0 ? (
+          store.ordersError && orders.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <ErrorState onRetry={loadOrders} />
+            </View>
+          ) : store.ordersLoading && orders.length === 0 ? (
             <View style={styles.emptyContainer}>
               <ActivityIndicator size="large" color={Colors.accent} />
             </View>

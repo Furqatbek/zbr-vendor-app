@@ -26,6 +26,7 @@ interface AppStore {
   // Orders
   orders: Order[];
   ordersLoading: boolean;
+  ordersError: boolean;
   loadOrders: () => Promise<void>;
   loadActiveOrders: () => Promise<void>;
   getOrdersByStatus: (statuses: OrderStatus[]) => Order[];
@@ -39,6 +40,7 @@ interface AppStore {
   totalRatings: number;
   ratingDistribution: Record<string, number>;
   reviewsLoading: boolean;
+  reviewsError: boolean;
   loadReviews: () => Promise<void>;
   replyToReview: (reviewId: string, text: string) => void;
 
@@ -46,6 +48,7 @@ interface AppStore {
   revenueData: RevenueData;
   financialReport: FinancialReportData | null;
   financialReportLoading: boolean;
+  financialReportError: boolean;
   selectedPeriod: 'day' | 'week' | 'month' | 'custom';
   customStartDate: Date | null;
   customEndDate: Date | null;
@@ -96,15 +99,16 @@ export const useStore = create<AppStore>((set, get) => ({
 
   orders: [],
   ordersLoading: false,
+  ordersError: false,
   loadOrders: async () => {
     const restaurant = useAuthStore.getState().restaurant;
     if (!restaurant) return;
-    set({ ordersLoading: true });
+    set({ ordersLoading: true, ordersError: false });
     try {
       const res = await fetchRestaurantOrders(restaurant.id, { page: 0, size: 100 });
       set((s) => ({ orders: mergePreservingPending(res.content, s.orders) }));
     } catch {
-      // Non-fatal – keep existing data
+      set({ ordersError: true });
     } finally {
       set({ ordersLoading: false });
     }
@@ -112,12 +116,12 @@ export const useStore = create<AppStore>((set, get) => ({
   loadActiveOrders: async () => {
     const restaurant = useAuthStore.getState().restaurant;
     if (!restaurant) return;
-    set({ ordersLoading: true });
+    set({ ordersLoading: true, ordersError: false });
     try {
       const res = await fetchActiveOrders(restaurant.id, { page: 0, size: 100 });
       set((s) => ({ orders: mergePreservingPending(res.content, s.orders) }));
     } catch {
-      // Non-fatal – keep existing data
+      set({ ordersError: true });
     } finally {
       set({ ordersLoading: false });
     }
@@ -199,10 +203,11 @@ export const useStore = create<AppStore>((set, get) => ({
   totalRatings: 0,
   ratingDistribution: {},
   reviewsLoading: false,
+  reviewsError: false,
   loadReviews: async () => {
     const restaurant = useAuthStore.getState().restaurant;
     if (!restaurant) return;
-    set({ reviewsLoading: true });
+    set({ reviewsLoading: true, reviewsError: false });
     try {
       const now = new Date();
       const startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString();
@@ -211,6 +216,11 @@ export const useStore = create<AppStore>((set, get) => ({
         fetchRatings(restaurant.id, startDate, endDate, { includeDistribution: true }).catch(() => null),
         fetchRestaurantReviews(restaurant.id, 0, 50).catch(() => null),
       ]);
+
+      // Both sub-fetches failed → surface a retryable error.
+      if (ratingsRes === null && reviewsRes === null) {
+        set({ reviewsError: true });
+      }
 
       // The restaurant object (from /restaurants/my) is the source of truth
       // for the headline average + total rating count.
@@ -261,6 +271,7 @@ export const useStore = create<AppStore>((set, get) => ({
   revenueData: emptyRevenueData,
   financialReport: null,
   financialReportLoading: false,
+  financialReportError: false,
   selectedPeriod: 'day',
   customStartDate: null,
   customEndDate: null,
@@ -277,7 +288,7 @@ export const useStore = create<AppStore>((set, get) => ({
   loadFinancialReport: async () => {
     const restaurant = useAuthStore.getState().restaurant;
     if (!restaurant) return;
-    set({ financialReportLoading: true });
+    set({ financialReportLoading: true, financialReportError: false });
     try {
       const now = new Date();
       const period = get().selectedPeriod;
@@ -318,7 +329,7 @@ export const useStore = create<AppStore>((set, get) => ({
         },
       });
     } catch {
-      // Non-fatal – keep existing data
+      set({ financialReportError: true });
     } finally {
       set({ financialReportLoading: false });
     }

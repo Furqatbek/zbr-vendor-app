@@ -42,6 +42,7 @@ export default {
     loading: 'Загрузка...',
     error: 'Ошибка',
     retry: 'Повторить',
+    loadError: 'Не удалось загрузить. Проверьте соединение.',
     search: 'Поиск',
     filter: 'Фильтр',
     all: 'Все',

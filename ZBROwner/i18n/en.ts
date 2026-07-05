@@ -45,6 +45,7 @@ export default {
     loading: 'Loading...',
     error: 'Error',
     retry: 'Retry',
+    loadError: 'Couldn\'t load. Check your connection.',
     search: 'Search',
     filter: 'Filter',
     all: 'All',
