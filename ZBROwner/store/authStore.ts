@@ -4,11 +4,17 @@ import type { AuthUser, AuthTokens, RefreshResponse, Restaurant } from '../types
 import { Platform } from 'react-native';
 import * as Application from 'expo-application';
 import { configureAuth, login as apiLogin, logout as apiLogout, fetchMyRestaurants, unregisterDeviceToken } from '../services/api';
+import { setSecureItem, deleteSecureItem, migrateFromAsyncStorage } from '../utils/secureStorage';
 import { useStore } from './index';
 
-const STORAGE_KEYS = {
+// Sensitive credentials — kept in the OS keystore via secureStorage.
+const SECURE_KEYS = {
   ACCESS_TOKEN: 'auth_access_token',
   REFRESH_TOKEN: 'auth_refresh_token',
+} as const;
+
+// Non-sensitive session data — plain AsyncStorage is fine.
+const STORAGE_KEYS = {
   USER: 'auth_user',
   RESTAURANTS: 'auth_restaurants',
   SELECTED_RESTAURANT_ID: 'auth_selected_restaurant_id',
@@ -44,9 +50,9 @@ export const useAuthStore = create<AuthStore>((set, get) => {
       // server-side, so losing the rotated pair (app killed mid-write) would
       // force a re-login on next launch.
       try {
-        await AsyncStorage.multiSet([
-          [STORAGE_KEYS.ACCESS_TOKEN, data.accessToken],
-          [STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken],
+        await Promise.all([
+          setSecureItem(SECURE_KEYS.ACCESS_TOKEN, data.accessToken),
+          setSecureItem(SECURE_KEYS.REFRESH_TOKEN, data.refreshToken),
         ]);
       } catch {
         // Non-fatal: in-memory tokens remain valid for this session
@@ -76,8 +82,10 @@ export const useAuthStore = create<AuthStore>((set, get) => {
     initialize: async () => {
       try {
         const [accessToken, refreshToken, userJson, restaurantsJson, selectedIdStr] = await Promise.all([
-          AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN),
-          AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN),
+          // migrateFromAsyncStorage moves any pre-existing plaintext token into
+          // secure storage on first launch after upgrade, then reads it back.
+          migrateFromAsyncStorage(SECURE_KEYS.ACCESS_TOKEN),
+          migrateFromAsyncStorage(SECURE_KEYS.REFRESH_TOKEN),
           AsyncStorage.getItem(STORAGE_KEYS.USER),
           AsyncStorage.getItem(STORAGE_KEYS.RESTAURANTS),
           AsyncStorage.getItem(STORAGE_KEYS.SELECTED_RESTAURANT_ID),
@@ -108,8 +116,8 @@ export const useAuthStore = create<AuthStore>((set, get) => {
         const user: AuthUser = { id: userId, email, fullName, roles };
 
         await Promise.all([
-          AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken),
-          AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken),
+          setSecureItem(SECURE_KEYS.ACCESS_TOKEN, accessToken),
+          setSecureItem(SECURE_KEYS.REFRESH_TOKEN, refreshToken),
           AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user)),
         ]);
 
@@ -174,9 +182,10 @@ export const useAuthStore = create<AuthStore>((set, get) => {
     },
 
     clearSession: () => {
+      // Fire-and-forget clears; in-memory state is nulled synchronously below.
+      deleteSecureItem(SECURE_KEYS.ACCESS_TOKEN);
+      deleteSecureItem(SECURE_KEYS.REFRESH_TOKEN);
       AsyncStorage.multiRemove([
-        STORAGE_KEYS.ACCESS_TOKEN,
-        STORAGE_KEYS.REFRESH_TOKEN,
         STORAGE_KEYS.USER,
         STORAGE_KEYS.RESTAURANTS,
         STORAGE_KEYS.SELECTED_RESTAURANT_ID,
