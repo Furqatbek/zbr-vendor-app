@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { LineChart } from 'react-native-chart-kit';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../constants/theme';
+import { FEATURES } from '../../constants/features';
 import { useStore } from '../../store';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
@@ -326,19 +327,23 @@ export default function ReportsScreen() {
             </Card>
           )}
 
-          {/* Refunds & Cancellations */}
-          <View style={styles.statsRow}>
-            <Card style={styles.statCard}>
-              <Ionicons name="arrow-undo-outline" size={20} color={Colors.warning} />
-              <Text style={styles.statLabel}>{t('reports.refunds' as any)}</Text>
-              <Text style={styles.statValue}>{revenueData.refunds}</Text>
-            </Card>
-            <Card style={styles.statCard}>
-              <Ionicons name="close-circle-outline" size={20} color={Colors.danger} />
-              <Text style={styles.statLabel}>{t('reports.cancellations' as any)}</Text>
-              <Text style={styles.statValue}>{revenueData.cancellations}</Text>
-            </Card>
-          </View>
+          {/* Refunds & Cancellations — hidden until the financial report payload
+              carries these totals (FEATURES.reportsRefunds); they were hardcoded
+              to a misleading 0 on a money screen. */}
+          {FEATURES.reportsRefunds && (
+            <View style={styles.statsRow}>
+              <Card style={styles.statCard}>
+                <Ionicons name="arrow-undo-outline" size={20} color={Colors.warning} />
+                <Text style={styles.statLabel}>{t('reports.refunds' as any)}</Text>
+                <Text style={styles.statValue}>{revenueData.refunds}</Text>
+              </Card>
+              <Card style={styles.statCard}>
+                <Ionicons name="close-circle-outline" size={20} color={Colors.danger} />
+                <Text style={styles.statLabel}>{t('reports.cancellations' as any)}</Text>
+                <Text style={styles.statValue}>{revenueData.cancellations}</Text>
+              </Card>
+            </View>
+          )}
         </>
       )}
     </ScrollView>

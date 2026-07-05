@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
+import { FEATURES } from '../../constants/features';
 import { useStore } from '../../store';
 import type { OrderStatus, OrderType, CourierRating } from '../../types';
 import Card from '../../components/Card';
@@ -81,7 +82,9 @@ export default function OrderDetailScreen() {
           try {
             await updateOrderStatus(order.id, newStatus);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            if (newStatus === 'picked_up' && order.courierName) {
+            // Courier rating sheet gated until a rating endpoint exists
+            // (FEATURES.courierRatings) — submissions were discarded.
+            if (FEATURES.courierRatings && newStatus === 'picked_up' && order.courierName) {
               setShowRatingSheet(true);
             }
           } catch {

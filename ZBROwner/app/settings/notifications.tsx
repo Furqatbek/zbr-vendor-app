@@ -5,6 +5,7 @@ import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme
 import { useStore } from '../../store';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
+import { FEATURES } from '../../constants/features';
 
 export default function NotificationsScreen() {
   const { notificationPrefs, toggleNotificationPref } = useStore();
@@ -31,11 +32,17 @@ export default function NotificationsScreen() {
         <Text style={styles.notifLabel}>{item.label}</Text>
         <Text style={styles.notifDesc}>{item.description}</Text>
       </View>
+      {/* Prefs aren't persisted/enforced until the backend supports them
+          (FEATURES.notificationPrefs). Until then the switch is disabled and
+          shows the truthful state: all categories are currently delivered. */}
       <Switch
-        value={notificationPrefs[item.key] ?? false}
-        onValueChange={() => toggleNotificationPref(item.key)}
+        value={FEATURES.notificationPrefs ? (notificationPrefs[item.key] ?? false) : true}
+        onValueChange={() => { if (FEATURES.notificationPrefs) toggleNotificationPref(item.key); }}
+        disabled={!FEATURES.notificationPrefs}
         trackColor={{ false: Colors.gray300, true: Colors.accentLight }}
-        thumbColor={notificationPrefs[item.key] ? Colors.accent : Colors.gray400}
+        thumbColor={
+          (FEATURES.notificationPrefs ? notificationPrefs[item.key] : true) ? Colors.accent : Colors.gray400
+        }
       />
     </View>
   );

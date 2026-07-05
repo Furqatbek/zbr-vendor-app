@@ -11,6 +11,7 @@ import RatingStars from '../../components/RatingStars';
 import Chip from '../../components/Chip';
 import { useT } from '../../i18n';
 import { useRefresh } from '../../hooks/useRefresh';
+import { FEATURES } from '../../constants/features';
 
 type Filter = 'all' | 'positive' | 'negative' | 'unresponded';
 
@@ -85,7 +86,9 @@ export default function ReviewsScreen() {
         </View>
       )}
       <View style={styles.reviewActions}>
-        {!item.replied && (
+        {/* Reply hidden until the backend reply endpoint exists (FEATURES.reviewReplies) —
+            replies were previously local-only and vanished on refresh. */}
+        {FEATURES.reviewReplies && !item.replied && (
           <TouchableOpacity style={styles.replyButton} onPress={() => setReplyingTo(item.id)}>
             <Ionicons name="chatbubble-outline" size={16} color={Colors.accent} />
             <Text style={styles.replyButtonText}>{t('reviews.reply')}</Text>
@@ -129,9 +132,12 @@ export default function ReviewsScreen() {
         })}
       </Card>
 
-      {/* Filter Chips */}
+      {/* Filter Chips — 'unresponded' only when replies are live (it keys off
+          the replied flag, which doesn't persist without the reply endpoint). */}
       <View style={styles.filterRow}>
-        {(['all', 'positive', 'negative', 'unresponded'] as Filter[]).map((f) => (
+        {((FEATURES.reviewReplies
+          ? ['all', 'positive', 'negative', 'unresponded']
+          : ['all', 'positive', 'negative']) as Filter[]).map((f) => (
           <Chip
             key={f}
             label={t(filterKeys[f] as any)}
