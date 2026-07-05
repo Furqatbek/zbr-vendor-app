@@ -220,7 +220,7 @@ const KNOWN_STATUSES: ReadonlySet<string> = new Set<OrderStatus>([
  * actions available. Unknown future statuses fall back to a warn + pass-through
  * so they at least render via StatusBadge's fallback instead of vanishing.
  */
-function normalizeStatus(raw: RawApiOrder): OrderStatus {
+export function normalizeStatus(raw: RawApiOrder): OrderStatus {
   if (!raw.status || typeof raw.status !== 'string') return 'created';
   const upper = raw.status.toUpperCase();
   if (upper === 'COURIER_ASSIGNED') {
@@ -235,14 +235,14 @@ function normalizeStatus(raw: RawApiOrder): OrderStatus {
   return lower as OrderStatus;
 }
 
-function minutesUntil(iso?: string): number | undefined {
+export function minutesUntil(iso?: string): number | undefined {
   if (!iso) return undefined;
   const ms = new Date(iso).getTime() - Date.now();
   if (Number.isNaN(ms) || ms <= 0) return undefined;
   return Math.round(ms / 60000);
 }
 
-function mapApiOrder(raw: RawApiOrder): Order {
+export function mapApiOrder(raw: RawApiOrder): Order {
   return {
     id: String(raw.id),
     orderNumber: raw.externalOrderNo,
@@ -286,7 +286,7 @@ function mapApiOrder(raw: RawApiOrder): Order {
  * order can't reject the whole `.map` and blank the vendor's order board.
  * Bad records are dropped with a warning rather than taking down the page.
  */
-function safeMapOrders(raw: RawApiOrder[] | undefined | null): Order[] {
+export function safeMapOrders(raw: RawApiOrder[] | undefined | null): Order[] {
   if (!Array.isArray(raw)) return [];
   const out: Order[] = [];
   for (const r of raw) {
