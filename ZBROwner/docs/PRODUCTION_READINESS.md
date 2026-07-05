@@ -1,74 +1,72 @@
 # Production Readiness Audit — ZBROwner
 
-**Verdict: NOT ready for production launch.**
+**Original verdict: NOT ready for production launch.**
+**Status: all Tier-0 ship-blockers resolved (client side). Now blocked only on a
+TLS backend host + Tier-1 hardening.**
 
 A five-dimension audit (config/deploy, security, resilience, testing, feature-correctness)
 of the ZBROwner vendor app. The architecture is sound — the order pipeline works
-end-to-end, auth is well-built, real-time is properly wired — but the app **cannot
-connect to a backend from a device and does not build in its current state.**
+end-to-end, auth is well-built, real-time is properly wired. As originally filed the
+app **could not connect to a backend from a device and did not build.** Both are
+now fixed; see the progress log.
 
-Every load-bearing finding below was verified by hand against the repo.
-
-| Dimension | Score /10 | One-line |
+| Dimension | Score /10 → now | One-line |
 |-----------|-----------|----------|
-| Config & deployment | 2 | Hardcoded `localhost`; two deps uninstalled; no `eas.json` |
-| Security | 3 | Plaintext tokens, cleartext traffic, PII in logs |
-| Resilience | 4 | No error boundary; one bad record blanks the order board |
-| Testing & quality | 3 | Zero tests, no CI, blind-cast API boundary |
-| Feature correctness | 5 | Core flows real; several features fake success |
+| Config & deployment | 2 → 7 | Env-based hosts, deps installed, `eas.json` added; needs real TLS host |
+| Security | 3 → 6 | Tokens in keystore, logs stripped; SSRF/deep-link hardening pending |
+| Resilience | 4 → 5 | Error boundary added; error/retry UI + races still Tier-1 |
+| Testing & quality | 3 → 4 | `tsc` now clean; still zero tests, no CI |
+| Feature correctness | 5 | Unchanged — fake-success features still Tier-1 |
 
-**Rough timeline:** ~1 week to *installable & functional on a device*; **3–4 weeks**
-to *let real restaurants run a dinner rush on it.*
+### Progress log
+- **Tier 0 — all items resolved** (commits `89bb82b`, `b97e32e`, `417fbec`,
+  `73f17b2`, `44e7e2f`). #5 (TLS) is client-ready; the remaining piece is the
+  backend serving `https`/`wss`.
+- **Bonus:** fixed 4 pre-existing TypeScript compile errors (`479244d`) — the
+  project now type-checks clean (`npx tsc --noEmit` passes), including a real
+  runtime bug in the menu remove-image button.
+
+**Rough remaining timeline:** Tier 1 (~1–2 weeks) to soft-launch bar; Tier 2
+(~2–3 weeks) for real confidence.
 
 ---
 
-## TIER 0 — Ship-blockers (must fix before ANY build ships)
+## TIER 0 — Ship-blockers — ✅ ALL RESOLVED
 
-- [ ] **Backend URL hardcoded to localhost, no env mechanism**
-  `constants/api.ts:5,7` — `API_BASE_URL='http://localhost:8080'`,
-  `WS_BASE_URL='ws://localhost:8080'`. On a real device `localhost` is the phone
-  itself, so login and every request/WebSocket fail instantly. No `app.config`,
-  no `expo-constants` `extra`, no `__DEV__` switch. **Move to an env/build-profile
-  mechanism and point at a real host.**
+- [x] **Backend URL hardcoded to localhost** → `constants/api.ts` now reads
+  `EXPO_PUBLIC_API_BASE_URL` / `EXPO_PUBLIC_WS_BASE_URL` (Expo inlines these at
+  build time), with a localhost dev fallback + `__DEV__` warning. Hosts are set
+  per environment in `eas.json`. `.env.example` documents local usage. (`b97e32e`)
 
-- [ ] **`expo-location` imported but not an installed dependency**
-  `app/settings/location.tsx:7` imports it and `app.json` lists it as a plugin,
-  but it's absent from `package.json`. `expo prebuild`/EAS fails to resolve the
-  plugin; Metro fails to resolve the import. **Run `npx expo install expo-location`
-  and commit.**
+- [x] **`expo-location` not installed** → installed via `expo install`
+  (`expo-location@~55.1.11`, SDK-matched). (`89bb82b`)
 
-- [ ] **`react-native-webview` require()'d but not installed**
-  `components/MapPicker.tsx:159` — native map picker require()s it; absent from
-  `package.json`. Bundle fails / crashes when a vendor opens Settings → Location.
-  **Run `npx expo install react-native-webview` and commit.**
+- [x] **`react-native-webview` not installed** → installed
+  (`react-native-webview@13.16.0`). Native map picker resolves. (`89bb82b`)
 
-- [ ] **No `eas.json`, no EAS project config in `app.json`**
-  No build profiles (development/preview/production), no `projectId`, no
-  `runtimeVersion`, no updates block. Deployment via EAS is not set up. **Create
-  `eas.json` and run `eas init`.**
+- [x] **No `eas.json`** → added with development / preview / production build
+  profiles, each injecting the API/WS hosts; `appVersionSource: remote` +
+  `production.autoIncrement` handles versionCode/buildNumber. (`b97e32e`)
+  **⚠️ Action for team:** replace the `*.zbr.example.com` placeholder hosts with
+  real staging/prod URLs, and run `eas init` to attach a `projectId`.
 
-- [ ] **Cleartext HTTP/WS will be blocked in release even after the host is fixed**
-  `constants/api.ts:5,7` use `http://`/`ws://`. iOS ATS and Android cleartext
-  policy block non-TLS in release builds; no exception config exists. **Backend
-  must be `https://` and `wss://`.**
+- [x] **Cleartext HTTP/WS** → **client-ready.** Env mechanism + `eas.json`
+  preview/production profiles use `https://` / `wss://`. (`b97e32e`)
+  **⚠️ Remaining (backend):** the staging/prod backend must actually serve TLS.
+  No client code change left.
 
-- [ ] **Auth tokens in AsyncStorage plaintext**
-  `store/authStore.ts` persists access + long-lived refresh tokens unencrypted.
-  A rooted/stolen/`adb backup`'d device leaks a refresh token that mints access
-  tokens indefinitely (rotation only on use). **Migrate token storage to
-  `expo-secure-store`.**
+- [x] **Auth tokens in AsyncStorage plaintext** → migrated to `expo-secure-store`
+  (iOS Keychain / Android Keystore) via `utils/secureStorage.ts`, with web
+  fallback and a one-time migration from the legacy plaintext slot. (`44e7e2f`)
 
-- [ ] **PII console-logged to production**
-  `store/index.ts:148` — `console.log('[store.declineOrder] API success:',
-  JSON.stringify(result))` dumps the full order (customer name, phone, address)
-  to device logs on every decline. Also `services/api.ts:189` logs cancel URL +
-  body. No `__DEV__` guard, no `babel-plugin-transform-remove-console`. **Strip
-  all console.* from release (add the babel plugin) and remove the PII dumps now.**
+- [x] **PII console-logged to production** → removed the debug logs (including the
+  full-order `JSON.stringify` dump) across store/api/order-detail/orders-tab/
+  SlideToAction, and added `babel-plugin-transform-remove-console` to strip
+  `console.*` (except `error`) from release builds. (`417fbec`)
 
-- [ ] **No global React error boundary**
-  `app/_layout.tsx` — no `componentDidCatch`/`ErrorBoundary` anywhere. Any thrown
-  render white-screens the entire app with no recovery; vendor must force-quit.
-  **Add a root error boundary with a reload affordance.**
+- [x] **No global React error boundary** → added `components/ErrorBoundary.tsx`
+  wrapping the root tree with a "Something went wrong / Reload" fallback.
+  (`73f17b2`)
 
 ---
 
@@ -143,6 +141,8 @@ doesn't present a capability that doesn't exist.**
 - [ ] **No quality gates** — no ESLint/Prettier config, no `.github/workflows`. Nothing
   runs `tsc --noEmit`/lint/test on PRs. (`more.tsx:48` even has an
   `eslint-disable` for an ESLint that isn't installed.) Add CI.
+  *(Update: `npx tsc --noEmit` now passes clean as of `479244d`, so a typecheck
+  gate can be wired immediately.)*
 - [ ] **`noUncheckedIndexedAccess` off** — `tsconfig.json`; record lookups
   (`STATUS_LABEL_KEYS[order.status]`, `ROLE_COLORS[role]`) resolve to `undefined`
   with no compile warning, and the mapping layer explicitly passes unknown statuses
