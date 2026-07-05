@@ -39,9 +39,14 @@ export default function ReviewsScreen() {
     if (hasApiDist) {
       return [5, 4, 3, 2, 1].map((star) => ratingDistribution[String(star)] ?? 0);
     }
-    // Fallback: compute from reviews locally
+    // Fallback: compute from reviews locally. Clamp to 1–5 so a 0/NaN rating
+    // (mapApiOrder falls back to 0 when both rating fields are null) can't write
+    // to index -1.
     const dist = [0, 0, 0, 0, 0];
-    reviews.forEach((r) => dist[r.rating - 1]++);
+    reviews.forEach((r) => {
+      const idx = Math.round(r.rating) - 1;
+      if (idx >= 0 && idx < dist.length) dist[idx] = (dist[idx] ?? 0) + 1;
+    });
     return dist.reverse();
   }, [ratingDistribution, reviews]);
 

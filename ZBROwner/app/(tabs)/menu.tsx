@@ -500,7 +500,9 @@ export default function MenuScreen() {
                         value={variant.name}
                         onChangeText={(v) => setItemForm((f) => {
                           const variants = [...(f.variants ?? [])];
-                          variants[idx] = { ...variants[idx], name: v };
+                          const existing = variants[idx];
+                          if (!existing) return f;
+                          variants[idx] = { ...existing, name: v };
                           return { ...f, variants };
                         })}
                       />
@@ -513,7 +515,9 @@ export default function MenuScreen() {
                         value={variant.priceDelta ? String(variant.priceDelta) : ''}
                         onChangeText={(v) => setItemForm((f) => {
                           const variants = [...(f.variants ?? [])];
-                          variants[idx] = { ...variants[idx], priceDelta: Number(v) || 0 };
+                          const existing = variants[idx];
+                          if (!existing) return f;
+                          variants[idx] = { ...existing, priceDelta: Number(v) || 0 };
                           return { ...f, variants };
                         })}
                         keyboardType="numeric"
@@ -550,7 +554,9 @@ export default function MenuScreen() {
                         value={option.groupName}
                         onChangeText={(v) => setItemForm((f) => {
                           const options = [...(f.options ?? [])];
-                          options[idx] = { ...options[idx], groupName: v };
+                          const existing = options[idx];
+                          if (!existing) return f;
+                          options[idx] = { ...existing, groupName: v };
                           return { ...f, options };
                         })}
                       />
@@ -571,7 +577,9 @@ export default function MenuScreen() {
                         value={option.name}
                         onChangeText={(v) => setItemForm((f) => {
                           const options = [...(f.options ?? [])];
-                          options[idx] = { ...options[idx], name: v };
+                          const existing = options[idx];
+                          if (!existing) return f;
+                          options[idx] = { ...existing, name: v };
                           return { ...f, options };
                         })}
                       />
@@ -584,7 +592,9 @@ export default function MenuScreen() {
                         value={option.priceDelta ? String(option.priceDelta) : ''}
                         onChangeText={(v) => setItemForm((f) => {
                           const options = [...(f.options ?? [])];
-                          options[idx] = { ...options[idx], priceDelta: Number(v) || 0 };
+                          const existing = options[idx];
+                          if (!existing) return f;
+                          options[idx] = { ...existing, priceDelta: Number(v) || 0 };
                           return { ...f, options };
                         })}
                         keyboardType="numeric"
@@ -596,7 +606,9 @@ export default function MenuScreen() {
                       style={[styles.optionFlag, option.isDefault && styles.optionFlagActive]}
                       onPress={() => setItemForm((f) => {
                         const options = [...(f.options ?? [])];
-                        options[idx] = { ...options[idx], isDefault: !options[idx].isDefault };
+                        const existing = options[idx];
+                        if (!existing) return f;
+                        options[idx] = { ...existing, isDefault: !existing.isDefault };
                         return { ...f, options };
                       })}
                     >
@@ -606,7 +618,9 @@ export default function MenuScreen() {
                       style={[styles.optionFlag, option.required && styles.optionFlagActive]}
                       onPress={() => setItemForm((f) => {
                         const options = [...(f.options ?? [])];
-                        options[idx] = { ...options[idx], required: !options[idx].required };
+                        const existing = options[idx];
+                        if (!existing) return f;
+                        options[idx] = { ...existing, required: !existing.required };
                         return { ...f, options };
                       })}
                     >
@@ -619,7 +633,9 @@ export default function MenuScreen() {
                         value={option.maxSelections ? String(option.maxSelections) : ''}
                         onChangeText={(v) => setItemForm((f) => {
                           const options = [...(f.options ?? [])];
-                          options[idx] = { ...options[idx], maxSelections: Number(v) || undefined };
+                          const existing = options[idx];
+                          if (!existing) return f;
+                          options[idx] = { ...existing, maxSelections: Number(v) || undefined };
                           return { ...f, options };
                         })}
                         keyboardType="numeric"

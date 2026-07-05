@@ -62,7 +62,7 @@ describe('acceptOrder', () => {
       status: 'ACCEPTED',
       estimatedPrepTimeMinutes: 20,
     });
-    expect(useStore.getState().orders[0].status).toBe('accepted');
+    expect(useStore.getState().orders[0]!.status).toBe('accepted');
   });
 
   it('rolls back to the previous state when the API rejects', async () => {
@@ -71,7 +71,7 @@ describe('acceptOrder', () => {
 
     await expect(useStore.getState().acceptOrder('1', 20)).rejects.toThrow('network');
     // Reverted, not left in the optimistic 'accepted' state.
-    expect(useStore.getState().orders[0].status).toBe('created');
+    expect(useStore.getState().orders[0]!.status).toBe('created');
   });
 });
 
@@ -81,7 +81,7 @@ describe('updateOrderStatus', () => {
     mockApi.updateOrderStatus.mockRejectedValue(new Error('boom'));
 
     await expect(useStore.getState().updateOrderStatus('1', 'ready')).rejects.toThrow('boom');
-    expect(useStore.getState().orders[0].status).toBe('accepted');
+    expect(useStore.getState().orders[0]!.status).toBe('accepted');
   });
 
   it('stamps the matching timestamp on success', async () => {
@@ -90,8 +90,8 @@ describe('updateOrderStatus', () => {
 
     await useStore.getState().updateOrderStatus('1', 'ready');
 
-    expect(useStore.getState().orders[0].status).toBe('ready');
-    expect(useStore.getState().orders[0].readyAt).toBeDefined();
+    expect(useStore.getState().orders[0]!.status).toBe('ready');
+    expect(useStore.getState().orders[0]!.readyAt).toBeDefined();
   });
 });
 
@@ -101,7 +101,7 @@ describe('declineOrder', () => {
     mockApi.cancelOrder.mockRejectedValue(new Error('nope'));
 
     await expect(useStore.getState().declineOrder('1', 'reason')).rejects.toThrow('nope');
-    expect(useStore.getState().orders[0].status).toBe('created');
+    expect(useStore.getState().orders[0]!.status).toBe('created');
   });
 });
 
@@ -115,7 +115,7 @@ describe('loadOrders race guard (pending merge)', () => {
 
     // Fire accept but don't await — optimistic 'accepted' is applied, id is pending.
     const acceptPromise = useStore.getState().acceptOrder('1', 15);
-    expect(useStore.getState().orders[0].status).toBe('accepted');
+    expect(useStore.getState().orders[0]!.status).toBe('accepted');
 
     // A concurrent refresh returns STALE server data (still 'created').
     mockApi.fetchRestaurantOrders.mockResolvedValue({
@@ -126,7 +126,7 @@ describe('loadOrders race guard (pending merge)', () => {
     await useStore.getState().loadOrders();
 
     // The pending order must NOT revert to the stale server status.
-    expect(useStore.getState().orders[0].status).toBe('accepted');
+    expect(useStore.getState().orders[0]!.status).toBe('accepted');
 
     // Resolve the PATCH; the id leaves the pending set.
     patch.resolve({});
@@ -139,7 +139,7 @@ describe('loadOrders race guard (pending merge)', () => {
       last: true,
     } as any);
     await useStore.getState().loadOrders();
-    expect(useStore.getState().orders[0].status).toBe('accepted');
+    expect(useStore.getState().orders[0]!.status).toBe('accepted');
   });
 
   it('sets ordersError when the fetch fails', async () => {

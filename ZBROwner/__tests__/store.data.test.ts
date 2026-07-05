@@ -67,7 +67,7 @@ describe('loadReviews', () => {
 
     await useStore.getState().loadReviews();
 
-    const r = useStore.getState().reviews[0];
+    const r = useStore.getState().reviews[0]!;
     expect(r.rating).toBe(3);
     expect(r.customerName).toBe('Anonymous');
   });
@@ -130,7 +130,7 @@ describe('loadFinancialReport', () => {
     expect(s.revenueData.ordersCount).toBe(42);
     expect(s.revenueData.avgOrderValue).toBe(29.4);
     expect(s.revenueData.chartData).toHaveLength(2);
-    expect(s.revenueData.chartData[0].value).toBe(500);
+    expect(s.revenueData.chartData[0]!.value).toBe(500);
   });
 
   it('sets financialReportError on failure and clears loading', async () => {
