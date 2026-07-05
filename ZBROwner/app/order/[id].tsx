@@ -14,6 +14,7 @@ import StatusBadge from '../../components/StatusBadge';
 import RatingStars from '../../components/RatingStars';
 import Chip from '../../components/Chip';
 import { useT } from '../../i18n';
+import type { TranslationKey } from '../../i18n';
 
 const DELIVERY_STEPS: OrderStatus[] = ['created', 'accepted', 'preparing', 'ready', 'picked_up', 'in_transit', 'delivered', 'completed'];
 const TAKEAWAY_STEPS: OrderStatus[] = ['created', 'accepted', 'preparing', 'ready', 'completed'];
@@ -25,7 +26,7 @@ function getStatusSteps(orderType?: OrderType): OrderStatus[] {
   return DELIVERY_STEPS;
 }
 
-const STATUS_LABEL_KEYS: Record<OrderStatus, string> = {
+const STATUS_LABEL_KEYS: Record<OrderStatus, TranslationKey> = {
   created: 'orderStatus.created',
   accepted: 'orderStatus.accepted',
   preparing: 'orderStatus.preparing',
@@ -38,7 +39,7 @@ const STATUS_LABEL_KEYS: Record<OrderStatus, string> = {
   refunded: 'orderStatus.refunded',
 };
 
-const CRITERIA_KEYS = [
+const CRITERIA_KEYS: TranslationKey[] = [
   'orderDetail.criteriaBehavior',
   'orderDetail.criteriaPunctuality',
   'orderDetail.criteriaCommunication',
@@ -74,7 +75,7 @@ export default function OrderDetailScreen() {
   const isTerminal = order.status === 'cancelled' || order.status === 'refunded';
 
   const handleStatusChange = (newStatus: OrderStatus) => {
-    Alert.alert(t('orderDetail.updateStatus'), t('orderDetail.changeStatusTo', { status: t(STATUS_LABEL_KEYS[newStatus] as any) }), [
+    Alert.alert(t('orderDetail.updateStatus'), t('orderDetail.changeStatusTo', { status: t(STATUS_LABEL_KEYS[newStatus]) }), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('common.confirm'),
@@ -161,7 +162,7 @@ export default function OrderDetailScreen() {
               size={22}
               color={Colors.danger}
             />
-            <Text style={styles.terminalText}>{t(STATUS_LABEL_KEYS[order.status] as any)}</Text>
+            <Text style={styles.terminalText}>{t(STATUS_LABEL_KEYS[order.status])}</Text>
           </View>
           {order.cancellationReason ? (
             <Text style={styles.terminalReason}>{order.cancellationReason}</Text>
@@ -189,7 +190,7 @@ export default function OrderDetailScreen() {
                 <View style={[styles.stepLine, isCompleted && styles.stepLineActive]} />
               )}
               <Text style={[styles.stepLabel, isCompleted && styles.stepLabelActive, isCurrent && styles.stepLabelCurrent]}>
-                {t(STATUS_LABEL_KEYS[step] as any)}
+                {t(STATUS_LABEL_KEYS[step])}
               </Text>
               {isNext && (
                 <Ionicons name="chevron-forward" size={16} color={Colors.accent} style={{ marginLeft: 'auto' }} />
@@ -442,7 +443,7 @@ export default function OrderDetailScreen() {
               {CRITERIA_KEYS.map((key) => (
                 <Chip
                   key={key}
-                  label={t(key as any)}
+                  label={t(key)}
                   selected={selectedCriteria.includes(key)}
                   onPress={() => toggleCriterion(key)}
                 />

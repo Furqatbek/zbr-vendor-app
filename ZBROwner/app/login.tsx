@@ -23,11 +23,11 @@ export default function LoginScreen() {
 
   const validateEmail = useCallback((value: string) => {
     if (!value.trim()) {
-      setEmailError(t('login.emailRequired' as any));
+      setEmailError(t('login.emailRequired'));
       return false;
     }
     if (!EMAIL_REGEX.test(value.trim())) {
-      setEmailError(t('login.emailInvalid' as any));
+      setEmailError(t('login.emailInvalid'));
       return false;
     }
     setEmailError('');
@@ -39,7 +39,7 @@ export default function LoginScreen() {
     let isPasswordValid = true;
 
     if (!password) {
-      setPasswordError(t('login.passwordRequired' as any));
+      setPasswordError(t('login.passwordRequired'));
       isPasswordValid = false;
     } else {
       setPasswordError('');
@@ -51,8 +51,8 @@ export default function LoginScreen() {
       await login(email.trim(), password);
       router.replace('/(tabs)');
     } catch (error: any) {
-      const message = error?.message || t('login.loginFailed' as any);
-      Alert.alert(t('common.error' as any), message);
+      const message = error?.message || t('login.loginFailed');
+      Alert.alert(t('common.error'), message);
     }
   }, [email, password, validateEmail, t, router, login]);
 
@@ -68,22 +68,22 @@ export default function LoginScreen() {
           <View style={styles.logoCircle}>
             <Ionicons name="storefront" size={40} color={Colors.accent} />
           </View>
-          <Text style={styles.appName}>{t('login.appName' as any)}</Text>
-          <Text style={styles.tagline}>{t('login.tagline' as any)}</Text>
+          <Text style={styles.appName}>{t('login.appName')}</Text>
+          <Text style={styles.tagline}>{t('login.tagline')}</Text>
         </View>
 
         {/* Form */}
         <View style={styles.form}>
-          <Text style={styles.title}>{t('login.signIn' as any)}</Text>
+          <Text style={styles.title}>{t('login.signIn')}</Text>
 
           {/* Email */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>{t('login.email' as any)}</Text>
+            <Text style={styles.label}>{t('login.email')}</Text>
             <View style={[styles.inputRow, emailError ? styles.inputRowError : null]}>
               <Ionicons name="mail-outline" size={20} color={emailError ? Colors.danger : Colors.gray400} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder={t('login.emailPlaceholder' as any)}
+                placeholder={t('login.emailPlaceholder')}
                 placeholderTextColor={Colors.gray400}
                 value={email}
                 onChangeText={(v) => { setEmail(v); if (emailError) validateEmail(v); }}
@@ -100,12 +100,12 @@ export default function LoginScreen() {
 
           {/* Password */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>{t('login.password' as any)}</Text>
+            <Text style={styles.label}>{t('login.password')}</Text>
             <View style={[styles.inputRow, passwordError ? styles.inputRowError : null]}>
               <Ionicons name="lock-closed-outline" size={20} color={passwordError ? Colors.danger : Colors.gray400} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder={t('login.passwordPlaceholder' as any)}
+                placeholder={t('login.passwordPlaceholder')}
                 placeholderTextColor={Colors.gray400}
                 value={password}
                 onChangeText={(v) => { setPassword(v); if (passwordError) setPasswordError(''); }}
@@ -128,7 +128,7 @@ export default function LoginScreen() {
             onPress={() => router.push('/forgot-password' as any)}
             disabled={isLoading}
           >
-            <Text style={styles.forgotText}>{t('login.forgotPassword' as any)}</Text>
+            <Text style={styles.forgotText}>{t('login.forgotPassword')}</Text>
           </TouchableOpacity>
 
           {/* Sign In Button */}
@@ -141,7 +141,7 @@ export default function LoginScreen() {
             {isLoading ? (
               <ActivityIndicator color={Colors.white} />
             ) : (
-              <Text style={styles.buttonText}>{t('login.signIn' as any)}</Text>
+              <Text style={styles.buttonText}>{t('login.signIn')}</Text>
             )}
           </TouchableOpacity>
         </View>

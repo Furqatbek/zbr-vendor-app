@@ -10,13 +10,14 @@ import Card from '../../components/Card';
 import RatingStars from '../../components/RatingStars';
 import Chip from '../../components/Chip';
 import { useT } from '../../i18n';
+import type { TranslationKey } from '../../i18n';
 import { useRefresh } from '../../hooks/useRefresh';
 import { FEATURES } from '../../constants/features';
 import ErrorState from '../../components/ErrorState';
 
 type Filter = 'all' | 'positive' | 'negative' | 'unresponded';
 
-const filterKeys: Record<Filter, string> = {
+const filterKeys: Record<Filter, TranslationKey> = {
   all: 'common.all',
   positive: 'reviews.positive',
   negative: 'reviews.negative',
@@ -146,7 +147,7 @@ export default function ReviewsScreen() {
           : ['all', 'positive', 'negative']) as Filter[]).map((f) => (
           <Chip
             key={f}
-            label={t(filterKeys[f] as any)}
+            label={t(filterKeys[f])}
             selected={filter === f}
             onPress={() => setFilter(f)}
           />

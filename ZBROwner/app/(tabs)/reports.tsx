@@ -10,13 +10,14 @@ import ErrorState from '../../components/ErrorState';
 import { useStore } from '../../store';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
+import type { TranslationKey } from '../../i18n';
 import { useRefresh } from '../../hooks/useRefresh';
 
 type Period = 'day' | 'week' | 'month' | 'custom';
 
 const screenWidth = Dimensions.get('window').width;
 
-const periodKeys: Record<Period, string> = {
+const periodKeys: Record<Period, TranslationKey> = {
   day: 'reports.day',
   week: 'reports.week',
   month: 'reports.month',
@@ -103,7 +104,7 @@ export default function ReportsScreen() {
   // undefined would throw during render and — even with the error boundary —
   // blank the whole reports screen instead of showing 0.
   const fmt = (amount: number | null | undefined) =>
-    t('common.currency' as any, { amount: (typeof amount === 'number' ? amount : 0).toFixed(2) });
+    t('common.currency', { amount: (typeof amount === 'number' ? amount : 0).toFixed(2) });
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}>
@@ -117,7 +118,7 @@ export default function ReportsScreen() {
             accessibilityRole="tab"
           >
             <Text style={[styles.segmentText, selectedPeriod === p && styles.segmentTextActive]}>
-              {t(periodKeys[p] as any)}
+              {t(periodKeys[p])}
             </Text>
           </TouchableOpacity>
         ))}
@@ -128,7 +129,7 @@ export default function ReportsScreen() {
         <Card style={styles.dateRangeCard}>
           <View style={styles.dateRow}>
             <View style={styles.dateField}>
-              <Text style={styles.dateLabel}>{t('reports.from' as any)}</Text>
+              <Text style={styles.dateLabel}>{t('reports.from')}</Text>
               <TouchableOpacity style={styles.dateButton} onPress={() => setShowStartPicker(true)}>
                 <Ionicons name="calendar-outline" size={16} color={Colors.accent} />
                 <Text style={styles.dateButtonText}>{formatDateShort(tempStart)}</Text>
@@ -138,7 +139,7 @@ export default function ReportsScreen() {
               <Text style={styles.dateDashText}>–</Text>
             </View>
             <View style={styles.dateField}>
-              <Text style={styles.dateLabel}>{t('reports.to' as any)}</Text>
+              <Text style={styles.dateLabel}>{t('reports.to')}</Text>
               <TouchableOpacity style={styles.dateButton} onPress={() => setShowEndPicker(true)}>
                 <Ionicons name="calendar-outline" size={16} color={Colors.accent} />
                 <Text style={styles.dateButtonText}>{formatDateShort(tempEnd)}</Text>
@@ -169,7 +170,7 @@ export default function ReportsScreen() {
       {/* Export Button */}
       <TouchableOpacity style={styles.exportButton} activeOpacity={0.7}>
         <Ionicons name="download-outline" size={18} color={Colors.accent} />
-        <Text style={styles.exportText}>{t('reports.exportPdf' as any)}</Text>
+        <Text style={styles.exportText}>{t('reports.exportPdf')}</Text>
       </TouchableOpacity>
 
       {financialReportError && !report ? (
@@ -181,13 +182,13 @@ export default function ReportsScreen() {
       ) : !report ? (
         <View style={styles.empty}>
           <Ionicons name="bar-chart-outline" size={48} color={Colors.gray300} />
-          <Text style={styles.emptyText}>{t('reports.noData' as any)}</Text>
+          <Text style={styles.emptyText}>{t('reports.noData')}</Text>
         </View>
       ) : (
         <>
           {/* Revenue Summary */}
           <Card style={styles.revenueCard}>
-            <Text style={styles.revenueLabel}>{t('reports.totalRevenue' as any)}</Text>
+            <Text style={styles.revenueLabel}>{t('reports.totalRevenue')}</Text>
             <Text style={styles.revenueValue}>{fmt(report.totalRevenue)}</Text>
             {report.growthRate !== 0 && (
               <View style={styles.growthRow}>
@@ -205,35 +206,35 @@ export default function ReportsScreen() {
 
           <View style={styles.statsRow}>
             <Card style={styles.statCard}>
-              <Text style={styles.statLabel}>{t('reports.orders' as any)}</Text>
+              <Text style={styles.statLabel}>{t('reports.orders')}</Text>
               <Text style={styles.statValue}>{report.totalOrders}</Text>
             </Card>
             <Card style={styles.statCard}>
-              <Text style={styles.statLabel}>{t('reports.avgValue' as any)}</Text>
+              <Text style={styles.statLabel}>{t('reports.avgValue')}</Text>
               <Text style={styles.statValue}>{fmt(report.averageOrderValue)}</Text>
             </Card>
           </View>
 
           {/* Revenue Breakdown */}
           <Card style={styles.breakdownCard}>
-            <Text style={styles.sectionTitle}>{t('reports.revenueBreakdown' as any)}</Text>
+            <Text style={styles.sectionTitle}>{t('reports.revenueBreakdown')}</Text>
             <View style={styles.breakdownRow}>
-              <Text style={styles.breakdownLabel}>{t('reports.foodRevenue' as any)}</Text>
+              <Text style={styles.breakdownLabel}>{t('reports.foodRevenue')}</Text>
               <Text style={styles.breakdownValue}>{fmt(report.foodRevenue)}</Text>
             </View>
             <View style={styles.breakdownRow}>
-              <Text style={styles.breakdownLabel}>{t('reports.deliveryFees' as any)}</Text>
+              <Text style={styles.breakdownLabel}>{t('reports.deliveryFees')}</Text>
               <Text style={styles.breakdownValue}>{fmt(report.deliveryFeeRevenue)}</Text>
             </View>
             <View style={styles.breakdownRow}>
-              <Text style={styles.breakdownLabel}>{t('reports.tips' as any)}</Text>
+              <Text style={styles.breakdownLabel}>{t('reports.tips')}</Text>
               <Text style={styles.breakdownValue}>{fmt(report.tipRevenue)}</Text>
             </View>
           </Card>
 
           {/* Revenue Chart */}
           <Card style={styles.chartCard}>
-            <Text style={styles.chartTitle}>{t('reports.earningsOverTime' as any)}</Text>
+            <Text style={styles.chartTitle}>{t('reports.earningsOverTime')}</Text>
             <LineChart
               data={chartData}
               width={screenWidth - Spacing.base * 2 - Spacing.base * 2}
@@ -251,40 +252,40 @@ export default function ReportsScreen() {
 
           {/* Payout Summary */}
           <Card style={styles.breakdownCard}>
-            <Text style={styles.sectionTitle}>{t('reports.payoutSummary' as any)}</Text>
+            <Text style={styles.sectionTitle}>{t('reports.payoutSummary')}</Text>
             <View style={styles.breakdownRow}>
-              <Text style={styles.breakdownLabel}>{t('reports.grossSales' as any)}</Text>
+              <Text style={styles.breakdownLabel}>{t('reports.grossSales')}</Text>
               <Text style={styles.breakdownValue}>{fmt(report.grossSales)}</Text>
             </View>
             <View style={styles.breakdownRow}>
-              <Text style={[styles.breakdownLabel, { color: Colors.danger }]}>{t('reports.commissions' as any)}</Text>
+              <Text style={[styles.breakdownLabel, { color: Colors.danger }]}>{t('reports.commissions')}</Text>
               <Text style={[styles.breakdownValue, { color: Colors.danger }]}>-{fmt(report.commissionsDeducted)}</Text>
             </View>
             <View style={styles.breakdownRow}>
-              <Text style={[styles.breakdownLabel, { color: Colors.danger }]}>{t('reports.deliverySubsidies' as any)}</Text>
+              <Text style={[styles.breakdownLabel, { color: Colors.danger }]}>{t('reports.deliverySubsidies')}</Text>
               <Text style={[styles.breakdownValue, { color: Colors.danger }]}>-{fmt(report.deliverySubsidies)}</Text>
             </View>
             <View style={styles.breakdownRow}>
-              <Text style={[styles.breakdownLabel, { color: Colors.danger }]}>{t('reports.promotionCosts' as any)}</Text>
+              <Text style={[styles.breakdownLabel, { color: Colors.danger }]}>{t('reports.promotionCosts')}</Text>
               <Text style={[styles.breakdownValue, { color: Colors.danger }]}>-{fmt(report.promotionCosts)}</Text>
             </View>
             <View style={styles.breakdownRow}>
-              <Text style={[styles.breakdownLabel, { color: Colors.danger }]}>{t('reports.fees' as any)}</Text>
+              <Text style={[styles.breakdownLabel, { color: Colors.danger }]}>{t('reports.fees')}</Text>
               <Text style={[styles.breakdownValue, { color: Colors.danger }]}>-{fmt(report.fees)}</Text>
             </View>
             <View style={[styles.breakdownRow, styles.netPayoutRow]}>
-              <Text style={styles.netPayoutLabel}>{t('reports.netPayout' as any)}</Text>
+              <Text style={styles.netPayoutLabel}>{t('reports.netPayout')}</Text>
               <Text style={styles.netPayoutValue}>{fmt(report.netPayout)}</Text>
             </View>
           </Card>
 
           <View style={styles.statsRow}>
             <Card style={styles.statCard}>
-              <Text style={styles.statLabel}>{t('reports.pendingPayouts' as any)}</Text>
+              <Text style={styles.statLabel}>{t('reports.pendingPayouts')}</Text>
               <Text style={[styles.statValue, { color: Colors.warning }]}>{fmt(report.pendingPayouts)}</Text>
             </Card>
             <Card style={styles.statCard}>
-              <Text style={styles.statLabel}>{t('reports.completedPayouts' as any)}</Text>
+              <Text style={styles.statLabel}>{t('reports.completedPayouts')}</Text>
               <Text style={[styles.statValue, { color: Colors.success }]}>{fmt(report.completedPayouts)}</Text>
             </Card>
           </View>
@@ -292,7 +293,7 @@ export default function ReportsScreen() {
           {/* Payout Trend Chart */}
           {hasPayoutTrend && (
             <Card style={styles.chartCard}>
-              <Text style={styles.chartTitle}>{t('reports.payoutTrend' as any)}</Text>
+              <Text style={styles.chartTitle}>{t('reports.payoutTrend')}</Text>
               <LineChart
                 data={payoutChartData}
                 width={screenWidth - Spacing.base * 2 - Spacing.base * 2}
@@ -312,7 +313,7 @@ export default function ReportsScreen() {
           {/* Sold Items Preview */}
           {previewItems.length > 0 && (
             <Card style={styles.soldItemsCard}>
-              <Text style={styles.sectionTitle}>{t('reports.soldItems' as any)}</Text>
+              <Text style={styles.sectionTitle}>{t('reports.soldItems')}</Text>
               {previewItems.map((item, index) => (
                 <View key={item.name} style={[styles.soldItemRow, index < previewItems.length - 1 && styles.soldItemBorder]}>
                   <View style={styles.soldItemInfo}>
@@ -320,13 +321,13 @@ export default function ReportsScreen() {
                     <Text style={styles.soldItemCategory}>{item.category}</Text>
                   </View>
                   <View style={styles.soldItemStats}>
-                    <Text style={styles.soldItemUnits}>{t('reports.sold' as any, { count: item.unitsSold })}</Text>
+                    <Text style={styles.soldItemUnits}>{t('reports.sold', { count: item.unitsSold })}</Text>
                     <Text style={styles.soldItemRevenue}>{fmt(item.revenue)}</Text>
                   </View>
                 </View>
               ))}
               <TouchableOpacity style={styles.viewAllButton} activeOpacity={0.7} onPress={() => router.push('/settings/sold-items' as any)}>
-                <Text style={styles.viewAllText}>{t('reports.viewAllItems' as any, { count: revenueData.soldItems.length })}</Text>
+                <Text style={styles.viewAllText}>{t('reports.viewAllItems', { count: revenueData.soldItems.length })}</Text>
                 <Ionicons name="chevron-forward" size={16} color={Colors.accent} />
               </TouchableOpacity>
             </Card>
@@ -339,12 +340,12 @@ export default function ReportsScreen() {
             <View style={styles.statsRow}>
               <Card style={styles.statCard}>
                 <Ionicons name="arrow-undo-outline" size={20} color={Colors.warning} />
-                <Text style={styles.statLabel}>{t('reports.refunds' as any)}</Text>
+                <Text style={styles.statLabel}>{t('reports.refunds')}</Text>
                 <Text style={styles.statValue}>{revenueData.refunds}</Text>
               </Card>
               <Card style={styles.statCard}>
                 <Ionicons name="close-circle-outline" size={20} color={Colors.danger} />
-                <Text style={styles.statLabel}>{t('reports.cancellations' as any)}</Text>
+                <Text style={styles.statLabel}>{t('reports.cancellations')}</Text>
                 <Text style={styles.statValue}>{revenueData.cancellations}</Text>
               </Card>
             </View>

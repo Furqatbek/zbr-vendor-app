@@ -11,6 +11,7 @@ import { updateRestaurantLocation } from '../../services/api';
 import Card from '../../components/Card';
 import MapPicker from '../../components/MapPicker';
 import { useT } from '../../i18n';
+import type { TranslationKey } from '../../i18n';
 
 const formatCoord = (n: number | undefined | null): string =>
   typeof n === 'number' && !Number.isNaN(n) ? String(n) : '';
@@ -25,7 +26,7 @@ const parseCoord = (s: string): number | null => {
 const validateCoords = (
   lat: number | null,
   lng: number | null,
-): { ok: true; lat: number; lng: number } | { ok: false; messageKey: string } => {
+): { ok: true; lat: number; lng: number } | { ok: false; messageKey: TranslationKey } => {
   if (lat === null || lng === null) return { ok: false, messageKey: 'location.invalidNumeric' };
   if (lat < -90 || lat > 90) return { ok: false, messageKey: 'location.invalidLatRange' };
   if (lng < -180 || lng > 180) return { ok: false, messageKey: 'location.invalidLngRange' };
@@ -102,7 +103,7 @@ export default function RestaurantLocationScreen() {
 
     const v = validateCoords(parseCoord(latitude), parseCoord(longitude));
     if (!v.ok) {
-      Alert.alert(t('location.invalidTitle'), t(v.messageKey as any));
+      Alert.alert(t('location.invalidTitle'), t(v.messageKey));
       return;
     }
 

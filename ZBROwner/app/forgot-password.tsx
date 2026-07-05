@@ -21,11 +21,11 @@ export default function ForgotPasswordScreen() {
 
   const validateEmail = useCallback((value: string) => {
     if (!value.trim()) {
-      setEmailError(t('login.emailRequired' as any));
+      setEmailError(t('login.emailRequired'));
       return false;
     }
     if (!EMAIL_REGEX.test(value.trim())) {
-      setEmailError(t('login.emailInvalid' as any));
+      setEmailError(t('login.emailInvalid'));
       return false;
     }
     setEmailError('');
@@ -40,7 +40,7 @@ export default function ForgotPasswordScreen() {
       await requestPasswordReset(email.trim());
       setSent(true);
     } catch (error: any) {
-      Alert.alert(t('common.error' as any), error?.message || t('forgotPassword.requestFailed' as any));
+      Alert.alert(t('common.error'), error?.message || t('forgotPassword.requestFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -53,10 +53,10 @@ export default function ForgotPasswordScreen() {
           <View style={styles.successIcon}>
             <Ionicons name="mail-open-outline" size={48} color={Colors.accent} />
           </View>
-          <Text style={styles.successTitle}>{t('forgotPassword.emailSent' as any)}</Text>
-          <Text style={styles.successMessage}>{t('forgotPassword.checkInbox' as any)}</Text>
+          <Text style={styles.successTitle}>{t('forgotPassword.emailSent')}</Text>
+          <Text style={styles.successMessage}>{t('forgotPassword.checkInbox')}</Text>
           <TouchableOpacity style={styles.button} activeOpacity={0.8} onPress={() => router.back()}>
-            <Text style={styles.buttonText}>{t('forgotPassword.backToLogin' as any)}</Text>
+            <Text style={styles.buttonText}>{t('forgotPassword.backToLogin')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -80,18 +80,18 @@ export default function ForgotPasswordScreen() {
           <View style={styles.iconCircle}>
             <Ionicons name="key-outline" size={36} color={Colors.accent} />
           </View>
-          <Text style={styles.title}>{t('forgotPassword.title' as any)}</Text>
-          <Text style={styles.subtitle}>{t('forgotPassword.subtitle' as any)}</Text>
+          <Text style={styles.title}>{t('forgotPassword.title')}</Text>
+          <Text style={styles.subtitle}>{t('forgotPassword.subtitle')}</Text>
         </View>
 
         {/* Email field */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>{t('login.email' as any)}</Text>
+          <Text style={styles.label}>{t('login.email')}</Text>
           <View style={[styles.inputRow, emailError ? styles.inputRowError : null]}>
             <Ionicons name="mail-outline" size={20} color={emailError ? Colors.danger : Colors.gray400} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder={t('login.emailPlaceholder' as any)}
+              placeholder={t('login.emailPlaceholder')}
               placeholderTextColor={Colors.gray400}
               value={email}
               onChangeText={(v) => { setEmail(v); if (emailError) validateEmail(v); }}
@@ -116,7 +116,7 @@ export default function ForgotPasswordScreen() {
           {isLoading ? (
             <ActivityIndicator color={Colors.white} />
           ) : (
-            <Text style={styles.buttonText}>{t('forgotPassword.sendLink' as any)}</Text>
+            <Text style={styles.buttonText}>{t('forgotPassword.sendLink')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

@@ -7,6 +7,7 @@ import { Colors, Spacing, Typography, BorderRadius } from '../constants/theme';
 import { useAuthStore } from '../store/authStore';
 import { useStore } from '../store';
 import { useT } from '../i18n';
+import type { TranslationKey } from '../i18n';
 import { useRefresh } from '../hooks/useRefresh';
 import Card from '../components/Card';
 import Chip from '../components/Chip';
@@ -146,7 +147,7 @@ export default function NotificationsScreen() {
     return date.toLocaleDateString();
   };
 
-  const filterKeys: Record<Filter, string> = {
+  const filterKeys: Record<Filter, TranslationKey> = {
     all: 'common.all',
     ORDER: 'notifInbox.orders',
     FINANCE: 'notifInbox.finance',
@@ -182,7 +183,7 @@ export default function NotificationsScreen() {
                 <Text style={styles.notifTime}>{item.timeAgo ?? formatTime(item.createdAt)}</Text>
                 <View style={[styles.categoryBadge, { backgroundColor: iconColor + '15' }]}>
                   <Text style={[styles.categoryBadgeText, { color: iconColor }]}>
-                    {t(filterKeys[item.category] as any)}
+                    {t(filterKeys[item.category])}
                   </Text>
                 </View>
               </View>
@@ -209,7 +210,7 @@ export default function NotificationsScreen() {
         {FILTER_CATEGORIES.map((f) => (
           <Chip
             key={f}
-            label={t(filterKeys[f] as any)}
+            label={t(filterKeys[f])}
             selected={filter === f}
             onPress={() => setFilter(f)}
           />

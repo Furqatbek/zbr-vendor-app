@@ -65,7 +65,7 @@ function RefreshBanner({ visible }: { visible: boolean }) {
       <Animated.View style={spinStyle}>
         <Ionicons name="sync" size={16} color={Colors.accent} />
       </Animated.View>
-      <Text style={bannerStyles.text}>{t('soldItems.updating' as any)}</Text>
+      <Text style={bannerStyles.text}>{t('soldItems.updating')}</Text>
     </Animated.View>
   );
 }
@@ -93,10 +93,10 @@ export default function SoldItemsScreen() {
   const [sortBy, setSortBy] = useState<SortMode>('units');
 
   const dateFilters: { key: DateFilter; label: string }[] = [
-    { key: 'today', label: t('soldItems.today' as any) },
-    { key: 'week', label: t('soldItems.thisWeek' as any) },
-    { key: 'month', label: t('soldItems.thisMonth' as any) },
-    { key: 'all', label: t('soldItems.allTime' as any) },
+    { key: 'today', label: t('soldItems.today') },
+    { key: 'week', label: t('soldItems.thisWeek') },
+    { key: 'month', label: t('soldItems.thisMonth') },
+    { key: 'all', label: t('soldItems.allTime') },
   ];
 
   const filteredItems = useMemo(() => {
@@ -142,19 +142,19 @@ export default function SoldItemsScreen() {
       {/* Summary */}
       <View style={styles.summaryRow}>
         <Card style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>{t('soldItems.totalUnits' as any)}</Text>
+          <Text style={styles.summaryLabel}>{t('soldItems.totalUnits')}</Text>
           <Text style={styles.summaryValue}>{totals.units}</Text>
         </Card>
         <Card style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>{t('soldItems.totalRevenue' as any)}</Text>
-          <Text style={styles.summaryValue}>{t('common.currency' as any, { amount: totals.revenue.toFixed(2) })}</Text>
+          <Text style={styles.summaryLabel}>{t('soldItems.totalRevenue')}</Text>
+          <Text style={styles.summaryValue}>{t('common.currency', { amount: totals.revenue.toFixed(2) })}</Text>
         </Card>
       </View>
 
       {/* Sort + Count */}
       <View style={styles.sortRow}>
         <Text style={styles.resultCount}>
-          {t('soldItems.showingItems' as any, { count: filteredItems.length })}
+          {t('soldItems.showingItems', { count: filteredItems.length })}
         </Text>
         <View style={styles.sortChips}>
           <TouchableOpacity
@@ -163,7 +163,7 @@ export default function SoldItemsScreen() {
             activeOpacity={0.7}
           >
             <Text style={[styles.sortChipText, sortBy === 'units' && styles.sortChipTextActive]}>
-              {t('soldItems.byUnits' as any)}
+              {t('soldItems.byUnits')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -172,7 +172,7 @@ export default function SoldItemsScreen() {
             activeOpacity={0.7}
           >
             <Text style={[styles.sortChipText, sortBy === 'revenue' && styles.sortChipTextActive]}>
-              {t('soldItems.byRevenue' as any)}
+              {t('soldItems.byRevenue')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -197,8 +197,8 @@ export default function SoldItemsScreen() {
             <Text style={styles.itemMeta}>{item.category} · {formatDate(item.soldAt)}</Text>
           </View>
           <View style={styles.itemStats}>
-            <Text style={styles.itemUnits}>{t('reports.sold' as any, { count: item.unitsSold })}</Text>
-            <Text style={styles.itemRevenue}>{t('common.currency' as any, { amount: item.revenue.toFixed(2) })}</Text>
+            <Text style={styles.itemUnits}>{t('reports.sold', { count: item.unitsSold })}</Text>
+            <Text style={styles.itemRevenue}>{t('common.currency', { amount: item.revenue.toFixed(2) })}</Text>
           </View>
         </View>
       </Card>
@@ -218,7 +218,7 @@ export default function SoldItemsScreen() {
       ListEmptyComponent={
         <View style={styles.emptyContainer}>
           <Ionicons name="bag-outline" size={48} color={Colors.gray300} />
-          <Text style={styles.emptyText}>{t('soldItems.noItems' as any)}</Text>
+          <Text style={styles.emptyText}>{t('soldItems.noItems')}</Text>
         </View>
       }
     />

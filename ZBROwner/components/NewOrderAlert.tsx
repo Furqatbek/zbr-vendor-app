@@ -74,7 +74,7 @@ export default function NewOrderAlert({ order, visible, onAccept, onDecline, onV
             <Ionicons name="notifications" size={36} color={Colors.white} />
           </Animated.View>
 
-          <Text style={styles.title}>{t('newOrderAlert.title' as any)}</Text>
+          <Text style={styles.title}>{t('newOrderAlert.title')}</Text>
 
           {/* Order details */}
           <View style={styles.orderInfo}>
@@ -104,7 +104,7 @@ export default function NewOrderAlert({ order, visible, onAccept, onDecline, onV
             )}
 
             <Text style={styles.totalPrice}>
-              {t('common.currency' as any, { amount: order.totalPrice.toFixed(2) })}
+              {t('common.currency', { amount: order.totalPrice.toFixed(2) })}
             </Text>
           </View>
 
@@ -112,17 +112,17 @@ export default function NewOrderAlert({ order, visible, onAccept, onDecline, onV
           <View style={styles.actions}>
             <TouchableOpacity style={styles.declineButton} onPress={handleDecline} activeOpacity={0.8}>
               <Ionicons name="close" size={22} color={Colors.danger} />
-              <Text style={styles.declineText}>{t('newOrderAlert.decline' as any)}</Text>
+              <Text style={styles.declineText}>{t('newOrderAlert.decline')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.acceptButton} onPress={handleAccept} activeOpacity={0.8}>
               <Ionicons name="checkmark" size={22} color={Colors.white} />
-              <Text style={styles.acceptText}>{t('newOrderAlert.accept' as any)}</Text>
+              <Text style={styles.acceptText}>{t('newOrderAlert.accept')}</Text>
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity style={styles.viewButton} onPress={handleView} activeOpacity={0.7}>
-            <Text style={styles.viewText}>{t('newOrderAlert.viewDetails' as any)}</Text>
+            <Text style={styles.viewText}>{t('newOrderAlert.viewDetails')}</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>

@@ -17,6 +17,7 @@ import type { MenuCategory, MenuItem, CreateMenuCategoryRequest, CreateMenuItemR
 import Card from '../../components/Card';
 import InAppToast from '../../components/InAppToast';
 import { useT } from '../../i18n';
+import type { TranslationKey } from '../../i18n';
 
 type ViewMode = 'categories' | 'items';
 
@@ -474,7 +475,7 @@ export default function MenuScreen() {
                     style={[styles.flagChip, itemForm[flag] && styles.flagChipActive]}
                     onPress={() => setItemForm((f) => ({ ...f, [flag]: !f[flag] }))}
                   >
-                    <Text style={[styles.flagChipText, itemForm[flag] && styles.flagChipTextActive]}>{t(`menu.${flag}` as any)}</Text>
+                    <Text style={[styles.flagChipText, itemForm[flag] && styles.flagChipTextActive]}>{t(`menu.${flag}` as TranslationKey)}</Text>
                   </TouchableOpacity>
                 ))}
               </View>

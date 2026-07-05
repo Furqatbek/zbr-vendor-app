@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, BorderRadius, Typography } from '../constants/theme';
 import { useT } from '../i18n';
+import type { TranslationKey } from '../i18n';
 import type { OrderStatus } from '../types';
 
 const statusColors: Record<OrderStatus, { bg: string; text: string }> = {
@@ -17,7 +18,7 @@ const statusColors: Record<OrderStatus, { bg: string; text: string }> = {
   refunded: { bg: Colors.dangerLight, text: Colors.danger },
 };
 
-const statusKeys: Record<OrderStatus, string> = {
+const statusKeys: Record<OrderStatus, TranslationKey> = {
   created: 'statusBadge.new',
   accepted: 'statusBadge.accepted',
   preparing: 'statusBadge.preparing',
@@ -37,8 +38,10 @@ interface Props {
 export default function StatusBadge({ status }: Props) {
   const t = useT();
   const colors = statusColors[status] ?? { bg: Colors.gray100, text: Colors.gray500 };
+  // status may be an out-of-union string at runtime (normalizeStatus passes
+  // unknown backend statuses through), so keep the truthy guard.
   const key = statusKeys[status];
-  const label = key ? t(key as any) : status;
+  const label = key ? t(key) : status;
 
   return (
     <View style={[styles.badge, { backgroundColor: colors.bg }]}>
