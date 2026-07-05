@@ -1,33 +1,37 @@
 # Production Readiness Audit — ZBROwner
 
 **Original verdict: NOT ready for production launch.**
-**Status: all Tier-0 ship-blockers resolved (client side). Now blocked only on a
-TLS backend host + Tier-1 hardening.**
+**Status: Tier-0 (ship-blockers) and Tier-1 (soft-launch bar) both resolved.
+Remaining before a confident launch: a TLS backend host + Tier-2 (tests/CI/runtime
+validation).**
 
 A five-dimension audit (config/deploy, security, resilience, testing, feature-correctness)
 of the ZBROwner vendor app. The architecture is sound — the order pipeline works
 end-to-end, auth is well-built, real-time is properly wired. As originally filed the
 app **could not connect to a backend from a device and did not build.** Both are
-now fixed; see the progress log.
+fixed, and the soft-launch hardening is done; see the progress log.
 
 | Dimension | Score /10 → now | One-line |
 |-----------|-----------|----------|
 | Config & deployment | 2 → 7 | Env-based hosts, deps installed, `eas.json` added; needs real TLS host |
 | Security | 3 → 6 | Tokens in keystore, logs stripped; SSRF/deep-link hardening pending |
-| Resilience | 4 → 5 | Error boundary added; error/retry UI + races still Tier-1 |
+| Resilience | 4 → 7 | Error boundary, error/retry UI, crash guards, race fix all in |
 | Testing & quality | 3 → 4 | `tsc` now clean; still zero tests, no CI |
-| Feature correctness | 5 | Unchanged — fake-success features still Tier-1 |
+| Feature correctness | 5 → 7 | Fake-success features gated off; core flows solid |
 
 ### Progress log
-- **Tier 0 — all items resolved** (commits `89bb82b`, `b97e32e`, `417fbec`,
-  `73f17b2`, `44e7e2f`). #5 (TLS) is client-ready; the remaining piece is the
-  backend serving `https`/`wss`.
+- **Tier 0 — all items resolved** (`89bb82b`, `b97e32e`, `417fbec`, `73f17b2`,
+  `44e7e2f`). #5 (TLS) is client-ready; the remaining piece is the backend
+  serving `https`/`wss`.
+- **Tier 1 — all items resolved** (`85275a0`, `e8d87f6`, `d13baee`, `2dc4e3b`,
+  `e158dc5`): crash guards, error/retry UI, silent-failure fixes, fake-feature
+  gating, optimistic-race fix, WS alarm dedupe.
 - **Bonus:** fixed 4 pre-existing TypeScript compile errors (`479244d`) — the
   project now type-checks clean (`npx tsc --noEmit` passes), including a real
   runtime bug in the menu remove-image button.
 
-**Rough remaining timeline:** Tier 1 (~1–2 weeks) to soft-launch bar; Tier 2
-(~2–3 weeks) for real confidence.
+**Rough remaining timeline:** Tier 2 (~2–3 weeks) for real confidence (tests, CI,
+runtime validation, security hardening).
 
 ---
 
@@ -70,62 +74,48 @@ now fixed; see the progress log.
 
 ---
 
-## TIER 1 — Soft-launch bar (fix before real vendors rely on it)
+## TIER 1 — Soft-launch bar — ✅ ALL RESOLVED
 
 ### Crashes & data integrity
-- [ ] **Reports crashes on partial/null financial data** — `app/(tabs)/reports.tsx`
-  calls `.toFixed(2)` directly on ~12 backend fields (`totalRevenue`, `netPayout`,
-  …). Any null/missing field throws during render → white-screen (no boundary).
-  Default/guard every numeric field.
-- [ ] **One malformed order poisons the whole list** — `services/api.ts:253`
-  `res.data.content.map(mapApiOrder)`; `mapApiOrder` does `raw.items.map` and
-  `raw.status.toUpperCase()`. A single null `items`/`status` rejects the whole
-  `.map`; `loadOrders` swallows it (empty catch, `store/index.ts:91`) → order
-  board silently stops updating. Map defensively per-record; skip bad records.
+- [x] **Reports crashes on partial/null financial data** → `fmt()` coerces
+  null/undefined to 0 before `.toFixed`. (`85275a0`)
+- [x] **One malformed order poisons the whole list** → `normalizeStatus`/`mapApiOrder`
+  tolerate null fields and a new `safeMapOrders` drops bad records per-item instead
+  of rejecting the page; `totalElements`/`last` guarded too. (`85275a0`)
 
 ### Error visibility
-- [ ] **No error/retry UI on any data screen** — orders, reviews, reports, more,
-  notifications all render a friendly empty-state on fetch failure, identical to
-  genuinely-empty data, with no retry. Add error state + retry.
-- [ ] **`toggleRestaurantOpen` failures are fully silent** — `app/(tabs)/index.tsx:47`,
-  `app/(tabs)/more.tsx:57`. The open/closed switch just doesn't move; a vendor who
-  thinks they went "Open" may be receiving nothing. Surface the failure.
-- [ ] **Orders screen has no loading indicator** — `store.ordersLoading` is set but
-  never consumed by `app/(tabs)/index.tsx`; first load flashes "No new orders"
-  before data arrives.
+- [x] **No error/retry UI on any data screen** → added `components/ErrorState.tsx` +
+  `ordersError`/`reviewsError`/`financialReportError` store flags; Orders, Reviews,
+  and Reports show a retryable error state when a load fails with no cached data.
+  (`e158dc5`)
+- [x] **`toggleRestaurantOpen` failures are fully silent** → both tabs now Alert the
+  vendor on failure (`orders.toggleOpenFailed`, all locales). (`e8d87f6`)
+- [x] **Orders screen has no loading indicator** → first-load spinner wired to
+  `ordersLoading`. (`e8d87f6`)
 
 ### Features that fake success (persist nothing)
-- [ ] **Review replies are local-only** — `store/index.ts:236` `replyToReview` flips
-  in-memory state; no reply endpoint exists; `loadReviews` always maps
-  `replied:false`, so the reply vanishes on refresh. The customer never sees it.
-- [ ] **Courier ratings discarded** — `store/index.ts:310` `submitCourierRating`
-  appends to an array that is never POSTed or read.
-- [ ] **Notification preference toggles are cosmetic** — `store/index.ts:337` flips an
-  in-memory map that's never sent to the backend or consulted before showing
-  notifications.
-- [ ] **Reports "Refunds / Cancellations" permanently show 0** — `reports.tsx:329,334`
-  read `revenueData.refunds/cancellations`, never populated by
-  `loadFinancialReport`. Misleading on a money screen.
-- [ ] **Sold Items always empty** — `settings/sold-items.tsx` reads
-  `revenueData.soldItems` (never populated); its pull-to-refresh is a no-op
-  (`useRefresh()` with no callback).
-- [ ] **Staff screen is an inert stub** — `settings/staff.tsx`: `staffMembers` never
-  loaded, no staff API, "Invite" button has no `onPress`, route unreachable from UI.
-  **Decide: finish it or delete it (and its `_layout.tsx` registration).**
-
-**For each fake feature: either wire it to a real endpoint or remove the UI so it
-doesn't present a capability that doesn't exist.**
+Resolved by **hiding behind feature flags** (`constants/features.ts`) so they stop
+presenting capabilities that silently fail; flip each flag to `true` when the
+backend endpoint lands. (`d13baee`)
+- [x] **Review replies** → reply button + `unresponded` filter gated on
+  `FEATURES.reviewReplies`.
+- [x] **Courier ratings** → rating sheet gated on `FEATURES.courierRatings`.
+- [x] **Notification preference toggles** → switches disabled and show the truthful
+  "all delivered" state, gated on `FEATURES.notificationPrefs`.
+- [x] **Reports "Refunds / Cancellations"** → cards gated on `FEATURES.reportsRefunds`
+  (were hardcoded 0 on a money screen).
+- [x] **Sold Items always empty** → already self-hidden (preview gated on
+  `soldItems.length > 0`, which is never populated). No change needed.
+- [x] **Staff screen** → already unreachable (removed from the More menu earlier).
+  Left registered but not linked; delete in a later cleanup if desired.
 
 ### Race conditions
-- [ ] **Optimistic status updates clobbered by WS `loadOrders`** — every WS event
-  (`order_update`/`kitchen_ticket`/`new_order`/`connected`) calls `loadOrders`,
-  replacing the whole array with server state. If an event lands mid-PATCH, the
-  optimistic status reverts ("Ready" → "Preparing") until the next event. Add
-  request sequencing or reconcile in-flight mutations.
-- [ ] **WS `new_order` re-triggers the alarm without the push path's dedupe guard** —
-  `hooks/useNotifications.ts`: push handler guards on `!store.showOrderAlert`; the
-  WS handler calls `triggerOrderAlert` unconditionally. Duplicate deliveries /
-  reconnects churn the modal.
+- [x] **Optimistic status updates clobbered by WS `loadOrders`** → a module-level
+  `pendingOrderIds` set is populated during each in-flight mutation; `loadOrders`
+  merges server data but preserves the local copy for pending ids, so a refresh
+  mid-PATCH no longer reverts the card. (`2dc4e3b`)
+- [x] **WS `new_order` re-triggers the alarm** → now skips `triggerOrderAlert` when
+  it's already showing for that same order. (`2dc4e3b`)
 
 ---
 
