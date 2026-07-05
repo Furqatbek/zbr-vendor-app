@@ -155,7 +155,8 @@ function NativeMap({
   startLng: number;
   onChange: (c: { lat: number; lng: number }) => void;
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // Lazy require so the web bundle doesn't need react-native-webview.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { WebView } = require('react-native-webview');
   const html = useMemo(() => buildHtml(startLat, startLng), [startLat, startLng]);
   return (

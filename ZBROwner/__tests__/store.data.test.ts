@@ -1,3 +1,6 @@
+import { useStore } from '../store';
+import * as api from '../services/api';
+
 jest.mock('../services/api', () => ({
   fetchRestaurantOrders: jest.fn(),
   fetchActiveOrders: jest.fn(),
@@ -15,9 +18,6 @@ jest.mock('../store/authStore', () => ({
     }),
   },
 }));
-
-import { useStore } from '../store';
-import * as api from '../services/api';
 
 const mockApi = api as jest.Mocked<typeof api>;
 

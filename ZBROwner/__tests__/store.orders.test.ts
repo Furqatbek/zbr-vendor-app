@@ -1,5 +1,8 @@
 import type { Order } from '../types';
 
+import { useStore } from '../store';
+import * as api from '../services/api';
+
 // Mock the API layer so no network happens and we control resolution timing.
 jest.mock('../services/api', () => ({
   fetchRestaurantOrders: jest.fn(),
@@ -18,9 +21,6 @@ jest.mock('../store/authStore', () => ({
     getState: () => ({ restaurant: { id: 1, isOpen: true } }),
   },
 }));
-
-import { useStore } from '../store';
-import * as api from '../services/api';
 
 const mockApi = api as jest.Mocked<typeof api>;
 
