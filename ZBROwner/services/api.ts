@@ -221,6 +221,7 @@ const KNOWN_STATUSES: ReadonlySet<string> = new Set<OrderStatus>([
  * so they at least render via StatusBadge's fallback instead of vanishing.
  */
 function normalizeStatus(raw: RawApiOrder): OrderStatus {
+  if (!raw.status || typeof raw.status !== 'string') return 'created';
   const upper = raw.status.toUpperCase();
   if (upper === 'COURIER_ASSIGNED') {
     if (raw.pickedUpAt) return 'picked_up';
@@ -248,7 +249,7 @@ function mapApiOrder(raw: RawApiOrder): Order {
     status: normalizeStatus(raw),
     orderType: raw.orderType as Order['orderType'],
     paymentStatus: raw.paymentStatus as Order['paymentStatus'],
-    items: raw.items.map(mapApiOrderItem),
+    items: Array.isArray(raw.items) ? raw.items.map(mapApiOrderItem) : [],
     subtotal: raw.subtotal,
     tax: raw.tax,
     deliveryFee: raw.deliveryFee,
@@ -280,6 +281,24 @@ function mapApiOrder(raw: RawApiOrder): Order {
   };
 }
 
+/**
+ * Map a page of raw orders, isolating per-record failures so one malformed
+ * order can't reject the whole `.map` and blank the vendor's order board.
+ * Bad records are dropped with a warning rather than taking down the page.
+ */
+function safeMapOrders(raw: RawApiOrder[] | undefined | null): Order[] {
+  if (!Array.isArray(raw)) return [];
+  const out: Order[] = [];
+  for (const r of raw) {
+    try {
+      out.push(mapApiOrder(r));
+    } catch (e) {
+      console.warn('[api] Skipped a malformed order record:', e);
+    }
+  }
+  return out;
+}
+
 export async function fetchRestaurantOrders(
   restaurantId: number,
   params: { page?: number; size?: number } = {},
@@ -292,9 +311,9 @@ export async function fetchRestaurantOrders(
     ENDPOINTS.restaurantOrders(restaurantId) + (qs ? `?${qs}` : ''),
   );
   return {
-    content: res.data.content.map(mapApiOrder),
-    totalElements: res.data.totalElements,
-    last: res.data.last,
+    content: safeMapOrders(res.data?.content),
+    totalElements: res.data?.totalElements ?? 0,
+    last: res.data?.last ?? true,
   };
 }
 
@@ -310,9 +329,9 @@ export async function fetchActiveOrders(
     ENDPOINTS.restaurantActiveOrders(restaurantId) + (qs ? `?${qs}` : ''),
   );
   return {
-    content: res.data.content.map(mapApiOrder),
-    totalElements: res.data.totalElements,
-    last: res.data.last,
+    content: safeMapOrders(res.data?.content),
+    totalElements: res.data?.totalElements ?? 0,
+    last: res.data?.last ?? true,
   };
 }
 

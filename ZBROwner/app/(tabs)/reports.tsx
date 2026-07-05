@@ -96,7 +96,12 @@ export default function ReportsScreen() {
     datasets: [{ data: hasPayoutTrend ? report!.dailyPayoutTrend.map((d) => d.netPayouts) : [0] }],
   };
 
-  const fmt = (amount: number) => t('common.currency' as any, { amount: amount.toFixed(2) });
+  // Guard against missing/null numeric fields from a partial financial report
+  // (new restaurant, partial period, schema drift). An unguarded .toFixed on
+  // undefined would throw during render and — even with the error boundary —
+  // blank the whole reports screen instead of showing 0.
+  const fmt = (amount: number | null | undefined) =>
+    t('common.currency' as any, { amount: (typeof amount === 'number' ? amount : 0).toFixed(2) });
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.accent} colors={[Colors.accent]} />}>
