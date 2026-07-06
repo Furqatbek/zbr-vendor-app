@@ -9,17 +9,54 @@ Companion doc: `docs/PRODUCTION_READINESS.md` (the client-side checklist).
 
 ---
 
+## Update — backend responded (VENDOR_VERIFICATION_RESPONSE)
+
+The backend team verified 36 points, confirmed 17, and shipped 6 fixes. Status of
+the §0 asks and what the client adjusted in response:
+
+**Resolved by backend:**
+- ✅ **WS topic authorization** — restaurant topics now restricted to owners/admins;
+  CONNECT rejects unauthenticated sockets (was a PII leak — any authed user could
+  read `/topic/restaurants/{anyId}/orders`). (§0 #3)
+- ✅ **`isCurrentlyOpen`** now `ACTIVE && isOpen==true`, never true when `isOpen`
+  is false/null. (§0 #5)
+- ✅ **Idempotency** — replaying a status update / cancelling an already-cancelled
+  order returns 200 no-op. (§0 #7)
+- ✅ **OrderDto timestamps** `pickedUpAt / inTransitAt / completedAt / cancelledAt`
+  + `courierPhone` + `estimatedDeliveryTime` now included. (§0 #4)
+- ✅ **Restos `overwriteExisting=false`** correctly skips existing products.
+
+**Corrected the client (commit `f297549`) — the client had these wrong:**
+- **Device-token endpoint** is `POST/DELETE /api/v1/device-tokens`, not
+  `/notifications/device-token`. Fixed.
+- **Active-orders** `GET /orders/restaurant/{id}/active` returns an **unpaged raw
+  `OrderDto[]`** (no `content`/`totalElements`). Client now handles the array.
+- **`/refresh` does NOT rotate** the refresh token — returns a new access token and
+  the same/omitted refresh token, never revokes the old one. Client keeps the
+  existing refresh token instead of expecting a rotated pair.
+- **Financial report** — use owner-accessible `GET /restaurants/{id}/financial-report`
+  (client already does). The payouts endpoint is admin-only (403 for owners) — the
+  client's `fetchPayouts` is only reachable from the hidden payments screen, so no
+  live impact, but don't wire it to an owner-facing screen.
+
+**Still open:**
+- 🔴 **TLS host** (§0 #1) — still the launch blocker.
+- 🟠 **Restos `baseUrl` server-side allowlist** (§0 #2) — SSRF.
+- 🟡 **Feature-flagged endpoints** (§7) — still unbuilt.
+
+---
+
 ## 0. TL;DR — what we need from you
 
-| # | Ask | Why | Blocking? |
-|---|-----|-----|-----------|
-| 1 | **Serve the API over `https://` and the WebSocket over `wss://`** on staging + prod | iOS ATS and Android cleartext policy block `http`/`ws` in release builds. The client is already env-driven and ready for TLS. | **Yes — gates any real launch** |
-| 2 | **Server-side allowlist/validation on the Restos `baseUrl`** we forward to you | The backend fetches that URL server-side → SSRF risk. Client now blocks obvious internal hosts, but the authoritative check must be yours. | High (security) |
-| 3 | **Accept the JWT on the STOMP `CONNECT` frame** (`Authorization: Bearer <token>`) and keep publishing order status changes to the restaurant topic | Real-time order board + reconnect correctness. | High |
-| 4 | Confirm **`courierPhone` + `estimatedDeliveryTime`** ride on every `OrderDto` | Powers the call-courier button + ETA chip. You said `courierPhone` was added — please confirm it's on the WS payloads too. | Medium |
-| 5 | Fix the **`isOpen` vs `isCurrentlyOpen`** semantics (see §9) | Suspected backend bug — `isCurrentlyOpen: true` while `isOpen: false`. | Medium |
-| 6 | Build the **feature-flagged endpoints** in §7 (review reply, courier rating, notification prefs, refunds/cancellations, sold-items, staff) | Those UIs are hidden on the client until each endpoint exists. | Low (post-launch) |
-| 7 | **Idempotency keys** honored on order-mutating endpoints | We retry briefly across deploy drains; retries must be safe. | Medium |
+| # | Ask | Why | Blocking? | Status |
+|---|-----|-----|-----------|--------|
+| 1 | **Serve the API over `https://` and the WebSocket over `wss://`** on staging + prod | iOS ATS / Android cleartext block `http`/`ws` in release. Client is env-driven and TLS-ready. | **Yes — gates launch** | 🔴 Open |
+| 2 | **Server-side allowlist on the Restos `baseUrl`** | Backend fetches it server-side → SSRF. | High | 🟠 Open |
+| 3 | **JWT on STOMP `CONNECT`** + publish status changes to the restaurant topic | Real-time board + reconnect. | High | ✅ Done |
+| 4 | **`courierPhone` + `estimatedDeliveryTime`** on every `OrderDto` (incl. WS) | Call-courier + ETA. | Medium | ✅ Done |
+| 5 | Fix **`isOpen` vs `isCurrentlyOpen`** | Was true while `isOpen:false`. | Medium | ✅ Done |
+| 6 | Build the **feature-flagged endpoints** (§7) | UIs hidden until each exists. | Low | 🟡 Open |
+| 7 | **Idempotent** order mutations | Safe retries across deploys. | Medium | ✅ Done |
 
 ---
 
@@ -44,7 +81,7 @@ Companion doc: `docs/PRODUCTION_READINESS.md` (the client-side checklist).
 | Endpoint | Method | Body | Notes |
 |----------|--------|------|-------|
 | `/api/v1/auth/login` | POST | `{ emailOrPhone, password }` | Returns `data: { accessToken, refreshToken, userId, email, fullName, roles }` |
-| `/api/v1/auth/refresh` | POST | `{ "refreshToken": "<REFRESH token>" }` | **Must return a rotated pair** `data: { accessToken, refreshToken }` |
+| `/api/v1/auth/refresh` | POST | `{ "refreshToken": "<REFRESH token>" }` | Returns a **new access token; refresh token is NOT rotated** (same value returned, old one never revoked). Client keeps its stored refresh token. |
 | `/api/v1/auth/logout` | POST | `{ refreshToken }` | Best-effort; client also unregisters its device token |
 | `/api/v1/auth/password-reset` | POST | `{ email }` | |
 | `/api/v1/auth/password-reset/confirm` | POST | `{ token, newPassword }` | |
@@ -95,8 +132,8 @@ Contract notes:
 ### Endpoints
 | Endpoint | Method | Body | Notes |
 |----------|--------|------|-------|
-| `/api/v1/orders/restaurant/{id}?page&size` | GET | | Paged order list |
-| `/api/v1/orders/restaurant/{id}/active?page&size` | GET | | Active orders |
+| `/api/v1/orders/restaurant/{id}?page&size` | GET | | Paged order list (`data: { content[], totalElements, last }`) |
+| `/api/v1/orders/restaurant/{id}/active` | GET | | Active orders — **unpaged raw `OrderDto[]` under `data`**; `page`/`size` ignored |
 | `/api/v1/orders/{orderId}/status` | PATCH | `{ status: "ACCEPTED", estimatedPrepTimeMinutes? }` | Status is **UPPERCASE** |
 | `/api/v1/orders/{orderId}/cancel` | POST | `{ reason, requestRefund }` | Used for decline + cancel |
 
@@ -217,7 +254,7 @@ payments land, tell us and we'll surface it.
   `{ notifications[], unreadCount, hasNext, ... }`.
 - `GET /api/v1/notifications/user/{userId}/unread-count?role=RESTAURANT`.
 - `PATCH /api/v1/notifications/{id}/read`, `POST /api/v1/notifications/read-all`.
-- `POST /api/v1/notifications/device-token` (register) / unregister on logout.
+- `POST /api/v1/device-tokens` (register) / `DELETE /api/v1/device-tokens` (unregister on logout).
 - **The client always passes `role=RESTAURANT`.** Notifications for other roles
   must not leak into this feed.
 - **No per-event SMS/email** — delivery is WebSocket + push only. 
