@@ -332,13 +332,17 @@ export async function fetchActiveOrders(
   if (params.page != null) query.set('page', String(params.page));
   if (params.size != null) query.set('size', String(params.size));
   const qs = query.toString();
-  const res = await apiFetch<RestaurantOrdersResponse>(
+  // The active-orders endpoint returns an UNPAGED raw OrderDto[] under `data`
+  // (no content/totalElements), unlike the paged list endpoint. Handle both.
+  const res = await apiFetch<{ data: RawApiOrder[] | RestaurantOrdersResponse['data'] }>(
     ENDPOINTS.restaurantActiveOrders(restaurantId) + (qs ? `?${qs}` : ''),
   );
+  const list = Array.isArray(res.data) ? res.data : res.data?.content;
+  const content = safeMapOrders(list);
   return {
-    content: safeMapOrders(res.data?.content),
-    totalElements: res.data?.totalElements ?? 0,
-    last: res.data?.last ?? true,
+    content,
+    totalElements: Array.isArray(res.data) ? content.length : (res.data?.totalElements ?? 0),
+    last: Array.isArray(res.data) ? true : (res.data?.last ?? true),
   };
 }
 

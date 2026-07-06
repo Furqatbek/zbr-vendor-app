@@ -42,18 +42,18 @@ export const useAuthStore = create<AuthStore>((set, get) => {
     getAccessToken: () => get().accessToken,
     getRefreshToken: () => get().refreshToken,
     onTokenRefreshed: async (data: RefreshResponse['data']) => {
+      // The backend does NOT rotate the refresh token — /refresh returns a new
+      // access token and the same (or omitted) refresh token. Keep the existing
+      // one if the response doesn't carry a new value, so we never null it out.
+      const nextRefresh = data.refreshToken ?? get().refreshToken;
       set({
         accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
+        ...(nextRefresh ? { refreshToken: nextRefresh } : {}),
       });
-      // Await persistence: the old refresh token may already be invalidated
-      // server-side, so losing the rotated pair (app killed mid-write) would
-      // force a re-login on next launch.
       try {
-        await Promise.all([
-          setSecureItem(SECURE_KEYS.ACCESS_TOKEN, data.accessToken),
-          setSecureItem(SECURE_KEYS.REFRESH_TOKEN, data.refreshToken),
-        ]);
+        const writes = [setSecureItem(SECURE_KEYS.ACCESS_TOKEN, data.accessToken)];
+        if (nextRefresh) writes.push(setSecureItem(SECURE_KEYS.REFRESH_TOKEN, nextRefresh));
+        await Promise.all(writes);
       } catch {
         // Non-fatal: in-memory tokens remain valid for this session
       }
