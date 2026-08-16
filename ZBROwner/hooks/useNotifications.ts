@@ -54,6 +54,15 @@ export function useNotifications() {
         .then((registration) => {
           if (cancelled || !registration) return;
           setPushToken(registration.token);
+          // Dev-only: the token is otherwise invisible, and you need it to send
+          // a test push before the backend's sender exists. Read it with:
+          //   adb logcat -s ReactNativeJS | findstr "device token"
+          // Stripped from release builds by transform-remove-console.
+          if (__DEV__) {
+            console.log(
+              `[push] ${registration.service.toUpperCase()} device token: ${registration.token}`,
+            );
+          }
         })
         .catch(() => {
           if (!cancelled && attempt < maxAttempts) {
