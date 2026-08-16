@@ -50,7 +50,7 @@ the §0 asks and what the client adjusted in response:
 
 | # | Ask | Why | Blocking? | Status |
 |---|-----|-----|-----------|--------|
-| 1 | **Serve the API over `https://` and the WebSocket over `wss://`** on staging + prod | iOS ATS / Android cleartext block `http`/`ws` in release. Client is env-driven and TLS-ready. | **Yes — gates launch** | 🔴 Open |
+| 1 | **Serve the API over `https://` and the WebSocket over `wss://`** on staging + prod, and **tell us the hostnames** | iOS ATS / Android cleartext block `http`/`ws` in release. Client is env-driven and TLS-ready — the hostnames get baked into the release bundle at build time, so we cannot build a shippable APK until these exist. | **Yes — gates launch** | 🔴 Open |
 | 2 | **Server-side allowlist on the Restos `baseUrl`** | Backend fetches it server-side → SSRF. | High | 🟠 Open |
 | 3 | **JWT on STOMP `CONNECT`** + publish status changes to the restaurant topic | Real-time board + reconnect. | High | ✅ Done |
 | 4 | **`courierPhone` + `estimatedDeliveryTime`** on every `OrderDto` (incl. WS) | Call-courier + ETA. | Medium | ✅ Done |
@@ -64,7 +64,8 @@ the §0 asks and what the client adjusted in response:
 ## 1. Transport & environment
 
 - Base URLs are injected at build time via `EXPO_PUBLIC_API_BASE_URL` and
-  `EXPO_PUBLIC_WS_BASE_URL` (see `eas.json` build profiles). The client no longer
+  `EXPO_PUBLIC_WS_BASE_URL` (set in `.env.production` for release builds; the app
+  is built locally with Gradle — no EAS). The client no longer
   hardcodes `localhost`.
 - **Release builds require TLS.** `http://`/`ws://` are fine for local dev only;
   a store/TestFlight build cannot talk to a cleartext host.

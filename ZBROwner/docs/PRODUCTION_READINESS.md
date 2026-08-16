@@ -1,9 +1,15 @@
 # Production Readiness Audit — ZBROwner
 
 **Original verdict: NOT ready for production launch.**
-**Status: Tier-0 (ship-blockers) and Tier-1 (soft-launch bar) both resolved.
-Remaining before a confident launch: a TLS backend host + Tier-2 (tests/CI/runtime
-validation).**
+**Status: Tier-0, Tier-1 and (bar cert pinning) Tier-2 all resolved.
+The remaining blockers are external, not client code:**
+1. **A TLS backend host + its hostnames** — inlined into the bundle at build
+   time, so no shippable APK exists until these are known.
+2. **Backend sending FCM/APNs pushes** — see `docs/PUSH_SETUP.md`.
+3. **An APNs key** (iOS only; Android push is fully configured).
+
+**Build/release model: local Gradle builds → Google Play. No EAS.** See
+`docs/LOCAL_BUILD.md`.
 
 A five-dimension audit (config/deploy, security, resilience, testing, feature-correctness)
 of the ZBROwner vendor app. The architecture is sound — the order pipeline works
@@ -13,7 +19,8 @@ fixed, and the soft-launch hardening is done; see the progress log.
 
 | Dimension | Score /10 → now | One-line |
 |-----------|-----------|----------|
-| Config & deployment | 2 → 7 | Env-based hosts, deps installed, `eas.json` added; needs real TLS host |
+| Config & deployment | 2 → 7 | Env-based hosts + preflight checks, local Gradle build documented; needs real TLS host |
+| Push notifications | 1 → 6 | Real FCM/APNs tokens, Firebase wired, channels/sound configured; needs backend senders + APNs key |
 | Security | 3 → 6 | Tokens in keystore, logs stripped; SSRF/deep-link hardening pending |
 | Resilience | 4 → 7 | Error boundary, error/retry UI, crash guards, race fix all in |
 | Testing & quality | 3 → 8 | CI runs lint+typecheck+37 tests; strict flags on; zod at money/orders boundary |
@@ -36,12 +43,25 @@ fixed, and the soft-launch hardening is done; see the progress log.
   casts removed (`1b7eadd`); **zod runtime validation** at the money/orders
   boundary (`f78be08`). **The only remaining Tier-2 item is cert pinning, which
   needs the real TLS host.**
+- **Push notifications — new workstream** (`a139652`, `ac07611`, `e3cf2a9`,
+  `0415a6d`): screen-off delivery needs remote push; the WebSocket + local
+  notifications could never wake a sleeping device. Fixed four real defects
+  found along the way — push registration threw in any real build (no EAS
+  `projectId`), the wrong token type was being sent (Expo token to an FCM/APNs
+  backend), token rotation was unhandled (silent push death), and the alarm
+  sound's filename would have broken the Android build. Firebase project
+  `push-notifications-for-zbr` wired and verified. See `docs/PUSH_SETUP.md`.
+- **Build model** (`9e043bf`): local Gradle builds, no EAS. Added
+  `check:release` / `check:push` preflights so a build can't ship pointing at a
+  placeholder host or with a mismatched Firebase config.
 - **Bonus:** fixed 4 pre-existing TypeScript compile errors (`479244d`) — the
   project now type-checks clean, including a real runtime bug in the menu
   remove-image button.
 
-**Rough remaining timeline:** a few days to close out the remaining Tier-2
-items — plus the external TLS backend host, which gates a real launch.
+**Rough remaining timeline:** client work is essentially done. What's left is
+external: the TLS hostnames, the backend's FCM/APNs senders, and an APNs key for
+iOS. Android could be in an internal Play test within a day of the TLS host
+existing.
 
 ---
 
@@ -49,8 +69,9 @@ items — plus the external TLS backend host, which gates a real launch.
 
 - [x] **Backend URL hardcoded to localhost** → `constants/api.ts` now reads
   `EXPO_PUBLIC_API_BASE_URL` / `EXPO_PUBLIC_WS_BASE_URL` (Expo inlines these at
-  build time), with a localhost dev fallback + `__DEV__` warning. Hosts are set
-  per environment in `eas.json`. `.env.example` documents local usage. (`b97e32e`)
+  build time), with a localhost dev fallback + `__DEV__` warning. Release hosts
+  come from `.env.production`; `.env.example` documents which env file loads
+  when. (`b97e32e`, `9e043bf`)
 
 - [x] **`expo-location` not installed** → installed via `expo install`
   (`expo-location@~55.1.11`, SDK-matched). (`89bb82b`)
@@ -58,16 +79,21 @@ items — plus the external TLS backend host, which gates a real launch.
 - [x] **`react-native-webview` not installed** → installed
   (`react-native-webview@13.16.0`). Native map picker resolves. (`89bb82b`)
 
-- [x] **No `eas.json`** → added with development / preview / production build
-  profiles, each injecting the API/WS hosts; `appVersionSource: remote` +
-  `production.autoIncrement` handles versionCode/buildNumber. (`b97e32e`)
-  **⚠️ Action for team:** replace the `*.zbr.example.com` placeholder hosts with
-  real staging/prod URLs, and run `eas init` to attach a `projectId`.
+- [x] **No reproducible build config** → **decided: build locally with Gradle, no
+  EAS.** `eas.json` remains in the repo but is **unused** (kept only as an escape
+  hatch if cloud builds are ever wanted); its placeholder hosts affect nothing,
+  and no Expo `projectId` is needed. Release config now lives in
+  `.env.production` + `app.json` (`android.versionCode`, `ios.buildNumber`),
+  with `npm run check:release` blocking a build on placeholder/localhost/
+  cleartext hosts or a missing versionCode. See `docs/LOCAL_BUILD.md`.
+  (`b97e32e`, `9e043bf`)
 
-- [x] **Cleartext HTTP/WS** → **client-ready.** Env mechanism + `eas.json`
-  preview/production profiles use `https://` / `wss://`. (`b97e32e`)
-  **⚠️ Remaining (backend):** the staging/prod backend must actually serve TLS.
-  No client code change left.
+- [x] **Cleartext HTTP/WS** → **client-ready.** `check:release` hard-fails any
+  release build whose hosts aren't `https://` / `wss://`. (`b97e32e`, `9e043bf`)
+  **⚠️ Remaining (backend):** the staging/prod backend must actually serve TLS,
+  **and the hostnames must be known** — they're inlined into the bundle at build
+  time, so no shippable APK can be produced until they exist. No client code
+  change left.
 
 - [x] **Auth tokens in AsyncStorage plaintext** → migrated to `expo-secure-store`
   (iOS Keychain / Android Keystore) via `utils/secureStorage.ts`, with web
@@ -171,7 +197,10 @@ backend endpoint lands. (`d13baee`)
 
 ## Minor / polish
 
-- `app.json` has no `android.versionCode` / `ios.buildNumber` (needed for store updates).
+- ~~`app.json` has no `android.versionCode` / `ios.buildNumber`~~ → **added**
+  (`versionCode: 1`, `buildNumber: "1"`). Now that EAS isn't auto-incrementing
+  them, `versionCode` **must be bumped manually before every Play upload** —
+  Play rejects a duplicate. (`9e043bf`)
 - `expo-image-picker` used but not registered as a plugin in `app.json` — no
   `NSPhotoLibraryUsageDescription`; will bite on App Store review / camera use.
 - `expo-av` (order alarm) is deprecated in favor of `expo-audio`/`expo-video`.
