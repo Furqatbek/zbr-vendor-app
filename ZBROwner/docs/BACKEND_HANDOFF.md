@@ -57,6 +57,7 @@ the §0 asks and what the client adjusted in response:
 | 5 | Fix **`isOpen` vs `isCurrentlyOpen`** | Was true while `isOpen:false`. | Medium | ✅ Done |
 | 6 | Build the **feature-flagged endpoints** (§7) | UIs hidden until each exists. | Low | 🟡 Open |
 | 7 | **Idempotent** order mutations | Safe retries across deploys. | Medium | ✅ Done |
+| 8 | **Send FCM/APNs pushes** per [`PUSH_SETUP.md`](./PUSH_SETUP.md) §3 — high priority, `channel_id: orders_v2`, numeric `data.orderId`, prune dead tokens | **A locked phone only wakes for a remote push.** The WebSocket cannot deliver when the app is backgrounded — this is what makes vendors miss orders. | **High** | 🔴 Open |
 
 ---
 
@@ -255,6 +256,20 @@ payments land, tell us and we'll surface it.
 - `GET /api/v1/notifications/user/{userId}/unread-count?role=RESTAURANT`.
 - `PATCH /api/v1/notifications/{id}/read`, `POST /api/v1/notifications/read-all`.
 - `POST /api/v1/device-tokens` (register) / `DELETE /api/v1/device-tokens` (unregister on logout).
+  Body: `{ token, platform: "ANDROID" | "IOS", deviceId }`.
+  **The token is now a RAW device token, not an Expo token:** `ANDROID` = FCM
+  registration token (Firebase Admin SDK), `IOS` = APNs device token (HTTP/2 +
+  `.p8` JWT). The client re-registers automatically when the OS rotates a token,
+  so upsert on `deviceId` rather than inserting a new row.
+  → **Full push contract, payload shapes, and priority requirements:
+  [`docs/PUSH_SETUP.md`](./PUSH_SETUP.md) §3.** Key points: `priority: high`
+  (Android) / `apns-priority: 10` + `interruption-level: time-sensitive` (iOS),
+  `channel_id: "orders_v2"`, sound `new_order`, a `notification` block **and** a
+  `data` block, numeric `data.orderId`, and pruning of dead tokens on
+  `UNREGISTERED` / `410`.
+  ❓ **Please confirm the `DELETE` contract** — the client currently sends
+  `?deviceId=<id>`. If it expects the token in the body or infers from auth
+  context instead, unregister-on-logout is failing silently today.
 - **The client always passes `role=RESTAURANT`.** Notifications for other roles
   must not leak into this feed.
 - **No per-event SMS/email** — delivery is WebSocket + push only. 
