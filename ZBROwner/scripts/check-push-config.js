@@ -152,11 +152,10 @@ if (!notifPlugin) {
 }
 
 // ── EAS project id ──────────────────────────────────────────────────────────
-if (!expo?.extra?.eas?.projectId) {
-  warnings.push(
-    'app.json has no extra.eas.projectId — run `eas init`. Required for EAS builds.',
-  );
-} else {
+// Deliberately NOT required: it's only needed for EAS cloud builds or Expo's
+// push service. This app builds locally and registers raw FCM/APNs device
+// tokens, so no Expo project id is involved.
+if (expo?.extra?.eas?.projectId) {
   ok.push(`EAS projectId: ${expo.extra.eas.projectId}`);
 }
 
