@@ -165,7 +165,16 @@ const entitlements = expo?.ios?.entitlements || {};
 if (!entitlements['aps-environment']) {
   warnings.push('app.json: ios.entitlements["aps-environment"] is not set — iOS push will not be enabled.');
 } else {
-  ok.push(`iOS aps-environment: ${entitlements['aps-environment']}`);
+  ok.push(
+    `iOS aps-environment: ${entitlements['aps-environment']} ` +
+      '(default; override per build with APS_ENVIRONMENT=development — see app.config.js)',
+  );
+}
+if (!entitlements['com.apple.developer.usernotifications.time-sensitive']) {
+  warnings.push(
+    'app.json: the time-sensitive entitlement is not set — iOS alerts will not ' +
+      'break through Focus / Do Not Disturb.',
+  );
 }
 const backgroundModes = expo?.ios?.infoPlist?.UIBackgroundModes || [];
 if (!backgroundModes.includes('remote-notification')) {

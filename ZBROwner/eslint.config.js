@@ -10,10 +10,12 @@ module.exports = [
       sourceType: 'commonjs',
       globals: {
         __dirname: 'readonly',
+        __filename: 'readonly',
         module: 'writable',
         require: 'readonly',
         process: 'readonly',
         console: 'readonly',
+        Buffer: 'readonly',
       },
     },
   },

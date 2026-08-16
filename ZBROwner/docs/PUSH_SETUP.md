@@ -96,17 +96,94 @@ importance at creation. To change either, bump to `orders_v3` in
   production, create a **second project** and swap `google-services.json` per EAS
   build profile — do not try to share one project across both.
 
-### iOS — Apple
-1. Paid **Apple Developer account** ($99/yr).
-2. Create an **APNs Auth Key (.p8)** (Keys → new key → APNs). Note the **Key ID**
-   and **Team ID**. `.p8` is already gitignored — it is a secret.
-3. Enable **Push Notifications** on the `com.zbr.owner` App ID.
-4. EAS manages the push certificate: `eas credentials` (or automatically on
-   first `eas build -p ios`).
+### iOS — Apple (APNs)
 
-### EAS
-`eas init` — the project has **no `extra.eas.projectId`** yet. Also replace the
-`*.zbr.example.com` placeholder URLs in `eas.json` with the real hosts.
+> **No Firebase here.** iOS talks to APNs directly. And note: **building the iOS
+> app requires a Mac with Xcode** — but the steps below (getting the key) do
+> **not**, and the backend needs that key regardless. You can complete all of
+> this without a Mac; only the build itself is blocked.
+
+**1. Apple Developer Program** — paid membership ($99/yr),
+<https://developer.apple.com/programs/>. Enrolment as an *organization* needs a
+D-U-N-S number and can take days; budget for that.
+
+**2. Register the App ID**
+- <https://developer.apple.com/account> → **Certificates, IDs & Profiles** →
+  **Identifiers** → **+**
+- Type **App IDs → App**. Bundle ID (explicit):
+  ```
+  com.zbr.owner
+  ```
+  Must match `expo.ios.bundleIdentifier` exactly.
+- Under **Capabilities**, tick **Push Notifications**.
+
+**3. Create the APNs Auth Key (.p8)** — this is what the backend uses
+- **Keys** → **+** → name it e.g. `ZBR APNs` → tick **Apple Push Notifications
+  service (APNs)** → Continue → Register
+- **Download the `.p8`. You can only download it once** — Apple will not let you
+  re-download it. Lose it and you must revoke and create a new one.
+- Record the **Key ID** (10 chars, on that page) and your **Team ID** (10 chars,
+  top-right of the portal, or under Membership).
+
+You now have the three values the backend needs: **`.p8` file, Key ID, Team ID.**
+
+> **Prefer the `.p8` auth key over `.p12` certificates.** One key works for
+> *both* sandbox and production and for *all* your apps, and it **never
+> expires**. The old `.p12` certificates are per-environment and expire yearly —
+> a classic cause of "push suddenly stopped on a Tuesday".
+
+🔒 The `.p8` is a **secret** — anyone with it can push to every user of your
+apps. `*.p8` is already gitignored. Give it to the backend through a secret
+manager, not Slack or email.
+
+**4. Sandbox vs production — the one thing that trips everyone up**
+
+APNs has two isolated environments and **a device token from one is rejected by
+the other** with `400 BadDeviceToken`:
+
+| Build | Entitlement | APNs host |
+|---|---|---|
+| Xcode debug / development profile | `development` | `api.sandbox.push.apple.com` |
+| TestFlight / App Store | `production` | `api.push.apple.com` |
+
+`app.config.js` defaults the entitlement to `production`. For a local debug
+build:
+
+```bash
+APS_ENVIRONMENT=development npx expo prebuild --platform ios --clean
+```
+
+The entitlement must also match your provisioning profile, or the build won't
+sign.
+
+**5. Verify the key before the backend is written**
+
+Apple provides **no test console** for APNs (unlike Firebase, which has one
+built into the Cloud Messaging tab). So this repo ships a sender:
+
+```bash
+npm run push:test:ios -- \
+  --key ~/keys/AuthKey_ABC123XYZ.p8 \
+  --key-id ABC123XYZ \
+  --team-id DEF456UVW \
+  --token <device token printed by the app> \
+  --env sandbox
+```
+
+It sends the exact payload from §3, so a success means the backend only has to
+reproduce it. It decodes APNs' terse error codes — `BadDeviceToken`,
+`DeviceTokenNotForTopic`, `InvalidProviderToken` — into what's actually wrong.
+Use this to prove the key works *before* anyone writes backend code; otherwise a
+failure could be in either half and you won't know which.
+
+To get the device token: run the app on a physical device and log the value from
+`registerForPushNotifications()`. It's a 64-character hex string. **If it looks
+like `ExponentPushToken[...]`, something is wrong** — the app must call
+`getDevicePushTokenAsync()`.
+
+### EAS — not used
+This project builds locally with Gradle/Xcode. No `eas init`, no `projectId`,
+and `eas.json`'s placeholder hosts are inert. See `docs/LOCAL_BUILD.md`.
 
 ---
 
@@ -255,9 +332,13 @@ runs in CI, so a wrong-package `google-services.json` can't be merged.
 
 ## 7. Checklist
 
-- [ ] Firebase project + `google-services.json` committed
+- [x] Firebase project + `google-services.json` committed
 - [ ] Firebase service-account key in backend secrets
-- [ ] Apple Developer account, APNs `.p8`, Key ID, Team ID
+- [ ] Apple Developer account enrolled
+- [ ] App ID `com.zbr.owner` registered with Push Notifications capability
+- [ ] APNs `.p8` downloaded (one chance only) + Key ID + Team ID recorded
+- [ ] `.p8` handed to backend via a secret manager
+- [ ] `npm run push:test:ios` succeeds against a real device
 - [ ] `eas init` → `projectId` in `app.json`
 - [ ] Real hosts in `eas.json` (replacing `*.zbr.example.com`)
 - [ ] Backend sends the two payloads in §3, with `priority: high` / `apns-priority: 10`
