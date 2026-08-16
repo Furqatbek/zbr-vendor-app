@@ -27,7 +27,7 @@ export async function startAlarm() {
     });
 
     const { sound: loaded } = await Audio.Sound.createAsync(
-      require('../assets/sounds/new-order.wav'),
+      require('../assets/sounds/new_order.wav'),
       { isLooping: true, volume: 1.0, shouldPlay: true },
     );
     sound = loaded;

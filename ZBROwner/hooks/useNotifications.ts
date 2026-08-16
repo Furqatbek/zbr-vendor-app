@@ -6,7 +6,10 @@ import {
   registerForPushNotifications,
   addNotificationReceivedListener,
   addNotificationResponseListener,
+  addPushTokenListener,
+  getInitialNotificationResponse,
   sendLocalNotification,
+  ORDERS_CHANNEL,
 } from '../utils/notifications';
 import { createStompClient } from '../utils/websocket';
 import { registerDeviceToken } from '../services/api';
@@ -36,29 +39,41 @@ export function useNotifications() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const stompRef = useRef<ReturnType<typeof createStompClient> | null>(null);
 
-  // 1. Request push permissions and save token (max 3 attempts)
+  // 1. Request push permissions and save the raw device token.
+  //    A null result means push is unavailable on this device (web, simulator,
+  //    or permission denied) — retrying can't fix that, so only genuine errors
+  //    (transient token-service failures) are retried.
   useEffect(() => {
+    let cancelled = false;
     let attempt = 0;
     const maxAttempts = 3;
 
     function tryRegister() {
       attempt++;
       registerForPushNotifications()
-        .then((token) => {
-          if (token) {
-            setPushToken(token);
-          } else if (attempt < maxAttempts) {
-            setTimeout(tryRegister, attempt * 2000);
-          }
+        .then((registration) => {
+          if (cancelled || !registration) return;
+          setPushToken(registration.token);
         })
         .catch(() => {
-          if (attempt < maxAttempts) {
+          if (!cancelled && attempt < maxAttempts) {
             setTimeout(tryRegister, attempt * 2000);
           }
         });
     }
 
     tryRegister();
+
+    // The OS can rotate the token at any time; re-register when it does or the
+    // backend keeps pushing to a dead token and orders stop arriving.
+    const tokenSub = addPushTokenListener((registration) => {
+      if (!cancelled) setPushToken(registration.token);
+    });
+
+    return () => {
+      cancelled = true;
+      tokenSub.remove();
+    };
   }, [setPushToken]);
 
   // 1b. Register push token with backend when token + auth are available
@@ -90,18 +105,34 @@ export function useNotifications() {
       }
     });
 
-    const responseSub = addNotificationResponseListener((response) => {
-      const data = response.notification.request.content.data as Record<string, any> | undefined;
-      // Validate the id before interpolating it into a route path — a spoofed
-      // local notification / crafted deep link shouldn't be able to steer
-      // navigation with arbitrary path segments. Order ids are numeric strings.
+    // Validate the id before interpolating it into a route path — a spoofed
+    // local notification / crafted deep link shouldn't be able to steer
+    // navigation with arbitrary path segments. Order ids are numeric strings.
+    const openOrderFrom = (data: Record<string, any> | undefined) => {
       const orderId = data?.orderId != null ? String(data.orderId) : '';
       if (/^\d+$/.test(orderId)) {
         router.push(`/order/${orderId}`);
       }
+    };
+
+    const responseSub = addNotificationResponseListener((response) => {
+      openOrderFrom(response.notification.request.content.data as Record<string, any> | undefined);
     });
 
+    // A tap that cold-starts the app from a killed state may never reach the
+    // listener above, so recover that one navigation explicitly.
+    let cancelled = false;
+    getInitialNotificationResponse()
+      .then((response) => {
+        if (cancelled || !response) return;
+        openOrderFrom(response.notification.request.content.data as Record<string, any> | undefined);
+      })
+      .catch(() => {
+        // No initial response available — nothing to recover.
+      });
+
     return () => {
+      cancelled = true;
       receivedSub.remove();
       responseSub.remove();
     };
@@ -155,7 +186,7 @@ export function useNotifications() {
             newOrder
               ? `${newOrder.orderNumber} – ${newOrder.customerName}`
               : 'You have a new order waiting.',
-            'orders',
+            ORDERS_CHANNEL,
           );
           break;
         }

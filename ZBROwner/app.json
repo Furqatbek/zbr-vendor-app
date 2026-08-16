@@ -14,7 +14,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.zbr.owner"
+      "bundleIdentifier": "com.zbr.owner",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification", "audio"]
+      },
+      "entitlements": {
+        "aps-environment": "production",
+        "com.apple.developer.usernotifications.time-sensitive": true
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +30,15 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.zbr.owner"
+      "package": "com.zbr.owner",
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "POST_NOTIFICATIONS",
+        "VIBRATE",
+        "WAKE_LOCK",
+        "USE_FULL_SCREEN_INTENT",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -37,7 +52,8 @@
         {
           "icon": "./assets/icon.png",
           "color": "#FF5A1F",
-          "defaultChannel": "orders"
+          "defaultChannel": "orders_v2",
+          "sounds": ["./assets/sounds/new_order.wav"]
         }
       ],
       [
