@@ -57,7 +57,7 @@ the §0 asks and what the client adjusted in response:
 | 5 | Fix **`isOpen` vs `isCurrentlyOpen`** | Was true while `isOpen:false`. | Medium | ✅ Done |
 | 6 | Build the **feature-flagged endpoints** (§7) | UIs hidden until each exists. | Low | 🟡 Open |
 | 7 | **Idempotent** order mutations | Safe retries across deploys. | Medium | ✅ Done |
-| 8 | **Send FCM/APNs pushes** per [`PUSH_SETUP.md`](./PUSH_SETUP.md) §3 — high priority, `channel_id: orders_v2`, numeric `data.orderId`, prune dead tokens | **A locked phone only wakes for a remote push.** The WebSocket cannot deliver when the app is backgrounded — this is what makes vendors miss orders. | **High** | 🔴 Open |
+| 8 | **Send FCM/APNs pushes** per [`PUSH_SETUP.md`](./PUSH_SETUP.md) §3 — high priority, `channel_id: orders_v2`, numeric `data.orderId`, prune dead tokens | **A locked phone only wakes for a remote push.** The WebSocket cannot deliver when the app is backgrounded — this is what makes vendors miss orders. | **High** | 🔴 Open — **client side done, credentials ready (§6)** |
 
 ---
 
@@ -271,6 +271,39 @@ payments land, tell us and we'll surface it.
   ❓ **Please confirm the `DELETE` contract** — the client currently sends
   `?deviceId=<id>`. If it expects the token in the body or infers from auth
   context instead, unregister-on-logout is failing silently today.
+
+#### Push credentials — ready for you now
+
+The mobile side of push is complete. Everything needed to send is available:
+
+| | Value | Secret? |
+|---|---|---|
+| Firebase project (Android) | `push-notifications-for-zbr` | no |
+| Firebase service-account key | *ask mobile — via secret manager* | 🔒 **yes** |
+| Apple Team ID | `VQ56W9S7S9` | no (ships in every binary) |
+| APNs Key ID | *ask mobile* | no |
+| APNs `.p8` auth key | *ask mobile — via secret manager* | 🔒 **yes** |
+| `apns-topic` / bundle id | `com.zbr.owner` | no |
+| Android FCM `channel_id` | `orders_v2` | no |
+| Notification sound | `new_order` (Android) / `new_order.wav` (iOS) | no |
+
+Implementation notes that will save you time:
+
+- **Android** → Firebase **Admin SDK / HTTP v1**. The legacy Cloud Messaging
+  server key is **deprecated and disabled by Google** — an older tutorial using
+  a legacy server key will not work.
+- **iOS** → **APNs directly** over HTTP/2 with an ES256 JWT signed by the `.p8`.
+  There is no Firebase on the iOS path. Two details that commonly cost a day:
+  - The JWT signature must be **raw P1363 (64 bytes)**, not DER. Most libraries
+    handle this; hand-rolled signing usually gets it wrong and APNs replies with
+    a misleading `InvalidProviderToken`.
+  - **Sandbox and production are separate.** A token from a debug build only
+    works against `api.sandbox.push.apple.com`; TestFlight/App Store tokens only
+    against `api.push.apple.com`. Mismatch → `400 BadDeviceToken`. You may want
+    to store which environment a token came from.
+- A CLI sender for APNs lives at `scripts/send-apns-test.js` in the app repo —
+  it sends the exact payload below, so you can compare against a known-good
+  request while developing.
 - **The client always passes `role=RESTAURANT`.** Notifications for other roles
   must not leak into this feed.
 - **No per-event SMS/email** — delivery is WebSocket + push only. 

@@ -6,6 +6,32 @@ phone is locked and the app is closed**.
 Delivery model (decided): the backend talks to **FCM (Android)** and **APNs
 (iOS)** directly. No Expo push service.
 
+## Status at a glance
+
+| Piece | Owner | Status |
+|---|---|---|
+| Client: raw FCM/APNs tokens, channels, sound, rotation, tap routing | mobile | ✅ done |
+| Firebase project + `google-services.json` | mobile | ✅ done — `push-notifications-for-zbr` |
+| Apple App ID `com.zbr.owner` + Push capability | mobile | ✅ done |
+| APNs `.p8` auth key + Key ID + Team ID | mobile | ✅ obtained |
+| `.p8` delivered to backend secrets | **you → backend** | 🔴 **next** |
+| Firebase service-account key in backend secrets | **you → backend** | 🔴 **next** |
+| Backend sends FCM payloads (§3) | backend | 🔴 blocking |
+| Backend sends APNs payloads (§3) | backend | 🔴 blocking |
+| Android verified on a real device | mobile | 🟠 ready to test now |
+| iOS verified on a real device | mobile | ⛔ **needs a Mac + Xcode to build** |
+
+**Credentials for the backend** (see §2 for how they were created):
+
+| | |
+|---|---|
+| Apple Team ID | `VQ56W9S7S9` — not secret, ships in every binary |
+| APNs Key ID | on the key's page in the Apple portal (10 chars) |
+| APNs `.p8` | 🔒 **secret** — secret manager only |
+| `apns-topic` / bundle id | `com.zbr.owner` |
+| Firebase project | `push-notifications-for-zbr` |
+| Firebase service account | 🔒 **secret** — secret manager only |
+
 > **Why the WebSocket isn't enough:** when the screen goes off or the app is
 > backgrounded, iOS suspends the JS runtime within seconds and Android dozes.
 > The STOMP socket dies, so the in-app alarm cannot fire. Only a remote push
@@ -27,7 +53,10 @@ Delivery model (decided): the backend talks to **FCM (Android)** and **APNs
   |---|---|---|---|
   | `orders_v2` | New orders | `MAX` (heads-up, wakes screen) | `new_order.wav` |
   | `updates_v2` | Status changes | `DEFAULT` | default |
-- Taps navigate to `/order/{orderId}` (including the cold-start tap).
+- Taps navigate to `/order/{orderId}` (including the cold-start tap), after
+  validating `orderId` is numeric.
+- **Logs the device token in dev builds** so it can be read with `adb logcat`
+  for test sends — see §5. Never logged in release.
 - While the app is **open**, `NewOrderAlert` loops the alarm sound + haptics
   until the vendor accepts/dismisses.
 
@@ -40,7 +69,12 @@ importance at creation. To change either, bump to `orders_v3` in
 
 ## 2. Credentials you must create (blocking)
 
-### Android — Firebase  ← **start here, this unblocks Android entirely**
+### Android — Firebase ✅ DONE
+
+> Project **`push-notifications-for-zbr`**, Android app `com.zbr.owner`,
+> `google-services.json` committed and verified by `npm run check:push`.
+> Steps kept below for reference / recreating in another environment.
+> **Remaining:** step 4 — the backend needs a service-account key.
 
 > **iOS does not need Firebase.** Because we send to APNs directly, there is no
 > iOS Firebase app, no `GoogleService-Info.plist`, and nothing to add to
@@ -96,12 +130,17 @@ importance at creation. To change either, bump to `orders_v3` in
   production, create a **second project** and swap `google-services.json` per EAS
   build profile — do not try to share one project across both.
 
-### iOS — Apple (APNs)
+### iOS — Apple (APNs) ✅ CREDENTIALS DONE
 
+> App ID `com.zbr.owner` registered with the Push Notifications capability, and
+> the `.p8` auth key created. **Team ID `VQ56W9S7S9`.**
+> **Remaining:** hand the `.p8` + Key ID to the backend, and build on a Mac to
+> verify on a device.
+>
 > **No Firebase here.** iOS talks to APNs directly. And note: **building the iOS
 > app requires a Mac with Xcode** — but the steps below (getting the key) do
-> **not**, and the backend needs that key regardless. You can complete all of
-> this without a Mac; only the build itself is blocked.
+> **not**, and the backend needs that key regardless. All of this was completed
+> without a Mac; only the build and on-device verification are blocked.
 
 **1. Apple Developer Program** — paid membership ($99/yr),
 <https://developer.apple.com/programs/>. Enrolment as an *organization* needs a
@@ -287,8 +326,28 @@ remote push in SDK 53, and simulators/emulators can't receive APNs at all
 (an Android emulator *with* Play Services can receive FCM).
 
 ```bash
-eas build --profile development --platform android   # or ios
+npm run prebuild:android && npm run build:android:apk
+# install android/app/build/outputs/apk/release/app-release.apk
 ```
+
+**Get the device token.** The app logs it on registration (dev builds only —
+`__DEV__`-guarded and stripped from release by `transform-remove-console`):
+
+```bash
+adb logcat -s ReactNativeJS | grep "device token"      # Windows: | findstr "device token"
+```
+
+**Send a test without waiting for the backend:**
+- **Android** — Firebase console → **Cloud Messaging** → *Send test message* →
+  paste the token. ⚠️ The console sends a `notification`-only message at default
+  priority, so it validates the token and channel but **not** `priority: high`
+  or your `data` payload. Doze behaviour must be re-checked against the real
+  backend sender.
+- **iOS** — Apple has no console; use the bundled sender:
+  ```bash
+  npm run push:test:ios -- --key <p8> --key-id <id> --team-id VQ56W9S7S9 \
+    --token <hex> --env sandbox
+  ```
 
 Then verify, in order:
 
@@ -332,17 +391,28 @@ runs in CI, so a wrong-package `google-services.json` can't be merged.
 
 ## 7. Checklist
 
+**Credentials**
 - [x] Firebase project + `google-services.json` committed
+- [x] Apple Developer account enrolled
+- [x] App ID `com.zbr.owner` registered with Push Notifications capability
+- [x] APNs `.p8` downloaded (one chance only) + Key ID + Team ID recorded
+- [ ] `.p8` + Key ID handed to backend via a secret manager
 - [ ] Firebase service-account key in backend secrets
-- [ ] Apple Developer account enrolled
-- [ ] App ID `com.zbr.owner` registered with Push Notifications capability
-- [ ] APNs `.p8` downloaded (one chance only) + Key ID + Team ID recorded
-- [ ] `.p8` handed to backend via a secret manager
-- [ ] `npm run push:test:ios` succeeds against a real device
-- [ ] `eas init` → `projectId` in `app.json`
-- [ ] Real hosts in `eas.json` (replacing `*.zbr.example.com`)
-- [ ] Backend sends the two payloads in §3, with `priority: high` / `apns-priority: 10`
-- [ ] Backend prunes dead tokens and dedupes by `deviceId`
-- [ ] Dev build installed on a real Android + iPhone
-- [ ] **Killed + screen-off test passes on both**
+
+**Backend**
+- [ ] Sends the FCM payload in §3 with `priority: "high"` + `channel_id: "orders_v2"`
+- [ ] Sends the APNs payload in §3 with `apns-priority: 10` + `interruption-level: time-sensitive`
+- [ ] Prunes dead tokens (`UNREGISTERED` / `410`) and upserts by `deviceId`
+- [ ] Does not push to the device that caused the change
+
+**Verification**
+- [ ] Android APK on a real device; token read from `adb logcat`
+- [ ] Test send from Firebase console reaches the device
+- [ ] **Android: killed + screen-off test passes** ← the actual requirement
+- [ ] iOS build on a Mac; `npm run push:test:ios --env sandbox` succeeds
+- [ ] **iOS: killed + screen-off test passes**
 - [ ] Vendor onboarding mentions OEM auto-start (Android)
+
+> Dropped from this list: `eas init` and the `eas.json` hosts — the project
+> builds locally with Gradle and registers raw device tokens, so neither an
+> Expo `projectId` nor the EAS profiles are involved. See `docs/LOCAL_BUILD.md`.
