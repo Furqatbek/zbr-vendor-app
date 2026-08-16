@@ -40,15 +40,61 @@ importance at creation. To change either, bump to `orders_v3` in
 
 ## 2. Credentials you must create (blocking)
 
-### Android — Firebase
-1. Create a Firebase project (free) → add an **Android app** with package
-   `com.zbr.owner`.
-2. Download **`google-services.json`** → place at `ZBROwner/google-services.json`.
-   `app.json` already points at it; **the Android build fails until it exists.**
-   Commit it (it's client config, not a secret).
-3. Backend: create a **service account** (Project settings → Service accounts →
-   Generate new private key) for the Firebase Admin SDK. **That JSON is a secret**
-   — env var / secret manager, never the repo.
+### Android — Firebase  ← **start here, this unblocks Android entirely**
+
+> **iOS does not need Firebase.** Because we send to APNs directly, there is no
+> iOS Firebase app, no `GoogleService-Info.plist`, and nothing to add to
+> `app.json` for iOS beyond the entitlements already there. Firebase is
+> **Android-only** in this design.
+
+**Run `npm run check:push` after each step — it verifies what you just did.**
+
+**1. Create the project**
+- <https://console.firebase.google.com> → **Create a project**
+- Name it e.g. `zbr-production`. Google Analytics is **not required** — skip it.
+- ⚠️ Use a **company-owned Google account**, not a personal one. Moving a
+  Firebase project between owners later is painful, and whoever owns it controls
+  push for every installed app.
+
+**2. Register the Android app**
+- In the project → **Add app** → Android.
+- **Android package name** must be exactly:
+  ```
+  com.zbr.owner
+  ```
+  This must match `expo.android.package` in `app.json` **character for
+  character**. A mismatch is the #1 cause of "push just never arrives": FCM
+  issues a token for a non-existent app and silently drops every send.
+- App nickname: anything. **Debug signing certificate SHA-1: leave blank** — it's
+  only needed for Google Sign-In / Dynamic Links, not FCM.
+
+**3. Download `google-services.json`**
+- Save it to **`ZBROwner/google-services.json`** (next to `package.json`).
+- `app.json` already references it, so nothing to wire up.
+- **Commit it.** It's client configuration, not a secret — the API key in it is
+  restricted to this app. (The *service account* key in step 4 is the secret.)
+- Verify: `npm run check:push` should print
+  `ok  google-services.json matches package com.zbr.owner`.
+
+**4. Backend service account** (backend team)
+- Project settings → **Service accounts** → **Generate new private key** → JSON.
+- This is the credential the Firebase Admin SDK uses to send.
+- 🔒 **This one IS a secret.** Env var or secret manager — never the repo. Anyone
+  holding it can push to every vendor device.
+- The backend does **not** need `google-services.json`; the app does. They are
+  different files and are not interchangeable.
+
+**5. Confirm FCM is on**
+- Project settings → **Cloud Messaging** → the **Firebase Cloud Messaging API
+  (V1)** should be *Enabled*. It is on by default for new projects.
+- The old "Cloud Messaging API (Legacy)" / server key is **deprecated and
+  disabled by Google** — if the backend is following an old tutorial that uses a
+  legacy server key, it will not work. They must use the Admin SDK / HTTP v1.
+
+**6. Environments**
+- One Firebase project is fine to start. If you later want staging isolated from
+  production, create a **second project** and swap `google-services.json` per EAS
+  build profile — do not try to share one project across both.
 
 ### iOS — Apple
 1. Paid **Apple Developer account** ($99/yr).
@@ -190,7 +236,24 @@ field, and it is not something the app can fix in code.
 
 ---
 
-## 6. Checklist
+## 6. Verifying your config
+
+```bash
+npm run check:push
+```
+
+Validates the things that otherwise fail *silently*: that
+`google-services.json` exists and its `package_name` matches `app.json`, that the
+alarm sound is bundled with an Android-legal filename, that the channel id in
+`app.json` matches `utils/notifications.ts` (and tells you the `channel_id` the
+backend must send), and that the EAS project id and iOS entitlements are set.
+
+Missing config is a **warning**; contradictory config is a **failure**. It also
+runs in CI, so a wrong-package `google-services.json` can't be merged.
+
+---
+
+## 7. Checklist
 
 - [ ] Firebase project + `google-services.json` committed
 - [ ] Firebase service-account key in backend secrets

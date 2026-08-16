@@ -9,6 +9,7 @@
     "web": "expo start --web",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "check:push": "node scripts/check-push-config.js",
     "test": "jest",
     "test:ci": "jest --ci --runInBand"
   },

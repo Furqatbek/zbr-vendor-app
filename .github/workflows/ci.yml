@@ -31,5 +31,10 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # Fails only on a broken push config (e.g. google-services.json for the
+      # wrong package); missing-but-not-yet-configured is a warning.
+      - name: Check push config
+        run: npm run check:push
+
       - name: Test
         run: npm run test:ci
