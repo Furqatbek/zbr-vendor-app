@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "841558362981",
+    "project_id": "push-notifications-for-zbr",
+    "storage_bucket": "push-notifications-for-zbr.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:841558362981:android:157647204a29309a9fef8c",
+        "android_client_info": {
+          "package_name": "com.zbr.owner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnquyeupk0LXIwGJsIbIff1Zes05keau4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
