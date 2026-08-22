@@ -12,10 +12,11 @@ Build instructions: [`LOCAL_BUILD.md`](./LOCAL_BUILD.md).
 | # | Blocker | Owner | Why it blocks |
 |---|---|---|---|
 | 1 | **Real TLS backend hostnames** | backend | Inlined into the bundle at build time. Until these exist, no shippable AAB can be produced. `npm run check:release` will refuse to build. |
-| 2 | **Privacy policy hosted at a public URL** | you | Play requires a reachable URL on the store listing. Draft: [`PRIVACY_POLICY.md`](./PRIVACY_POLICY.md) — host it, then paste the URL. |
+| 2 | **Privacy policy hosted at a public URL** | you | Play requires a reachable URL on the store listing. Draft: [`PRIVACY_POLICY.md`](./PRIVACY_POLICY.md) — fill its 10 `[BRACKETED]` placeholders, host it, paste the URL into Play Console **and** into `constants/contact.ts`. |
 | 3 | **Reviewer login credentials** | you | ⚠️ See §2 — the single most likely cause of rejection for this app. |
 | 4 | **Screenshots (min 2)** | you | Require a running build on a device/emulator. |
-| 5 | **Signing keystore** | you | See `LOCAL_BUILD.md` §4. Back it up before you build. |
+| 5 | **Signing keystore** | you | See `LOCAL_BUILD.md` §4. Back it up before you build. The release build type is wired to it by `plugins/withReleaseSigning.js`; `check:release` fails if no upload key is configured, because a debug-signed AAB is rejected at upload. |
+| 6 | **Support contact details** | you | `constants/contact.ts` — the Help Center and About links stay hidden until set. |
 
 Everything else in this document is either done or is form-filling.
 
@@ -45,16 +46,21 @@ not just `app.json`, because libraries inject their own permissions.
 | `POST_NOTIFICATIONS` | new-order alerts |
 | `VIBRATE`, `WAKE_LOCK` | order alarm |
 | `MODIFY_AUDIO_SETTINGS` | alarm playback (expo-av) |
-| `ACCESS_COARSE_LOCATION`, `ACCESS_FINE_LOCATION` | one-shot foreground capture of the restaurant's coordinates |
+| `ACCESS_COARSE_LOCATION` | one-shot foreground capture of the restaurant's coordinates (Balanced accuracy; **FINE is blocked**) |
+
+> The list above is the **exact** set that survives into the release manifest.
+> Regenerate and re-check any time permissions change:
+> `npm run prebuild:android && grep uses-permission android/app/src/main/AndroidManifest.xml`
+> — entries carrying `tools:node="remove"` are stripped from the build.
 
 **Removed during this audit** — each was a rejection or friction risk:
 `USE_FULL_SCREEN_INTENT` (never implemented; Android 14 restricts it to
 calls/alarms), `RECEIVE_BOOT_COMPLETED` (no boot receiver),
 `SYSTEM_ALERT_WINDOW` (injected into the release manifest by the Expo template
-though the app never draws overlays), and `CAMERA` / `RECORD_AUDIO` /
-`READ_MEDIA_*` / storage (the photo picker needs none of them, and
-`READ_MEDIA_IMAGES` would have triggered Google's Photo and Video Permissions
-policy).
+though the app never draws overlays), `ACCESS_FINE_LOCATION` (the map prefill
+only needs Balanced accuracy), and `CAMERA` / `RECORD_AUDIO` / `READ_MEDIA_*` /
+storage (the photo picker needs none of them, and `READ_MEDIA_IMAGES` would have
+triggered Google's Photo and Video Permissions policy).
 
 > **No background location.** Explicitly disabled in both platform configs. If
 > Play ever flags background location, something regressed — it would require a
@@ -100,7 +106,7 @@ third-party SDK is Firebase Cloud Messaging (push transport).
 | **Name** | Yes | No | Account management, app functionality | Required |
 | **Email address** | Yes | No | Account management (login) | Required |
 | **Phone number** | Yes | No | Account management | Optional |
-| **Precise location** | Yes | No | App functionality — set the restaurant's map coordinates | Optional |
+| **Approximate location** | Yes | No | App functionality — set the restaurant's map coordinates | Optional |
 | **Photos** | Yes | No | App functionality — menu item and profile images | Optional |
 | **Device or other IDs** | Yes | No | App functionality — push notification delivery (FCM token) | Required |
 
@@ -142,8 +148,14 @@ answering *No* is a bad look for an app holding business and location data.
 2. Add a **"Delete account & data"** row in the More screen linking to it.
 3. Declare that URL in Play Console → App content → **Data deletion**.
 
-> I did not add the in-app row because it needs a real URL or support address you
-> own. Tell me the URL and it's a ten-minute change.
+**The in-app row is already built.** Set `dataDeletionUrl` in
+`constants/contact.ts` and a **"Delete account & data"** row appears in About →
+Legal (translated in all four locales). Until it is set the row is hidden rather
+than shipped as a dead button.
+
+The same file drives the Privacy Policy, Terms and Licenses rows, and the Help
+Center's phone/email/chat cards — all hidden until configured. **`privacyPolicyUrl`
+is required for submission**; the rest are optional but recommended.
 
 ---
 
@@ -217,10 +229,26 @@ Reports/revenue · Reviews. Portrait, from a real device or emulator.
 
 Category: **Utility, Productivity, Communication, or Other**.
 
-Answer **No** to everything about violence, sexuality, profanity, controlled
-substances, gambling and user-generated content. The app displays reviews written
-by customers, but vendors cannot post public content, so it is not a UGC social
-app. Expected outcome: **Everyone / PEGI 3**.
+Answer **No** to violence, sexuality, profanity, controlled substances and
+gambling. Expected outcome: **Everyone / PEGI 3**.
+
+⚠️ **The user-generated-content question needs your judgement — an earlier
+version of this doc said to answer "No", which is arguably wrong.** Two facts cut
+against a flat No:
+- the app **displays customer-written reviews**, which are UGC shown in-app; and
+- vendors **upload menu photos and text that are published to consumers**, so the
+  app is an upload surface for content other people see.
+
+Answering "Yes" typically requires you to state that a moderation and reporting
+mechanism exists. Note the in-app review **Report button is currently disabled**
+(no moderation endpoint — `FEATURES.reviewReports`), so a "Yes" answer claiming
+in-app reporting would not be accurate today.
+
+Two defensible routes: (a) answer **Yes** and describe moderation as handled by
+ZBR platform operations rather than in-app, or (b) build the reporting endpoint,
+enable the flag, and answer **Yes** with in-app reporting. **Do not answer "No"
+without a deliberate decision** — a misdeclaration here is an enforcement
+category, not a warning.
 
 Ads: **No, this app does not contain ads.** (Verified — no ad SDK.)
 
