@@ -15,6 +15,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const root = path.resolve(__dirname, '..');
 const problems = [];
@@ -99,6 +100,59 @@ for (const key of REQUIRED_VARS) {
     );
   } else {
     ok.push(`${key} = ${value}`);
+  }
+}
+
+// ── Signing ─────────────────────────────────────────────────────────────────
+// A release AAB signed with the shared debug keystore is REJECTED at upload
+// ("signed in debug mode"), after the whole build. Catch it before Gradle runs.
+const SIGNING_PROP = 'ZBR_UPLOAD_STORE_FILE';
+const gradlePropsPaths = [
+  path.join(os.homedir(), '.gradle', 'gradle.properties'),
+  path.join(root, 'android', 'gradle.properties'),
+];
+
+let signingConfigured = Boolean(process.env[SIGNING_PROP] || process.env.ORG_GRADLE_PROJECT_ZBR_UPLOAD_STORE_FILE);
+let keystorePath = process.env[SIGNING_PROP] || null;
+
+for (const p of gradlePropsPaths) {
+  if (signingConfigured) break;
+  const props = parseEnvFile(p);
+  if (props && props[SIGNING_PROP]) {
+    signingConfigured = true;
+    keystorePath = props[SIGNING_PROP];
+  }
+}
+
+if (!signingConfigured) {
+  problems.push(
+    'No upload keystore configured — the release build would be signed with the\n' +
+      '     DEBUG keystore and Play rejects it at upload ("signed in debug mode").\n' +
+      `     Set ${SIGNING_PROP} (+ _KEY_ALIAS, _STORE_PASSWORD, _KEY_PASSWORD) in\n` +
+      `     ${gradlePropsPaths[0]}\n` +
+      '     See docs/LOCAL_BUILD.md §4.',
+  );
+} else {
+  if (keystorePath && !fs.existsSync(keystorePath)) {
+    problems.push(`${SIGNING_PROP} points at a file that does not exist: ${keystorePath}`);
+  } else {
+    ok.push(`Upload keystore configured${keystorePath ? ` (${keystorePath})` : ''}`);
+  }
+}
+
+// The generated project must actually reference that config.
+const appGradle = path.join(root, 'android', 'app', 'build.gradle');
+if (fs.existsSync(appGradle)) {
+  const gradleSrc = fs.readFileSync(appGradle, 'utf8');
+  const releaseBlock = gradleSrc.split(/buildTypes\s*\{/)[1] || '';
+  const releaseUsesDebug = /release\s*\{[\s\S]*?signingConfig\s+signingConfigs\.debug/.test(releaseBlock);
+  if (releaseUsesDebug) {
+    problems.push(
+      'android/app/build.gradle: buildTypes.release still uses signingConfigs.debug.\n' +
+        '     Re-run `npm run prebuild:android` so plugins/withReleaseSigning.js applies.',
+    );
+  } else if (gradleSrc.includes('signingConfigs.release')) {
+    ok.push('Release build type uses the release signing config');
   }
 }
 

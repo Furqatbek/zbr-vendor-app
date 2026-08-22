@@ -33,6 +33,7 @@
       },
       "package": "com.zbr.owner",
       "versionCode": 1,
+      "allowBackup": false,
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "POST_NOTIFICATIONS",
@@ -69,7 +70,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/notification-icon.png",
           "color": "#FF5A1F",
           "defaultChannel": "orders_v2",
           "sounds": ["./assets/sounds/new_order.wav"]
@@ -92,7 +93,8 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-secure-store"
+      "expo-secure-store",
+      "./plugins/withReleaseSigning"
     ]
   }
 }

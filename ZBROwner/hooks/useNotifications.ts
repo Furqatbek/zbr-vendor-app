@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Application from 'expo-application';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   registerForPushNotifications,
   addNotificationReceivedListener,
@@ -16,12 +17,46 @@ import { registerDeviceToken } from '../services/api';
 import { useStore } from '../store';
 import { useAuthStore } from '../store/authStore';
 
-function getDeviceId(): string {
-  if (Platform.OS === 'android') {
-    return Application.getAndroidId() ?? 'android-unknown';
+const FALLBACK_DEVICE_ID_KEY = 'zbr_device_id';
+
+/**
+ * A stable identifier for THIS install, used as the upsert key for the push
+ * token on the backend.
+ *
+ * It must be unique per device. It previously returned `Application.applicationId`
+ * on iOS — the bundle identifier, which is `com.zbr.owner` on *every* iPhone. So
+ * every iOS vendor registered under the same deviceId and, because the backend
+ * upserts on that key, each new login overwrote the previous device's token:
+ * only the most recent iPhone would ever receive orders.
+ */
+async function getDeviceId(): Promise<string> {
+  try {
+    if (Platform.OS === 'android') {
+      const androidId = Application.getAndroidId();
+      if (androidId) return androidId;
+    } else {
+      // identifierForVendor: stable per vendor per device, resets only when all
+      // of this vendor's apps are uninstalled.
+      const idfv = await Application.getIosIdForVendorAsync();
+      if (idfv) return idfv;
+    }
+  } catch {
+    // fall through to the generated id
   }
-  // iOS: applicationId is stable per install
-  return Application.applicationId ?? 'ios-unknown';
+
+  // Last resort: a random id persisted on device, so it stays stable across
+  // launches instead of registering a new "device" every time.
+  try {
+    const existing = await AsyncStorage.getItem(FALLBACK_DEVICE_ID_KEY);
+    if (existing) return existing;
+    const generated = `${Platform.OS}-${Date.now().toString(36)}-${Math.random()
+      .toString(36)
+      .slice(2, 12)}`;
+    await AsyncStorage.setItem(FALLBACK_DEVICE_ID_KEY, generated);
+    return generated;
+  } catch {
+    return `${Platform.OS}-unknown`;
+  }
 }
 
 /**
@@ -88,13 +123,23 @@ export function useNotifications() {
   // 1b. Register push token with backend when token + auth are available
   useEffect(() => {
     if (!pushToken || !accessToken) return;
+    let cancelled = false;
 
     const platform = Platform.OS === 'ios' ? 'IOS' : 'ANDROID';
-    const deviceId = getDeviceId();
 
-    registerDeviceToken({ token: pushToken, platform, deviceId }).catch(() => {
-      // Non-fatal – backend won't send push but app still works
-    });
+    (async () => {
+      const deviceId = await getDeviceId();
+      if (cancelled) return;
+      try {
+        await registerDeviceToken({ token: pushToken, platform, deviceId });
+      } catch {
+        // Non-fatal – backend won't send push but app still works
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [pushToken, accessToken]);
 
   // 2. Notification listeners – handle push payload from backend
