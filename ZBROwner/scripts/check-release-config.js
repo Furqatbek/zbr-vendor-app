@@ -174,6 +174,66 @@ if (fs.existsSync(appGradle)) {
   }
 }
 
+// ── Contact / legal destinations ────────────────────────────────────────────
+// The privacy policy URL is a MANDATORY Play Console field and Google fetches
+// it to confirm it resolves without a login. Everything else is optional, but a
+// placeholder value is worse than an empty one: unset entries are hidden in the
+// UI, whereas a fake one ships to vendors and 404s for reviewers.
+const contactSrc = (() => {
+  const p = path.join(root, 'constants', 'contact.ts');
+  return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : null;
+})();
+
+if (contactSrc) {
+  const valueOf = (key) => {
+    const m = contactSrc.match(new RegExp(`${key}:\\s*(null|'([^']*)'|"([^"]*)")`));
+    if (!m || m[1] === 'null') return null;
+    return m[2] ?? m[3] ?? null;
+  };
+
+  const PLACEHOLDER = /example\.com|example\.org|1-800-|zbr\.com|yourdomain|changeme|TODO|localhost/i;
+  const CONTACT_KEYS = [
+    'privacyPolicyUrl',
+    'termsUrl',
+    'licensesUrl',
+    'dataDeletionUrl',
+    'supportPhone',
+    'supportEmail',
+    'liveChatUrl',
+  ];
+
+  for (const key of CONTACT_KEYS) {
+    const value = valueOf(key);
+    if (!value) continue;
+    if (PLACEHOLDER.test(value)) {
+      problems.push(
+        `constants/contact.ts: ${key} looks like a PLACEHOLDER ("${value}").\n` +
+          '     Use the real value or set it back to null — null hides the row,\n' +
+          '     a fake value ships to vendors and fails for Play reviewers.',
+      );
+    } else if (key.endsWith('Url') && !value.startsWith('https://')) {
+      problems.push(`constants/contact.ts: ${key} must be an https:// URL ("${value}").`);
+    } else {
+      ok.push(`contact.${key} = ${value}`);
+    }
+  }
+
+  if (!valueOf('privacyPolicyUrl')) {
+    problems.push(
+      'constants/contact.ts: privacyPolicyUrl is not set.\n' +
+        '     Google Play REQUIRES a public, no-login privacy policy URL and fetches\n' +
+        '     it during review. Publish docs/PRIVACY_POLICY.md and set it here and in\n' +
+        '     Play Console → App content → Privacy policy.',
+    );
+  }
+  if (!valueOf('supportEmail')) {
+    warnings.push(
+      'constants/contact.ts: supportEmail is not set — the Help Center contact\n' +
+        '     cards stay hidden, and Play requires a public contact email on the listing.',
+    );
+  }
+}
+
 // ── Report ──────────────────────────────────────────────────────────────────
 console.log('\nRelease configuration check\n' + '─'.repeat(50));
 for (const line of ok) console.log(`  ok       ${line}`);
