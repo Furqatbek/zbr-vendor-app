@@ -19,10 +19,17 @@ export async function startAlarm() {
   if (sound) return;
 
   try {
-    // Allow playback even when device is on silent/vibrate
+    // playsInSilentModeIOS is what makes the alarm audible with the ringer off,
+    // and it needs no background mode.
+    //
+    // staysActiveInBackground is deliberately false: this alarm only plays while
+    // the NewOrderAlert modal is on screen, i.e. always in the foreground.
+    // Claiming background audio would mean declaring the "audio" UIBackgroundMode
+    // without ever using it — an App Store rejection reason. Screen-off alerting
+    // comes from the FCM/APNs notification channel sound, not from here.
     await Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
-      staysActiveInBackground: true,
+      staysActiveInBackground: false,
       shouldDuckAndroid: false,
     });
 

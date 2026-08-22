@@ -425,6 +425,7 @@ export default {
     privacyPolicy: 'Политика конфиденциальности',
     cookiePolicy: 'Политика cookie',
     licenses: 'Лицензии',
+    deleteAccount: 'Удалить аккаунт и данные',
     systemInfo: 'Системная информация',
     platform: 'Платформа',
     runtime: 'Среда выполнения',

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Order, Review, RevenueData, OrderStatus, CourierRating, StaffMember, FinancialReportData } from '../types';
+import type { Order, Review, RevenueData, OrderStatus, CourierRating, FinancialReportData } from '../types';
 import { fetchRatings, fetchRestaurantReviews, fetchRestaurantOrders, fetchActiveOrders, updateOrderStatus as apiUpdateOrderStatus, cancelOrder as apiCancelOrder, fetchFinancialReport } from '../services/api';
 import { useAuthStore } from './authStore';
 
@@ -61,8 +61,6 @@ interface AppStore {
   submitCourierRating: (rating: CourierRating) => void;
 
   // Staff
-  staffMembers: StaffMember[];
-  toggleStaffActive: (staffId: string) => void;
 
   // New Order Alert
   incomingOrder: Order | null;
@@ -339,13 +337,6 @@ export const useStore = create<AppStore>((set, get) => ({
   submitCourierRating: (rating) =>
     set((s) => ({ courierRatings: [...s.courierRatings, rating] })),
 
-  staffMembers: [],
-  toggleStaffActive: (staffId) =>
-    set((s) => ({
-      staffMembers: s.staffMembers.map((m) =>
-        m.id === staffId ? { ...m, isActive: !m.isActive } : m
-      ),
-    })),
 
   incomingOrder: null,
   showOrderAlert: false,

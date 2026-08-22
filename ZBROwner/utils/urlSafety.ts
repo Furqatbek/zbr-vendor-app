@@ -26,7 +26,10 @@ export function isSafeExternalUrl(input: string): boolean {
   } catch {
     return false;
   }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+  // HTTPS only. The backend fetches this URL server-side and the request body
+  // carries the partner API key, so allowing http: would send that credential
+  // in cleartext — and the UI already promises "a valid public https:// URL".
+  if (url.protocol !== 'https:') return false;
   const host = url.hostname;
   if (!host) return false;
   return !PRIVATE_HOST_PATTERNS.some((re) => re.test(host));

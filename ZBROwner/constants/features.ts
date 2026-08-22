@@ -15,4 +15,7 @@ export const FEATURES = {
   notificationPrefs: false,
   // Refunds / cancellations totals on the reports screen — not in the financial report payload yet
   reportsRefunds: false,
+  // Report/flag an abusive review — needs a moderation endpoint. The button
+  // showed "Review flagged for review." while doing nothing at all.
+  reviewReports: false,
 } as const;

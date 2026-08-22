@@ -33,6 +33,24 @@ if (typeof versionCode !== 'number' || !Number.isInteger(versionCode) || version
   );
 } else {
   ok.push(`versionCode: ${versionCode} (must be HIGHER than any build already uploaded)`);
+
+  // Gradle stamps the AAB from android/app/build.gradle, NOT app.json. If the
+  // native project is stale, you would ship the old versionCode and Play would
+  // reject the upload as a duplicate — after the whole build.
+  const appGradlePath = path.join(root, 'android', 'app', 'build.gradle');
+  if (fs.existsSync(appGradlePath)) {
+    const m = fs.readFileSync(appGradlePath, 'utf8').match(/versionCode\s+(\d+)/);
+    const gradleVersionCode = m ? Number(m[1]) : null;
+    if (gradleVersionCode !== null && gradleVersionCode !== versionCode) {
+      problems.push(
+        `versionCode mismatch — the build would ship ${gradleVersionCode}, not ${versionCode}.\n` +
+          `     app.json says ${versionCode}; android/app/build.gradle says ${gradleVersionCode}.\n` +
+          '     Run `npm run prebuild:android` to regenerate the native project.',
+      );
+    } else if (gradleVersionCode !== null) {
+      ok.push(`android/app/build.gradle versionCode matches (${gradleVersionCode})`);
+    }
+  }
 }
 
 if (!expo?.version) {

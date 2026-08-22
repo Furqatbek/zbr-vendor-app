@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
+import { CONTACT, hasSupportChannels } from '../../constants/contact';
 
 export default function HelpCenterScreen() {
   const t = useT();
@@ -20,30 +21,55 @@ export default function HelpCenterScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {/* Quick Actions */}
+      {hasSupportChannels && (
+      <>
       <Text style={styles.sectionTitle}>{t('help.getHelp')}</Text>
       <View style={styles.helpActions}>
-        <TouchableOpacity style={styles.helpCard} activeOpacity={0.7}>
-          <View style={[styles.helpIcon, { backgroundColor: Colors.infoLight }]}>
-            <Ionicons name="chatbubbles-outline" size={24} color={Colors.info} />
-          </View>
-          <Text style={styles.helpLabel}>{t('help.liveChat')}</Text>
-          <Text style={styles.helpDesc}>{t('help.chatWithSupport')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.helpCard} activeOpacity={0.7}>
-          <View style={[styles.helpIcon, { backgroundColor: Colors.successLight }]}>
-            <Ionicons name="call-outline" size={24} color={Colors.success} />
-          </View>
-          <Text style={styles.helpLabel}>{t('help.callUs')}</Text>
-          <Text style={styles.helpDesc}>1-800-ZBR-HELP</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.helpCard} activeOpacity={0.7}>
-          <View style={[styles.helpIcon, { backgroundColor: Colors.accentLight }]}>
-            <Ionicons name="mail-outline" size={24} color={Colors.accent} />
-          </View>
-          <Text style={styles.helpLabel}>{t('help.emailUs')}</Text>
-          <Text style={styles.helpDesc}>support@zbr.com</Text>
-        </TouchableOpacity>
+        {/* Only channels with a real destination are shown. These were three
+            dead buttons advertising a US vanity number (1-800-ZBR-HELP) and an
+            unverified support@zbr.com. Configure constants/contact.ts. */}
+        {CONTACT.liveChatUrl && (
+          <TouchableOpacity
+            style={styles.helpCard}
+            activeOpacity={0.7}
+            onPress={() => Linking.openURL(CONTACT.liveChatUrl!)}
+          >
+            <View style={[styles.helpIcon, { backgroundColor: Colors.infoLight }]}>
+              <Ionicons name="chatbubbles-outline" size={24} color={Colors.info} />
+            </View>
+            <Text style={styles.helpLabel}>{t('help.liveChat')}</Text>
+            <Text style={styles.helpDesc}>{t('help.chatWithSupport')}</Text>
+          </TouchableOpacity>
+        )}
+        {CONTACT.supportPhone && (
+          <TouchableOpacity
+            style={styles.helpCard}
+            activeOpacity={0.7}
+            onPress={() => Linking.openURL(`tel:${CONTACT.supportPhone}`)}
+          >
+            <View style={[styles.helpIcon, { backgroundColor: Colors.successLight }]}>
+              <Ionicons name="call-outline" size={24} color={Colors.success} />
+            </View>
+            <Text style={styles.helpLabel}>{t('help.callUs')}</Text>
+            <Text style={styles.helpDesc}>{CONTACT.supportPhone}</Text>
+          </TouchableOpacity>
+        )}
+        {CONTACT.supportEmail && (
+          <TouchableOpacity
+            style={styles.helpCard}
+            activeOpacity={0.7}
+            onPress={() => Linking.openURL(`mailto:${CONTACT.supportEmail}`)}
+          >
+            <View style={[styles.helpIcon, { backgroundColor: Colors.accentLight }]}>
+              <Ionicons name="mail-outline" size={24} color={Colors.accent} />
+            </View>
+            <Text style={styles.helpLabel}>{t('help.emailUs')}</Text>
+            <Text style={styles.helpDesc}>{CONTACT.supportEmail}</Text>
+          </TouchableOpacity>
+        )}
       </View>
+      </>
+      )}
 
       {/* FAQ */}
       <Text style={styles.sectionTitle}>{t('help.faq')}</Text>
@@ -57,22 +83,9 @@ export default function HelpCenterScreen() {
         </Card>
       ))}
 
-      {/* Guides */}
-      <Text style={styles.sectionTitle}>{t('help.guides')}</Text>
-      <Card style={styles.guidesCard}>
-        {[
-          { label: t('help.guideGettingStarted'), icon: 'rocket-outline' as const },
-          { label: t('help.guideMenuManagement'), icon: 'restaurant-outline' as const },
-          { label: t('help.guideRevenue'), icon: 'trending-up-outline' as const },
-          { label: t('help.guidePeakHours'), icon: 'flash-outline' as const },
-        ].map((guide, index, arr) => (
-          <TouchableOpacity key={guide.label} style={[styles.guideRow, index < arr.length - 1 && styles.guideBorder]} activeOpacity={0.7}>
-            <Ionicons name={guide.icon} size={20} color={Colors.accent} />
-            <Text style={styles.guideLabel}>{guide.label}</Text>
-            <Ionicons name="chevron-forward" size={16} color={Colors.gray400} />
-          </TouchableOpacity>
-        ))}
-      </Card>
+      {/* The "Guides" section was four more tappable rows with chevrons and no
+          handler — there are no guide pages to open. Removed rather than left
+          inert; restore it when the guides actually exist. */}
     </ScrollView>
   );
 }

@@ -132,10 +132,6 @@ function AppStack() {
         options={{ headerShown: true, title: t('screenTitles.notifications'), headerTintColor: Colors.accent }}
       />
       <Stack.Screen
-        name="settings/staff"
-        options={{ headerShown: true, title: t('screenTitles.staffAccounts'), headerTintColor: Colors.accent }}
-      />
-      <Stack.Screen
         name="settings/order-history"
         options={{ headerShown: true, title: t('screenTitles.orderHistory'), headerTintColor: Colors.accent }}
       />

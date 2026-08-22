@@ -17,7 +17,7 @@
       "bundleIdentifier": "com.zbr.owner",
       "buildNumber": "1",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification", "audio"]
+        "UIBackgroundModes": ["remote-notification"]
       },
       "entitlements": {
         "aps-environment": "production",
@@ -41,6 +41,7 @@
         "WAKE_LOCK"
       ],
       "blockedPermissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.RECORD_AUDIO",
         "android.permission.READ_MEDIA_IMAGES",

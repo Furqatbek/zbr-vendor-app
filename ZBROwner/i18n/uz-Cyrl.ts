@@ -425,6 +425,7 @@ export default {
     privacyPolicy: 'Махфийлик сиёсати',
     cookiePolicy: 'Cookie сиёсати',
     licenses: 'Лицензиялар',
+    deleteAccount: 'Ҳисоб ва маълумотларни ўчириш',
     systemInfo: 'Тизим маълумотлари',
     platform: 'Платформа',
     runtime: 'Иш муҳити',

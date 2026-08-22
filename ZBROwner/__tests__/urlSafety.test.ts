@@ -1,13 +1,18 @@
 import { isSafeExternalUrl } from '../utils/urlSafety';
 
 describe('isSafeExternalUrl', () => {
-  it('accepts public http(s) URLs', () => {
+  it('accepts public https URLs', () => {
     expect(isSafeExternalUrl('https://restos.example.com')).toBe(true);
-    expect(isSafeExternalUrl('http://api.partner.io:8080/base')).toBe(true);
+    expect(isSafeExternalUrl('https://api.partner.io:8080/base')).toBe(true);
     expect(isSafeExternalUrl('  https://menu.zbr.uz  ')).toBe(true);
   });
 
-  it('rejects non-http(s) schemes', () => {
+  it('rejects cleartext http — the backend fetches this URL with the API key attached', () => {
+    expect(isSafeExternalUrl('http://api.partner.io:8080/base')).toBe(false);
+    expect(isSafeExternalUrl('http://restos.example.com')).toBe(false);
+  });
+
+  it('rejects non-https schemes', () => {
     expect(isSafeExternalUrl('ftp://example.com')).toBe(false);
     expect(isSafeExternalUrl('file:///etc/passwd')).toBe(false);
     expect(isSafeExternalUrl('javascript:alert(1)')).toBe(false);

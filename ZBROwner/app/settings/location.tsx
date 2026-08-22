@@ -73,7 +73,11 @@ export default function RestaurantLocationScreen() {
         return;
       }
       const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
+        // Balanced (~100m) is ample to centre the map on the restaurant, which
+        // the owner then drags to the exact spot. Requesting High would need
+        // ACCESS_FINE_LOCATION and a stronger Data Safety justification for no
+        // real benefit.
+        accuracy: Location.Accuracy.Balanced,
       });
       const lat = Number(pos.coords.latitude.toFixed(6));
       const lng = Number(pos.coords.longitude.toFixed(6));

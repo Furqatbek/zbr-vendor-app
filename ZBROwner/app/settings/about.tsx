@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
+import { CONTACT, hasLegalLinks } from '../../constants/contact';
 
 export default function AboutScreen() {
   const t = useT();
@@ -27,22 +28,33 @@ export default function AboutScreen() {
         </Text>
       </Card>
 
-      {/* Links */}
-      <Text style={styles.sectionTitle}>{t('aboutScreen.legal')}</Text>
-      <Card style={styles.linksCard}>
-        {[
-          { label: t('aboutScreen.termsOfService'), icon: 'document-text-outline' as const },
-          { label: t('aboutScreen.privacyPolicy'), icon: 'shield-checkmark-outline' as const },
-          { label: t('aboutScreen.cookiePolicy'), icon: 'information-circle-outline' as const },
-          { label: t('aboutScreen.licenses'), icon: 'code-slash-outline' as const },
-        ].map((link, index, arr) => (
-          <TouchableOpacity key={link.label} style={[styles.linkRow, index < arr.length - 1 && styles.linkBorder]} activeOpacity={0.7}>
-            <Ionicons name={link.icon} size={20} color={Colors.gray600} />
-            <Text style={styles.linkLabel}>{link.label}</Text>
-            <Ionicons name="open-outline" size={16} color={Colors.gray400} />
-          </TouchableOpacity>
-        ))}
-      </Card>
+      {/* Links — only rows with a configured destination are rendered. A row
+          with an "opens externally" chevron that does nothing is worse than no
+          row at all. Fill in constants/contact.ts to enable them. */}
+      {hasLegalLinks && (
+        <>
+          <Text style={styles.sectionTitle}>{t('aboutScreen.legal')}</Text>
+          <Card style={styles.linksCard}>
+            {([
+              { label: t('aboutScreen.termsOfService'), icon: 'document-text-outline' as const, url: CONTACT.termsUrl },
+              { label: t('aboutScreen.privacyPolicy'), icon: 'shield-checkmark-outline' as const, url: CONTACT.privacyPolicyUrl },
+              { label: t('aboutScreen.licenses'), icon: 'code-slash-outline' as const, url: CONTACT.licensesUrl },
+              { label: t('aboutScreen.deleteAccount'), icon: 'trash-outline' as const, url: CONTACT.dataDeletionUrl },
+            ].filter((l) => !!l.url) as { label: string; icon: any; url: string }[]).map((link, index, arr) => (
+              <TouchableOpacity
+                key={link.label}
+                style={[styles.linkRow, index < arr.length - 1 && styles.linkBorder]}
+                activeOpacity={0.7}
+                onPress={() => Linking.openURL(link.url)}
+              >
+                <Ionicons name={link.icon} size={20} color={Colors.gray600} />
+                <Text style={styles.linkLabel}>{link.label}</Text>
+                <Ionicons name="open-outline" size={16} color={Colors.gray400} />
+              </TouchableOpacity>
+            ))}
+          </Card>
+        </>
+      )}
 
       <Text style={styles.copyright}>{t('aboutScreen.copyright')}</Text>
     </ScrollView>

@@ -101,12 +101,16 @@ export default function ReviewsScreen() {
             <Text style={styles.replyButtonText}>{t('reviews.reply')}</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity
-          style={styles.flagButton}
-          onPress={() => Alert.alert(t('reviews.report'), t('reviews.reviewFlagged'))}
-        >
-          <Ionicons name="flag-outline" size={16} color={Colors.gray400} />
-        </TouchableOpacity>
+        {/* Hidden until a moderation endpoint exists (FEATURES.reviewReports) —
+            this confirmed "Review flagged for review." while doing nothing. */}
+        {FEATURES.reviewReports && (
+          <TouchableOpacity
+            style={styles.flagButton}
+            onPress={() => Alert.alert(t('reviews.report'), t('reviews.reviewFlagged'))}
+          >
+            <Ionicons name="flag-outline" size={16} color={Colors.gray400} />
+          </TouchableOpacity>
+        )}
       </View>
     </Card>
   );

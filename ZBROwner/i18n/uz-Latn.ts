@@ -425,6 +425,7 @@ export default {
     privacyPolicy: 'Maxfiylik siyosati',
     cookiePolicy: 'Cookie siyosati',
     licenses: 'Litsenziyalar',
+    deleteAccount: 'Hisob va ma\'lumotlarni o\'chirish',
     systemInfo: 'Tizim ma\'lumotlari',
     platform: 'Platforma',
     runtime: 'Ish muhiti',

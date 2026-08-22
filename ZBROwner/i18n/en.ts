@@ -446,6 +446,7 @@ export default {
     privacyPolicy: 'Privacy Policy',
     cookiePolicy: 'Cookie Policy',
     licenses: 'Licenses',
+    deleteAccount: 'Delete account & data',
     systemInfo: 'System Info',
     platform: 'Platform',
     runtime: 'Runtime',
