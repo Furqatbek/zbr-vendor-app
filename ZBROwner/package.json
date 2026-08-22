@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "check:push": "node scripts/check-push-config.js",
+    "check:privacy-url": "node scripts/check-privacy-url.js",
     "check:release": "node scripts/check-release-config.js && node scripts/check-push-config.js",
     "push:test:ios": "node scripts/send-apns-test.js",
     "prebuild:android": "expo prebuild --platform android --clean",

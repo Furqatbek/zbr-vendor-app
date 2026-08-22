@@ -16,7 +16,7 @@
 
 export const CONTACT = {
   /** Public, no-login URL of the hosted privacy policy. Required by Play. */
-  privacyPolicyUrl: null as string | null,
+  privacyPolicyUrl: 'https://app.zbrr.uz/privacy' as string | null,
   /** Terms of service. Null hides the row. */
   termsUrl: null as string | null,
   /** Open-source licenses page. Null hides the row. */
