@@ -72,6 +72,14 @@ if (checksOnly) {
 }
 
 // ── build ───────────────────────────────────────────────────────────────────
+// Bump BEFORE prebuild so the generated native project carries the new number —
+// Gradle stamps the AAB from android/app/build.gradle, not from app.json.
+if (!args.includes('--no-bump')) {
+  run('Bumping versionCode (+1)', 'node', ['scripts/bump-version-code.js']);
+} else {
+  console.log(`${C.yellow}▸ Skipping versionCode bump (--no-bump)${C.reset}\n`);
+}
+
 run('Regenerating android/ from app.json', npx, ['expo', 'prebuild', '--platform', 'android', '--clean']);
 
 const gradlew = isWindows ? 'gradlew.bat' : './gradlew';

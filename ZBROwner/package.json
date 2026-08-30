@@ -12,6 +12,7 @@
     "check:push": "node scripts/check-push-config.js",
     "check:privacy-url": "node scripts/check-privacy-url.js",
     "go-live": "node scripts/go-live.js",
+    "version:bump": "node scripts/bump-version-code.js",
     "check:release": "node scripts/check-release-config.js && node scripts/check-push-config.js",
     "push:test:ios": "node scripts/send-apns-test.js",
     "push:test:android": "node scripts/send-fcm-test.js",

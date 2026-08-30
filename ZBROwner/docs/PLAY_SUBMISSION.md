@@ -12,7 +12,7 @@ Build instructions: [`LOCAL_BUILD.md`](./LOCAL_BUILD.md).
 | # | Blocker | Owner | Why it blocks |
 |---|---|---|---|
 | 1 | **Real TLS backend hostnames** | backend | Inlined into the bundle at build time. Until these exist, no shippable AAB can be produced. `npm run check:release` will refuse to build. |
-| 2 | **Privacy policy hosted at a public URL** | you | Play requires a reachable URL on the store listing. Draft: [`PRIVACY_POLICY.md`](./PRIVACY_POLICY.md) — fill its 10 `[BRACKETED]` placeholders, host it, paste the URL into Play Console **and** into `constants/contact.ts`. |
+| 2 | **Privacy policy served as real HTML** | you | **Mandatory** — Play Console will not accept a submission without it, and Google FETCHES the URL during review. A ready-to-host page is generated at `store-assets/privacy.html`; fill its remaining `[BRACKETED]` details and serve it. ⚠️ `https://app.zbrr.uz/privacy` currently returns the SPA shell for every path — verify with `npm run check:privacy-url`. |
 | 3 | **Reviewer login credentials** | you | ⚠️ See §2 — the single most likely cause of rejection for this app. |
 | 4 | **Screenshots (min 2)** | you | Require a running build on a device/emulator. |
 | 5 | **Signing keystore** | you | See `LOCAL_BUILD.md` §4. Back it up before you build. The release build type is wired to it by `plugins/withReleaseSigning.js`; `check:release` fails if no upload key is configured, because a debug-signed AAB is rejected at upload. |

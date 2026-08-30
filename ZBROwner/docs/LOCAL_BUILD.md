@@ -15,7 +15,7 @@ account, no cloud service.**
 | Concern | With EAS | Now (local) |
 |---|---|---|
 | API/WS URLs | `env` per profile in `eas.json` | **`.env.production`** (see §3) |
-| `versionCode` | `autoIncrement: true` | **manual in `app.json`** (see §6) |
+| `versionCode` | `autoIncrement: true` | **auto-incremented by `go-live`** (see §6) |
 | Signing keystore | managed by EAS | **you hold the `.jks`** (see §4) |
 | Expo `projectId` | required | **not needed at all** |
 
@@ -23,9 +23,9 @@ account, no cloud service.**
 your escape hatch if you ever want cloud builds. Ignore it otherwise — its
 placeholder URLs no longer affect anything.
 
-⚠️ The first two rows are the dangerous ones: EAS used to supply the production
-URL and bump the version code. Nothing does that automatically now, so
-`npm run check:release` exists to catch both (§7).
+⚠️ EAS used to supply the production URL and bump the version code. Both are now
+handled locally — `.env.production` for the URLs, and `npm run go-live` for the
+version bump — with `npm run check:release` failing the build if either is wrong.
 
 ---
 
@@ -86,40 +86,11 @@ ZBR_UPLOAD_STORE_PASSWORD=•••
 ZBR_UPLOAD_KEY_PASSWORD=•••
 ```
 
-Then in `android/app/build.gradle`, add the release signing config:
-
-```gradle
-android {
-    signingConfigs {
-        release {
-            if (project.hasProperty('ZBR_UPLOAD_STORE_FILE')) {
-                storeFile file(ZBR_UPLOAD_STORE_FILE)
-                storePassword ZBR_UPLOAD_STORE_PASSWORD
-                keyAlias ZBR_UPLOAD_KEY_ALIAS
-                keyPassword ZBR_UPLOAD_KEY_PASSWORD
-            }
-        }
-    }
-    buildTypes {
-        release {
-            signingConfig signingConfigs.release   // replaces signingConfigs.debug
-        }
-    }
-}
-```
-
-⚠️ **`android/` is generated and gitignored**, so `prebuild --clean` wipes this
-edit. Two options:
-
-- **A — re-apply after each clean prebuild.** Fine if you build rarely. Keep the
-  snippet handy.
-- **B — stop regenerating it.** After your first successful build, remove
-  `/android` from `.gitignore` and commit the folder. You then own the native
-  project: signing survives, but **`app.json` plugin changes no longer apply
-  automatically** — you'd hand-maintain `AndroidManifest.xml`, channels, etc.
-
-Recommended: **A** while things are still changing (we're actively editing
-`app.json` for push), then switch to **B** once the config settles.
+That's all — **no `build.gradle` editing required.**
+`plugins/withReleaseSigning.js` injects the release `signingConfig` on every
+prebuild, so it survives `prebuild --clean`. Without those Gradle properties the
+build falls back to the debug keystore, and `check:release` refuses to proceed
+rather than let a debug-signed AAB reach Play (Play rejects those at upload).
 
 ---
 
@@ -127,34 +98,55 @@ Recommended: **A** while things are still changing (we're actively editing
 
 ```bash
 npm ci
-npm run prebuild:android          # generates ./android from app.json
-npm run build:android:aab         # AAB for Play  (runs check:release first)
-# or
-npm run build:android:apk         # APK for sideloading / device testing
+npm run go-live               # gates -> bump -> prebuild -> AAB for Play
+npm run go-live -- --apk      # same, but a sideloadable APK for device testing
+npm run go-live -- --checks   # gates only, no build (safe anytime)
+```
+
+`go-live` runs every gate in order and **stops at the first failure**, so a
+build that would be rejected — or accepted while pointing at the wrong backend —
+never gets produced:
+
+```
+release+push config -> privacy URL -> typecheck -> tests -> lint
+  -> versionCode bump -> prebuild -> gradle bundleRelease
 ```
 
 Outputs:
 - AAB → `android/app/build/outputs/bundle/release/app-release.aab`
 - APK → `android/app/build/outputs/apk/release/app-release.apk`
 
-**Use the APK for push testing** (you can sideload it directly); the AAB is
-Play-only.
+**Use the APK for push testing** — you can sideload it; the AAB is Play-only.
 
 ---
 
-## 6. Version numbers — every upload
+## 6. Version numbers — automatic
 
-Play rejects an AAB whose `versionCode` it has already seen. Before each
-upload, bump in `app.json`:
+`npm run go-live` **increments `versionCode` by 1 before every build**, and keeps
+`ios.buildNumber` in sync. You don't have to remember it.
 
-```jsonc
-"version": "1.0.1",          // user-visible; bump for real releases
-"android": { "versionCode": 2 }   // MUST increase every single upload
+```bash
+npm run version:bump              # +1, standalone
+npm run version:bump -- --dry-run # show what would change
+npm run version:bump -- --to 42   # set explicitly (must be higher)
+npm run go-live -- --no-bump      # rebuild WITHOUT consuming a number
 ```
 
-`versionCode` must strictly increase and is **independent** of `version` — many
-teams just increment it by 1 for every upload, including re-uploads of the same
-version name after a rejected build.
+It bumps **before** prebuild on purpose: Gradle stamps the AAB from
+`android/app/build.gradle`, not from `app.json`, so bumping afterwards would
+ship the old number. `check:release` cross-checks the two and fails if they
+drift.
+
+Why +1 and never a timestamp or random value: **Play remembers the highest
+versionCode you have ever uploaded**, and you can never go below it. One
+accidental `1700000000` burns every number beneath it permanently.
+
+`version` (the user-visible name, e.g. `1.0.1`) is separate and still manual —
+bump it in `app.json` for real releases. `versionCode` is independent of it and
+simply counts uploads.
+
+**Commit `app.json` after a release build** so the number is recorded in git
+against that upload.
 
 ---
 
