@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "uz.zbr.vendor",
+      "bundleIdentifier": "com.zbr.owner",
       "buildNumber": "1",
       "infoPlist": {
         "UIBackgroundModes": [
@@ -33,7 +33,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "uz.zbr.vendor",
+      "package": "com.zbr.owner",
       "versionCode": 1,
       "allowBackup": false,
       "googleServicesFile": "./google-services.json",

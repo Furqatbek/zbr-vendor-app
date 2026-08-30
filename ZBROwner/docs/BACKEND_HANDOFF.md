@@ -283,13 +283,7 @@ The mobile side of push is complete. Everything needed to send is available:
 | Apple Team ID | `VQ56W9S7S9` | no (ships in every binary) |
 | APNs Key ID | *ask mobile* | no |
 | APNs `.p8` auth key | *ask mobile — via secret manager* | 🔒 **yes** |
-| `apns-topic` / bundle id | `uz.zbr.vendor` | no |
-
-⚠️ **The bundle id changed from `com.zbr.owner` to `uz.zbr.vendor`.** If you
-already wired APNs, update `apns-topic` — sending with the old topic returns
-`DeviceTokenNotForTopic` and nothing is delivered. FCM is unaffected (it routes
-by registration token), but tokens issued to the old package are now dead and
-should be purged.
+| `apns-topic` / bundle id | `com.zbr.owner` | no |
 | Android FCM `channel_id` | `orders_v2` | no |
 | Notification sound | `new_order` (Android) / `new_order.wav` (iOS) | no |
 

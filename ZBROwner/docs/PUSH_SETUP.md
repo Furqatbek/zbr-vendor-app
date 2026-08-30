@@ -11,9 +11,8 @@ Delivery model (decided): the backend talks to **FCM (Android)** and **APNs
 | Piece | Owner | Status |
 |---|---|---|
 | Client: raw FCM/APNs tokens, channels, sound, rotation, tap routing | mobile | ✅ done |
-| Firebase project | mobile | ✅ `push-notifications-for-zbr` |
-| `google-services.json` for `uz.zbr.vendor` | **you** | 🔴 **re-download — bundle id changed** |
-| Apple App ID `uz.zbr.vendor` + Push capability | **you** | 🔴 **re-register — bundle id changed** |
+| Firebase project + `google-services.json` | mobile | ✅ done — `push-notifications-for-zbr` |
+| Apple App ID `com.zbr.owner` + Push capability | mobile | ✅ done |
 | APNs `.p8` auth key + Key ID + Team ID | mobile | ✅ obtained |
 | `.p8` + Firebase service-account key in backend secrets | you → backend | ✅ done |
 | Backend sends FCM + APNs payloads (§3) | backend | ✅ ready |
@@ -31,7 +30,7 @@ else can pass while that still fails.
 | Apple Team ID | `VQ56W9S7S9` — not secret, ships in every binary |
 | APNs Key ID | on the key's page in the Apple portal (10 chars) |
 | APNs `.p8` | 🔒 **secret** — secret manager only |
-| `apns-topic` / bundle id | `uz.zbr.vendor` |
+| `apns-topic` / bundle id | `com.zbr.owner` |
 | Firebase project | `push-notifications-for-zbr` |
 | Firebase service account | 🔒 **secret** — secret manager only |
 
@@ -74,13 +73,10 @@ importance at creation. To change either, bump to `orders_v3` in
 
 ### Android — Firebase ✅ DONE
 
-> ⚠️ **The bundle id changed to `uz.zbr.vendor`, so the committed
-> `google-services.json` (issued for `com.zbr.owner`) is now WRONG** —
-> `npm run check:push` fails on it. Firebase app ids are immutable, so add a
-> **new Android app** for `uz.zbr.vendor` in project
-> `push-notifications-for-zbr` and download a fresh `google-services.json`.
-> The old app can be deleted once nothing uses it.
-> Follow steps 2–3 below again.
+> Project **`push-notifications-for-zbr`**, Android app `com.zbr.owner`,
+> `google-services.json` committed and verified by `npm run check:push`.
+> Steps kept below for reference / recreating in another environment.
+> **Remaining:** step 4 — the backend needs a service-account key.
 
 > **iOS does not need Firebase.** Because we send to APNs directly, there is no
 > iOS Firebase app, no `GoogleService-Info.plist`, and nothing to add to
@@ -100,7 +96,7 @@ importance at creation. To change either, bump to `orders_v3` in
 - In the project → **Add app** → Android.
 - **Android package name** must be exactly:
   ```
-  uz.zbr.vendor
+  com.zbr.owner
   ```
   This must match `expo.android.package` in `app.json` **character for
   character**. A mismatch is the #1 cause of "push just never arrives": FCM
@@ -114,7 +110,7 @@ importance at creation. To change either, bump to `orders_v3` in
 - **Commit it.** It's client configuration, not a secret — the API key in it is
   restricted to this app. (The *service account* key in step 4 is the secret.)
 - Verify: `npm run check:push` should print
-  `ok  google-services.json matches package uz.zbr.vendor`.
+  `ok  google-services.json matches package com.zbr.owner`.
 
 **4. Backend service account** (backend team)
 - Project settings → **Service accounts** → **Generate new private key** → JSON.
@@ -138,14 +134,10 @@ importance at creation. To change either, bump to `orders_v3` in
 
 ### iOS — Apple (APNs) ✅ CREDENTIALS DONE
 
-> ⚠️ **The bundle id changed to `uz.zbr.vendor`.** Apple App IDs **cannot be
-> renamed**, so the existing `com.zbr.owner` App ID is unusable — register a new
-> one for `uz.zbr.vendor` with the Push Notifications capability (step 2 below).
->
-> ✅ **The `.p8` key does NOT need replacing.** An APNs auth key is valid for
-> every App ID in the team — that is the main advantage over `.p12`
-> certificates. Key ID and **Team ID `VQ56W9S7S9`** are unchanged. The backend
-> only has to update `apns-topic` to `uz.zbr.vendor`.
+> App ID `com.zbr.owner` registered with the Push Notifications capability, and
+> the `.p8` auth key created. **Team ID `VQ56W9S7S9`.**
+> **Remaining:** hand the `.p8` + Key ID to the backend, and build on a Mac to
+> verify on a device.
 >
 > **No Firebase here.** iOS talks to APNs directly. And note: **building the iOS
 > app requires a Mac with Xcode** — but the steps below (getting the key) do
@@ -161,7 +153,7 @@ D-U-N-S number and can take days; budget for that.
   **Identifiers** → **+**
 - Type **App IDs → App**. Bundle ID (explicit):
   ```
-  uz.zbr.vendor
+  com.zbr.owner
   ```
   Must match `expo.ios.bundleIdentifier` exactly.
 - Under **Capabilities**, tick **Push Notifications**.
@@ -273,7 +265,7 @@ Headers:
 ```
 apns-push-type: alert
 apns-priority: 10
-apns-topic: uz.zbr.vendor
+apns-topic: com.zbr.owner
 ```
 Payload:
 ```json
@@ -442,7 +434,7 @@ runs in CI, so a wrong-package `google-services.json` can't be merged.
 **Credentials**
 - [x] Firebase project + `google-services.json` committed
 - [x] Apple Developer account enrolled
-- [ ] App ID `uz.zbr.vendor` registered with Push Notifications capability (re-register: id changed)
+- [x] App ID `com.zbr.owner` registered with Push Notifications capability
 - [x] APNs `.p8` downloaded (one chance only) + Key ID + Team ID recorded
 - [ ] `.p8` + Key ID handed to backend via a secret manager
 - [ ] Firebase service-account key in backend secrets
