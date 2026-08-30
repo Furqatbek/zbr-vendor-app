@@ -1,6 +1,6 @@
 # Google Play Submission Guide — ZBR Owner
 
-Everything needed to publish `com.zbr.owner`, with the answers derived from an
+Everything needed to publish `uz.zbr.vendor`, with the answers derived from an
 audit of what the code **actually does** (not what we assume it does).
 
 Build instructions: [`LOCAL_BUILD.md`](./LOCAL_BUILD.md).

@@ -1,7 +1,7 @@
 # AI Designer Prompt — Google Play Promo Screenshots
 
 Prompts for generating the Play Store screenshot set for **ZBR Owner**
-(`com.zbr.owner`), plus the exact Play Console specs each asset must meet.
+(`uz.zbr.vendor`), plus the exact Play Console specs each asset must meet.
 
 > **These are marketing frames built *around* real screenshots — not
 > replacements for them.** Google requires screenshots to show actual in-app

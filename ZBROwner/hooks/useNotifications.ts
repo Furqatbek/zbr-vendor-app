@@ -24,7 +24,7 @@ const FALLBACK_DEVICE_ID_KEY = 'zbr_device_id';
  * token on the backend.
  *
  * It must be unique per device. It previously returned `Application.applicationId`
- * on iOS — the bundle identifier, which is `com.zbr.owner` on *every* iPhone. So
+ * on iOS — the bundle identifier, which is `uz.zbr.vendor` on *every* iPhone. So
  * every iOS vendor registered under the same deviceId and, because the backend
  * upserts on that key, each new login overwrote the previous device's token:
  * only the most recent iPhone would ever receive orders.
