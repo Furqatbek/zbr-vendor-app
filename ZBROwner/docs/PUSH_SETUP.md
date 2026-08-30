@@ -14,12 +14,14 @@ Delivery model (decided): the backend talks to **FCM (Android)** and **APNs
 | Firebase project + `google-services.json` | mobile | ✅ done — `push-notifications-for-zbr` |
 | Apple App ID `com.zbr.owner` + Push capability | mobile | ✅ done |
 | APNs `.p8` auth key + Key ID + Team ID | mobile | ✅ obtained |
-| `.p8` delivered to backend secrets | **you → backend** | 🔴 **next** |
-| Firebase service-account key in backend secrets | **you → backend** | 🔴 **next** |
-| Backend sends FCM payloads (§3) | backend | 🔴 blocking |
-| Backend sends APNs payloads (§3) | backend | 🔴 blocking |
-| Android verified on a real device | mobile | 🟠 ready to test now |
-| iOS verified on a real device | mobile | ⛔ **needs a Mac + Xcode to build** |
+| `.p8` + Firebase service-account key in backend secrets | you → backend | ✅ done |
+| Backend sends FCM + APNs payloads (§3) | backend | ✅ ready |
+| Android verified on a real device | mobile | 🟠 **testing now** |
+| iOS verified on a real device | mobile | 🟠 **testing now** (Mac available) |
+
+**Everything is in place; what remains is on-device verification (§5).** The one
+test that matters is step 4 there: **app force-killed, screen off.** Everything
+else can pass while that still fails.
 
 **Credentials for the backend** (see §2 for how they were created):
 
@@ -321,47 +323,85 @@ entitlement that may be denied.
 
 ## 5. Testing (nothing here works in Expo Go)
 
-Push requires a **development build on a physical device**. Expo Go dropped
-remote push in SDK 53, and simulators/emulators can't receive APNs at all
-(an Android emulator *with* Play Services can receive FCM).
+Push requires a **build on a physical device**. Expo Go dropped remote push in
+SDK 53, and simulators can't receive APNs at all (an Android emulator *with*
+Play Services can receive FCM).
+
+### Step 1 — build and install
 
 ```bash
+# Android (any OS)
 npm run prebuild:android && npm run build:android:apk
 # install android/app/build/outputs/apk/release/app-release.apk
+
+# iOS (macOS only) — note the dev entitlement, see the warning below
+npm run prebuild:ios:dev
+npx expo run:ios --device        # or open ios/*.xcworkspace in Xcode
 ```
 
-**Get the device token.** The app logs it on registration (dev builds only —
-`__DEV__`-guarded and stripped from release by `transform-remove-console`):
+> ⚠️ **iOS: use `prebuild:ios:dev` for anything you run from Xcode.**
+> It sets `aps-environment=development`, which is what a Development
+> provisioning profile requires and what mints a **sandbox** token. Build with
+> the production entitlement and you will either fail to sign or get
+> `BadDeviceToken` when sending. Use `npm run prebuild:ios` (production) only
+> for TestFlight/App Store builds.
+
+### Step 2 — get the device token
+
+The app logs it on registration (dev builds only):
 
 ```bash
-adb logcat -s ReactNativeJS | grep "device token"      # Windows: | findstr "device token"
+adb logcat -s ReactNativeJS | grep "device token"      # Windows: findstr
+npx react-native log-ios | grep "device token"         # or the Xcode console
 ```
 
-**Send a test without waiting for the backend:**
-- **Android** — Firebase console → **Cloud Messaging** → *Send test message* →
-  paste the token. ⚠️ The console sends a `notification`-only message at default
-  priority, so it validates the token and channel but **not** `priority: high`
-  or your `data` payload. Doze behaviour must be re-checked against the real
-  backend sender.
-- **iOS** — Apple has no console; use the bundled sender:
-  ```bash
-  npm run push:test:ios -- --key <p8> --key-id <id> --team-id VQ56W9S7S9 \
-    --token <hex> --env sandbox
-  ```
+Android tokens look like `dXk3…:APA91b…`; iOS is 64 hex characters.
+`ExponentPushToken[…]` means the wrong API is in use.
 
-Then verify, in order:
+### Step 3 — send a controlled test *before* using the real backend
 
-1. **Token reaches the backend** — log in, confirm a row appears for the device.
-   Android tokens look like `dXk3...:APA91b...`; iOS is a 64-char hex string.
-   If you see `ExponentPushToken[...]`, the wrong API is being used.
-2. **App foregrounded** → push arrives, alarm modal opens.
-3. **App backgrounded** → notification appears with the custom sound.
-4. **App force-killed + screen off** → ← *this is the actual requirement*.
-   Screen should wake and the alarm sound play.
-5. **Tap the notification from killed state** → app opens on the right order.
-6. **Airplane mode 5 min → back online** → queued push arrives (FCM/APNs hold it).
-7. **Battery saver / Doze on Android** → still arrives (this is what
-   `priority: high` buys).
+This isolates client/credential problems from backend problems. Both senders
+transmit the exact payload from §3.
+
+```bash
+# Android — real priority:high, unlike the Firebase console
+npm run push:test:android -- --key ./service-account.json --token <FCM token>
+
+# iOS — Apple provides no console at all
+npm run push:test:ios -- --key ./AuthKey_XXXX.p8 --key-id <KEY_ID> \
+  --team-id VQ56W9S7S9 --token <APNs token> --env sandbox
+```
+
+> **Don't rely on the Firebase console's "send test message".** It posts a
+> notification-only message at **default priority**, so it validates the token
+> and channel but never exercises `priority: high`, the `data` payload, or the
+> custom channel — i.e. it can pass while real screen-off delivery still fails.
+
+### Step 4 — verify, in this order
+
+1. **Token reaches the backend** — log in, confirm a row for the device.
+2. **App foregrounded** → alarm modal opens, sound loops until dismissed.
+3. **App backgrounded** → notification with the custom sound and the ZBR icon
+   (a white fork silhouette — a solid square means the icon lost its alpha).
+4. **App force-killed + screen off** → ← **the actual requirement.** Screen
+   wakes, alarm sounds.
+5. **Tap from killed state** → opens the correct order.
+6. **Airplane mode 5 min → online** → queued push arrives.
+7. **Battery saver / Doze on Android** → still arrives. This is what
+   `priority: high` buys and what the Firebase console cannot prove.
+8. **Real order through the backend** → same behaviour as the CLI test.
+
+### If it doesn't arrive
+
+| Symptom | Likely cause |
+|---|---|
+| `BadDeviceToken` (iOS) | sandbox/production mismatch — try the other `--env` |
+| `SENDER_ID_MISMATCH` (Android) | token is from a different Firebase project |
+| `UNREGISTERED` / `410` | token is dead; the backend must delete it |
+| Arrives foregrounded, not when killed | Doze — confirm `priority: high` / `apns-priority: 10` |
+| Solid white square icon | notification icon lost its alpha channel |
+| Silent notification | channel sound is fixed at creation; bump the channel id |
+| Nothing at all on Xiaomi/Huawei/Oppo | OEM battery killer — see below |
 
 ### Android OEM warning
 Xiaomi, Huawei, Oppo, Vivo and Samsung aggressively kill background apps.
