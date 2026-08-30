@@ -213,8 +213,12 @@ for customers.
 |---|---|---|
 | App icon | 512×512, 32-bit PNG | ✅ `store-assets/play-icon-512.png` |
 | Feature graphic | 1024×500, no alpha | ✅ `store-assets/play-feature-graphic-1024x500.png` |
-| Phone screenshots | 2–8, 16:9 or 9:16, 320–3840px | ⛔ **you must capture these** |
-| Tablet screenshots | optional | — |
+| Phone screenshots | 2–8, portrait 1080×1920 | ⛔ **you must capture these** |
+| 7" tablet screenshots | up to 8, portrait 1200×1920 | ⛔ needed for tablet surfacing |
+| 10" tablet screenshots | up to 8, portrait 1600×2560 | ⛔ needed for tablet surfacing |
+
+→ Designer prompts and per-screen direction:
+[`STORE_SCREENSHOTS_PROMPT.md`](./STORE_SCREENSHOTS_PROMPT.md)
 
 **Screenshots to capture** (use the demo account so nothing is empty): Orders
 board with live orders · Order detail with the status stepper · Menu management ·
