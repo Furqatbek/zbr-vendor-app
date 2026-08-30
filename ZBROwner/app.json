@@ -10,14 +10,16 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#17140F"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.zbr.owner",
       "buildNumber": "1",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       },
       "entitlements": {
         "aps-environment": "production",
@@ -26,7 +28,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#ffffff",
+        "backgroundColor": "#17140F",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -72,9 +74,11 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#FF5A1F",
+          "color": "#FF6B00",
           "defaultChannel": "orders_v2",
-          "sounds": ["./assets/sounds/new_order.wav"]
+          "sounds": [
+            "./assets/sounds/new_order.wav"
+          ]
         }
       ],
       [
