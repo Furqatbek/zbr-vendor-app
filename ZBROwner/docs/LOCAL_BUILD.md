@@ -92,7 +92,7 @@ quick. Requires the JAVA_HOME / ANDROID_HOME setup in §2.
 For push testing prefer a **real device** over the emulator: the test that
 matters — app force-killed, screen off — depends on Doze and OEM battery
 behaviour that emulators do not reproduce. Build a sideloadable APK with
-`npm run go-live -- --apk`.
+`npm run go-live:apk`.
 
 > Emulator showing `INSTALL_FAILED_INSUFFICIENT_STORAGE`? Android Studio ->
 > Device Manager -> ⋮ -> **Wipe Data**, or Edit -> Show Advanced Settings ->
@@ -178,11 +178,18 @@ rather than let a debug-signed AAB reach Play (Play rejects those at upload).
 ```bash
 npm ci
 npm run go-live               # gates -> bump -> prebuild -> AAB for Play
-npm run go-live -- --apk      # same, but a sideloadable APK for device testing
-npm run go-live -- --checks   # gates only, no build (safe anytime)
-
-npm run go-live -- --skip-privacy   # don't let the policy URL block the build
+npm run go-live:apk           # same, but a sideloadable APK for device testing
+npm run go-live:checks        # gates only, no build (safe anytime)
+npm run go-live:no-privacy    # don't let the policy URL block the build
+npm run go-live:no-bump       # rebuild without consuming a versionCode
 ```
+
+> **Use these named scripts, not `npm run go-live -- --flag`.** npm parses an
+> unrecognised dashed argument as its *own* config, prints
+> `npm warn Unknown cli config "--skip-privacy"`, and the flag never reaches the
+> script — which then runs as if you had not passed it. The script does recover
+> the value from the `npm_config_*` variable npm leaves behind, so the `--`
+> form works too, but the named scripts remove the ambiguity.
 
 `go-live` runs every gate in order and **stops at the first failure**, so a
 build that would be rejected — or accepted while pointing at the wrong backend —
@@ -225,7 +232,7 @@ is enforced for every build and has no skip flag.
 npm run version:bump              # +1, standalone
 npm run version:bump -- --dry-run # show what would change
 npm run version:bump -- --to 42   # set explicitly (must be higher)
-npm run go-live -- --no-bump      # rebuild WITHOUT consuming a number
+npm run go-live:no-bump           # rebuild WITHOUT consuming a number
 ```
 
 It bumps **before** prebuild on purpose: Gradle stamps the AAB from

@@ -15,11 +15,12 @@
  *   prebuild    regenerates android/ so it can't be stale
  *   build       the AAB itself
  *
- * Usage:
- *   npm run go-live                     full run, ends with an AAB
- *   npm run go-live -- --checks         gates only, no build (safe to run anytime)
- *   npm run go-live -- --apk            build an APK instead (device testing)
- *   npm run go-live -- --skip-privacy   don't let the policy URL block the build
+ * Usage — prefer these, they cannot be mangled by npm's argument parsing:
+ *   npm run go-live                full run, ends with an AAB
+ *   npm run go-live:checks         gates only, no build (safe to run anytime)
+ *   npm run go-live:apk            build an APK instead (device testing)
+ *   npm run go-live:no-privacy     don't let the policy URL block the build
+ *   npm run go-live:no-bump        rebuild without consuming a versionCode
  *
  * Cross-platform: uses gradlew.bat on Windows and ./gradlew elsewhere.
  */
@@ -30,9 +31,27 @@ const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 const args = process.argv.slice(2);
-const checksOnly = args.includes('--checks');
-const wantApk = args.includes('--apk');
-const skipPrivacy = args.includes('--skip-privacy');
+/**
+ * `npm run go-live -- --skip-privacy` does NOT reliably reach this script: npm
+ * parses unknown dashed args as its OWN config and warns
+ * "Unknown cli config", so argv arrives empty and the flag is silently ignored.
+ * It does export what it swallowed as `npm_config_<name>` with dashes turned
+ * into underscores, so read that too — the command works as typed either way.
+ * The dedicated `go-live:*` package scripts avoid the problem entirely.
+ */
+function hasFlag(name) {
+  if (args.includes(`--${name}`)) return true;
+  // npm normalises "--no-bump" to bump=false rather than no_bump=true.
+  if (name.startsWith('no-')) {
+    return process.env[`npm_config_${name.slice(3).replace(/-/g, '_')}`] === 'false';
+  }
+  const env = process.env[`npm_config_${name.replace(/-/g, '_')}`];
+  return env === 'true' || env === '';
+}
+
+const checksOnly = hasFlag('checks');
+const wantApk = hasFlag('apk');
+const skipPrivacy = hasFlag('skip-privacy');
 const isWindows = process.platform === 'win32';
 
 const C = {
@@ -65,7 +84,9 @@ function run(label, cmd, cmdArgs, opts = {}) {
 const npx = isWindows ? 'npx.cmd' : 'npx';
 
 console.log(`\n${C.bold}ZBR Owner — release gate${C.reset}`);
-console.log(`${C.dim}${checksOnly ? 'checks only (no build)' : wantApk ? 'building APK' : 'building AAB for Play'}${C.reset}\n`);
+console.log(`${C.dim}${checksOnly ? 'checks only (no build)' : wantApk ? 'building APK' : 'building AAB for Play'}${C.reset}`);
+if (skipPrivacy) console.log(`${C.yellow}--skip-privacy: the policy URL check will warn, not block${C.reset}`);
+console.log('');
 
 // ── gates ───────────────────────────────────────────────────────────────────
 run('Release + push configuration', 'node', ['scripts/check-release-config.js']);
@@ -94,7 +115,7 @@ if (checksOnly) {
 // ── build ───────────────────────────────────────────────────────────────────
 // Bump BEFORE prebuild so the generated native project carries the new number —
 // Gradle stamps the AAB from android/app/build.gradle, not from app.json.
-if (!args.includes('--no-bump')) {
+if (!hasFlag('no-bump')) {
   run('Bumping versionCode (+1)', 'node', ['scripts/bump-version-code.js']);
 } else {
   console.log(`${C.yellow}▸ Skipping versionCode bump (--no-bump)${C.reset}\n`);

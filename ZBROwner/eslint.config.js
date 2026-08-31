@@ -18,6 +18,13 @@ module.exports = [
         Buffer: 'readonly',
       },
     },
+    rules: {
+      // Guards against Metro inlining EXPO_PUBLIC_* at bundle time, so a
+      // computed key silently reads undefined. These scripts are run by node
+      // directly and never bundled, so the premise does not hold — and they
+      // legitimately need computed lookups (npm_config_*, per-key validation).
+      'expo/no-dynamic-env-var': 'off',
+    },
   },
   {
     ignores: [

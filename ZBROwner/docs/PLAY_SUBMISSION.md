@@ -12,7 +12,7 @@ Build instructions: [`LOCAL_BUILD.md`](./LOCAL_BUILD.md).
 | # | Blocker | Owner | Why it blocks |
 |---|---|---|---|
 | 1 | **Real TLS backend hostnames** | backend | Inlined into the bundle at build time. Until these exist, no shippable AAB can be produced. `npm run check:release` will refuse to build. |
-| 2 | **Privacy policy URL** | you | Handled directly in Play Console — build with `npm run go-live -- --skip-privacy`. Play still fetches whatever URL you enter; §2.5 covers verifying it and the in-app About row. |
+| 2 | **Privacy policy URL** | you | Handled directly in Play Console — build with `npm run go-live:no-privacy`. Play still fetches whatever URL you enter; §2.5 covers verifying it and the in-app About row. |
 | 3 | **Reviewer login credentials** | you | ⚠️ See §2 — the single most likely cause of rejection for this app. |
 | 4 | **Screenshots (min 2)** | you | Require a running build on a device/emulator. |
 | ~~5~~ | ~~Signing keystore~~ | you | ✅ Configured (`check:release` confirms the upload key). **Back up the keystore and its passwords now** — losing them means never updating this listing again. |
@@ -97,7 +97,7 @@ In Play Console → **App content → App access**:
 
 > **If you are entering the policy URL directly in Play Console** and it is not
 > `privacyPolicyUrl` from `constants/contact.ts`, build with
-> `npm run go-live -- --skip-privacy` and skip to §3. The check still runs and
+> `npm run go-live:no-privacy` and skip to §3. The check still runs and
 > prints, it just stops blocking. Two things remain worth knowing: Play
 > **fetches** whatever URL you enter during review, so run
 > `npm run check:privacy-url` against that one; and the in-app **About → Privacy
