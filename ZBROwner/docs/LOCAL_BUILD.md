@@ -14,7 +14,7 @@ account, no cloud service.**
 
 | Concern | With EAS | Now (local) |
 |---|---|---|
-| API/WS URLs | `env` per profile in `eas.json` | **`.env.production`** (see §3) |
+| API/WS URLs | `env` per profile in `eas.json` | **committed `.env.production` / `.env.development`** (see §3) |
 | `versionCode` | `autoIncrement: true` | **auto-incremented by `go-live`** (see §6) |
 | Signing keystore | managed by EAS | **you hold the `.jks`** (see §4) |
 | Expo `projectId` | required | **not needed at all** |
@@ -43,21 +43,33 @@ version bump — with `npm run check:release` failing the build if either is wro
 
 ---
 
-## 3. Configure the backend URLs
+## 3. Backend URLs — already configured
 
-Create **`ZBROwner/.env.production`**:
+Both env files are **committed and point at production**, so a fresh clone
+builds correctly with no setup:
 
-```
-EXPO_PUBLIC_API_BASE_URL=https://api.yourrealhost.com
-EXPO_PUBLIC_WS_BASE_URL=wss://api.yourrealhost.com
-```
+| File | Loaded when | Value |
+|---|---|---|
+| `.env.production` | release builds | `https://zbrr.uz` / `wss://zbrr.uz` |
+| `.env.development` | `expo start`, debug builds | same |
 
 These are **inlined into the JS bundle at build time**, not read at runtime — a
-wrong value ships to real phones and needs a new upload to fix.
+wrong value ships to real phones and needs a new upload to fix. `check:release`
+fails on a placeholder, a localhost/LAN address, or plain `http://`/`ws://`
+(Android blocks cleartext in release builds).
 
-Must be **`https://` / `wss://`**. Android blocks cleartext traffic in release
-builds, so an `http://` host fails with a confusing "network error" on every
-request, on a build that otherwise looks fine.
+To point at a local backend, create **`.env.local`** — gitignored, and it
+overrides both files:
+
+```
+EXPO_PUBLIC_API_BASE_URL=http://192.168.1.50:8080
+EXPO_PUBLIC_WS_BASE_URL=ws://192.168.1.50:8080
+```
+
+Use your machine's LAN IP, never `localhost` — a phone resolves localhost to
+itself. **Restart with `npx expo start --clear` after any env change**; Metro
+caches these values, and without `--clear` you will keep seeing the old URL and
+conclude the change did not work.
 
 ---
 
