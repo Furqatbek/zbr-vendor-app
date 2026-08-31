@@ -124,6 +124,21 @@ const POLICY_MARKERS = [
     notes.push(`${policyText.length} characters served, matched: ${matched.slice(0, 3).join(', ')}`);
   }
 
+  // The template in docs/PRIVACY_POLICY.md ships with [BRACKETED] blanks. A
+  // published policy still saying "[LEGAL ENTITY NAME]" reads as unfinished and
+  // is a documented rejection cause, so catch it here rather than in review.
+  // Upper bound is generous because one template blank is a full sentence; the
+  // [^\]] class still stops a match from spanning two separate brackets.
+  const placeholders = [...new Set(policyText.match(/\[[A-Z][^\]]{2,140}\]/g) || [])];
+  if (placeholders.length) {
+    problems.push(
+      `The published page still contains ${placeholders.length} unfilled placeholder(s):\n` +
+        placeholders.map((p) => `       ${p}`).join('\n') +
+        '\n     Fill them in docs/PRIVACY_POLICY.md, run `npm run build:privacy`,\n' +
+        '     and re-publish.',
+    );
+  }
+
   console.log(`\nPrivacy policy URL check\n${'─'.repeat(50)}`);
   console.log(`  url: ${url}`);
   for (const n of notes) console.log(`  ok       ${n}`);

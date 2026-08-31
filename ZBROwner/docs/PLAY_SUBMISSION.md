@@ -12,11 +12,13 @@ Build instructions: [`LOCAL_BUILD.md`](./LOCAL_BUILD.md).
 | # | Blocker | Owner | Why it blocks |
 |---|---|---|---|
 | 1 | **Real TLS backend hostnames** | backend | Inlined into the bundle at build time. Until these exist, no shippable AAB can be produced. `npm run check:release` will refuse to build. |
-| 2 | **Privacy policy served as real HTML** | you | **Mandatory** — Play Console will not accept a submission without it, and Google FETCHES the URL during review. A ready-to-host page is generated at `store-assets/privacy.html`; fill its remaining `[BRACKETED]` details and serve it. ⚠️ `https://app.zbrr.uz/privacy` currently returns the SPA shell for every path — verify with `npm run check:privacy-url`. |
+| 2 | **Privacy policy served as real HTML** | you | **Mandatory** — Play will not accept a submission without it and FETCHES the URL during review. `https://app.zbrr.uz/privacy` currently returns the SPA shell that every other path returns, so there is no policy there. Step-by-step fix in **§2.5**. |
+| 2b | **Fill the 8 policy placeholders** | you (legal) | The policy still says `[LEGAL ENTITY NAME]`. **§2.6** lists all eight and who to ask. |
 | 3 | **Reviewer login credentials** | you | ⚠️ See §2 — the single most likely cause of rejection for this app. |
 | 4 | **Screenshots (min 2)** | you | Require a running build on a device/emulator. |
-| 5 | **Signing keystore** | you | See `LOCAL_BUILD.md` §4. Back it up before you build. The release build type is wired to it by `plugins/withReleaseSigning.js`; `check:release` fails if no upload key is configured, because a debug-signed AAB is rejected at upload. |
-| 6 | **Support contact details** | you | `constants/contact.ts` — the Help Center and About links stay hidden until set. |
+| ~~5~~ | ~~Signing keystore~~ | you | ✅ Configured (`check:release` confirms the upload key). **Back up the keystore and its passwords now** — losing them means never updating this listing again. |
+| 6 | **Support contact details** | you | `constants/contact.ts` — `supportEmail` is still unset, so the Help Center cards stay hidden and Play has no contact email for the listing. |
+| 7 | **`DELETE /api/v1/auth/account`** | backend | In-app account deletion ships in this build (§4) but the endpoint does not exist yet. Blocks **App Store** submission (Guideline 5.1.1(v)); see `BACKEND_HANDOFF.md` §2.1. |
 
 Everything else in this document is either done or is form-filling.
 
@@ -92,6 +94,79 @@ In Play Console → **App content → App access**:
 
 ---
 
+## 2.5 Publishing the privacy policy 🔴 BLOCKS `npm run go-live`
+
+`constants/contact.ts` points at **https://app.zbrr.uz/privacy**, and today that
+path returns the customer web app's SPA shell — **the same 1,226 bytes as every
+other path on the host**, with the text "ZBR — Food. Faster than you." A browser
+would eventually draw something; a reviewer's fetch sees no policy. This is why
+`npm run go-live` refuses to build.
+
+**Step 1 — generate the page**
+
+```bash
+npm run build:privacy
+```
+
+Converts `docs/PRIVACY_POLICY.md` into the standalone
+`store-assets/privacy.html`: no JavaScript, no external CSS, no fonts, so the
+policy is in the HTML response itself. The command **exits non-zero while any
+`[BRACKETED]` placeholder remains** — see §2.6.
+
+**Step 2 — host it at that exact path**
+
+`app.zbrr.uz` is served by **Vercel** (`server: Vercel`, `x-vercel-cache`), so
+in the **web app repo** — not this one — add the generated file as:
+
+```
+public/privacy/index.html
+```
+
+Vercel matches the filesystem **before** applying rewrites, so a catch-all
+`{"source": "/(.*)", "destination": "/index.html"}` in `vercel.json` will not
+shadow it. Deploy, then confirm from a terminal rather than a browser — a
+browser runs the SPA's JS and hides exactly the failure that matters:
+
+```bash
+curl -s https://app.zbrr.uz/privacy | head -20     # must be the policy, not the shell
+npm run check:privacy-url                          # compares against a nonsense path
+```
+
+If you would rather not touch the web repo, host `store-assets/privacy.html`
+anywhere static (a separate Vercel project, GitHub Pages, S3) and set the real
+URL in `constants/contact.ts` — the gate checks whatever URL is configured. Keep
+it stable: it goes in the Play listing and the App Store Connect record, and
+changing it later means editing both.
+
+---
+
+## 2.6 Fill in the policy placeholders 🔴 BLOCKS SUBMISSION
+
+`docs/PRIVACY_POLICY.md` ships as a template. Eight blanks are still unfilled,
+and a published policy that says "[LEGAL ENTITY NAME]" reads as unfinished:
+
+| Placeholder | What goes there |
+|---|---|
+| `[DATE]` | Publication date of this version |
+| `[LEGAL ENTITY NAME]` | The registered company operating ZBR |
+| `[REGISTERED ADDRESS]` | Its registered address |
+| `[PRIVACY CONTACT EMAIL]` | Monitored inbox for privacy requests |
+| `[DELETION REQUEST EMAIL]` | Fallback for vendors who cannot sign in |
+| `[NUMBER]` | Days to respond to that fallback |
+| `[RETENTION PERIOD…]` | How long financial records are kept, per Uzbek accounting/tax law |
+| `[ADD TRANSFER SAFEGUARDS IF REQUIRED.]` | Delete the bracket if no transfers, or state the safeguard |
+
+These are legal and business facts, not engineering ones — get them from
+whoever owns the entity. Then re-run `npm run build:privacy` and re-publish.
+Both `build:privacy` and `check:privacy-url` fail while any remain, the latter
+against the **live** page, so a stale deploy is caught too.
+
+> The technical content of the policy was written from an audit of what the app
+> actually collects and matches the Data Safety table in §3. The legal framing
+> still wants a lawyer's eye — retention, jurisdiction, applicable law.
+
+---
+
 ## 3. Data Safety form — exact answers
 
 Derived from reading `services/api.ts`, `store/`, `hooks/`, `utils/`.
@@ -119,7 +194,7 @@ Answer for **every** row above:
 - **Is all user data encrypted in transit?** → **Yes** (HTTPS/WSS; cleartext is
   blocked in release builds)
 - **Do you provide a way for users to request that their data is deleted?** →
-  **Yes**, *provided you publish the deletion URL* — see §4.
+  **Yes** — deletion is built into the app, see §4.
 
 ### Notes to avoid a false declaration
 - Customer names/phones/addresses appear on order cards, but that data is

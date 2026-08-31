@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "check:push": "node scripts/check-push-config.js",
     "check:privacy-url": "node scripts/check-privacy-url.js",
+    "build:privacy": "node scripts/build-privacy-html.js",
     "go-live": "node scripts/go-live.js",
     "version:bump": "node scripts/bump-version-code.js",
     "check:release": "node scripts/check-release-config.js && node scripts/check-push-config.js",

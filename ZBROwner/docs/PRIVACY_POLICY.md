@@ -107,12 +107,23 @@ law"]. Push tokens are deleted when you sign out or the token becomes invalid.
 You may request access to, correction of, or deletion of your personal
 information, and you may withdraw consent for optional data such as location.
 
-**To request account and data deletion**, contact **[DELETION REQUEST EMAIL]**
-or use **[DELETION REQUEST URL]**. We will respond within [NUMBER] days.
-Some records may be retained where law requires it; we will tell you if so.
+**To delete your account and data, use the app**: open **More → Delete account**
+(also reachable from **More → About → Account**). The screen lists exactly what
+is removed, asks you to confirm by typing your email address, and deletes the
+account directly — you do not need to contact us first. If you cannot sign in,
+write to **[DELETION REQUEST EMAIL]** and we will respond within [NUMBER] days.
 
-Because accounts are issued by ZBR to partner restaurants, deleting your account
-also ends your ability to receive orders through the platform.
+Deleting your account:
+
+- stops orders reaching you immediately, and removes your restaurant from the
+  ZBR app that customers use;
+- revokes your sign-in credentials and deletes the push tokens for your devices,
+  so notifications stop;
+- removes or anonymises your name, email address, phone number and staff records.
+
+Financial and fiscal records that accounting and tax law require us to keep are
+retained for the period in section 6, but are no longer linked to an account you
+can sign in to. This cannot be undone.
 
 You can revoke notification, location, and photo permissions at any time in your
 device settings. Revoking notifications means you will stop receiving order
