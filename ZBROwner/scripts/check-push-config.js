@@ -132,6 +132,29 @@ if (!notifPlugin) {
     }
   }
 
+  // Every `sound:` string the app sets on a channel must name a BUNDLED file.
+  // Android resolves it against res/raw with the extension stripped, so a name
+  // like 'default' silently resolves to nothing — the channel falls back to the
+  // system sound and only a console error hints that anything is wrong.
+  const notifSrc = path.join(root, 'utils', 'notifications.ts');
+  if (fs.existsSync(notifSrc)) {
+    const src = fs.readFileSync(notifSrc, 'utf8');
+    const bundled = sounds.map((rel) => path.basename(rel).replace(/\.[^.]+$/, ''));
+    for (const m of src.matchAll(/sound:\s*'([^']+)'/g)) {
+      const value = m[1];
+      // Skip identifiers/constants — only literal filenames are resolvable.
+      const base = value.replace(/\.[^.]+$/, '');
+      if (!bundled.includes(base)) {
+        problems.push(
+          `utils/notifications.ts sets sound: '${value}', which is not a bundled sound.\n` +
+            `     Android strips the extension and looks for res/raw/${base} — it does not exist.\n` +
+            `     Bundled: ${bundled.join(', ') || '(none)'}\n` +
+            "     To use the system default, OMIT the sound key entirely.",
+        );
+      }
+    }
+  }
+
   // The channel the backend targets must be the one the app creates.
   const notificationsSrc = path.join(root, 'utils', 'notifications.ts');
   if (fs.existsSync(notificationsSrc)) {

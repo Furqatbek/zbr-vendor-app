@@ -83,7 +83,12 @@ export async function ensureNotificationChannels(): Promise<void> {
     name: 'Order updates',
     description: 'Status changes, courier assignment, and other non-urgent updates.',
     importance: Notifications.AndroidImportance.DEFAULT,
-    sound: 'default',
+    // `sound` is OMITTED on purpose — that is how you request the system
+    // default. Passing the string 'default' is treated as a FILENAME and
+    // resolved against res/raw, where no file called "default" exists, so
+    // expo-notifications logs "Custom sound 'default' not found in native app".
+    // The channel still ends up with the default sound (the resolver falls back),
+    // but the error is noisy and misleading.
     showBadge: true,
   });
 }
