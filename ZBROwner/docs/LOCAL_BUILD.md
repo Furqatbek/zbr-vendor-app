@@ -180,6 +180,8 @@ npm ci
 npm run go-live               # gates -> bump -> prebuild -> AAB for Play
 npm run go-live -- --apk      # same, but a sideloadable APK for device testing
 npm run go-live -- --checks   # gates only, no build (safe anytime)
+
+npm run go-live -- --skip-privacy   # don't let the policy URL block the build
 ```
 
 `go-live` runs every gate in order and **stops at the first failure**, so a
@@ -197,10 +199,20 @@ Outputs:
 
 **Use the APK for push testing** — you can sideload it; the AAB is Play-only.
 
-The privacy-policy gate is a **hard failure for the AAB** (it blocks Play review)
-but only a **warning for `--apk`**, since a sideloaded test build never reaches
-Play. Everything else — signing, backend URLs, versionCode, tests — is enforced
-for both.
+The privacy-policy gate is a **hard failure for the AAB** (it blocks Play
+review) but only a **warning** for `--apk` — a sideloaded test build never
+reaches Play — or when you pass **`--skip-privacy`**, for when the policy is
+managed outside this repo and `privacyPolicyUrl` in `constants/contact.ts` is
+not the URL that ends up in the Play listing.
+
+The check still **runs and prints** under both flags; it is only downgraded, not
+silenced. That matters because the failure it detects is invisible in a browser:
+a single-page app returns HTTP 200 with its shell for *every* path, so the URL
+looks alive while a reviewer's fetch sees no policy. Point
+`npm run check:privacy-url` at whatever URL you do submit.
+
+Everything else — signing, backend URLs, versionCode, typecheck, tests, lint —
+is enforced for every build and has no skip flag.
 
 ---
 

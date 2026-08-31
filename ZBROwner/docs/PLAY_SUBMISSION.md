@@ -12,8 +12,7 @@ Build instructions: [`LOCAL_BUILD.md`](./LOCAL_BUILD.md).
 | # | Blocker | Owner | Why it blocks |
 |---|---|---|---|
 | 1 | **Real TLS backend hostnames** | backend | Inlined into the bundle at build time. Until these exist, no shippable AAB can be produced. `npm run check:release` will refuse to build. |
-| 2 | **Privacy policy served as real HTML** | you | **Mandatory** — Play will not accept a submission without it and FETCHES the URL during review. `https://app.zbrr.uz/privacy` currently returns the SPA shell that every other path returns, so there is no policy there. Step-by-step fix in **§2.5**. |
-| 2b | **Fill the 8 policy placeholders** | you (legal) | The policy still says `[LEGAL ENTITY NAME]`. **§2.6** lists all eight and who to ask. |
+| 2 | **Privacy policy URL** | you | Handled directly in Play Console — build with `npm run go-live -- --skip-privacy`. Play still fetches whatever URL you enter; §2.5 covers verifying it and the in-app About row. |
 | 3 | **Reviewer login credentials** | you | ⚠️ See §2 — the single most likely cause of rejection for this app. |
 | 4 | **Screenshots (min 2)** | you | Require a running build on a device/emulator. |
 | ~~5~~ | ~~Signing keystore~~ | you | ✅ Configured (`check:release` confirms the upload key). **Back up the keystore and its passwords now** — losing them means never updating this listing again. |
@@ -94,13 +93,21 @@ In Play Console → **App content → App access**:
 
 ---
 
-## 2.5 Publishing the privacy policy 🔴 BLOCKS `npm run go-live`
+## 2.5 Publishing the privacy policy
+
+> **If you are entering the policy URL directly in Play Console** and it is not
+> `privacyPolicyUrl` from `constants/contact.ts`, build with
+> `npm run go-live -- --skip-privacy` and skip to §3. The check still runs and
+> prints, it just stops blocking. Two things remain worth knowing: Play
+> **fetches** whatever URL you enter during review, so run
+> `npm run check:privacy-url` against that one; and the in-app **About → Privacy
+> Policy** row opens `privacyPolicyUrl`, so if it stays pointed at the SPA path,
+> vendors tapping it see the shell rather than a policy.
 
 `constants/contact.ts` points at **https://app.zbrr.uz/privacy**, and today that
 path returns the customer web app's SPA shell — **the same 1,226 bytes as every
 other path on the host**, with the text "ZBR — Food. Faster than you." A browser
-would eventually draw something; a reviewer's fetch sees no policy. This is why
-`npm run go-live` refuses to build.
+would eventually draw something; a reviewer's fetch sees no policy.
 
 **Step 1 — generate the page**
 

@@ -16,9 +16,10 @@
  *   build       the AAB itself
  *
  * Usage:
- *   npm run go-live               full run, ends with an AAB
- *   npm run go-live -- --checks   gates only, no build (safe to run anytime)
- *   npm run go-live -- --apk      build an APK instead (device testing)
+ *   npm run go-live                     full run, ends with an AAB
+ *   npm run go-live -- --checks         gates only, no build (safe to run anytime)
+ *   npm run go-live -- --apk            build an APK instead (device testing)
+ *   npm run go-live -- --skip-privacy   don't let the policy URL block the build
  *
  * Cross-platform: uses gradlew.bat on Windows and ./gradlew elsewhere.
  */
@@ -31,6 +32,7 @@ const root = path.resolve(__dirname, '..');
 const args = process.argv.slice(2);
 const checksOnly = args.includes('--checks');
 const wantApk = args.includes('--apk');
+const skipPrivacy = args.includes('--skip-privacy');
 const isWindows = process.platform === 'win32';
 
 const C = {
@@ -68,11 +70,17 @@ console.log(`${C.dim}${checksOnly ? 'checks only (no build)' : wantApk ? 'buildi
 // ── gates ───────────────────────────────────────────────────────────────────
 run('Release + push configuration', 'node', ['scripts/check-release-config.js']);
 run('Push configuration', 'node', ['scripts/check-push-config.js']);
-// The privacy policy blocks Play REVIEW, not the correctness of the binary.
-// A sideloadable APK is for device testing and never reaches Play, so this is
-// only a hard gate for the AAB.
+// The privacy policy blocks Play REVIEW, not the correctness of the binary, so
+// it is downgraded to a warning when the artifact isn't going to Play (--apk)
+// or when the policy is being handled outside this repo (--skip-privacy).
+// Either way it still RUNS and still prints — silence would be worse than a
+// warning, because the failure mode is invisible in a browser.
 run('Privacy policy URL serves a real policy', 'node', ['scripts/check-privacy-url.js'], {
-  nonFatal: wantApk ? 'APK is for device testing, not Play upload' : undefined,
+  nonFatal: wantApk
+    ? 'APK is for device testing, not Play upload'
+    : skipPrivacy
+      ? '--skip-privacy: policy handled in Play Console'
+      : undefined,
 });
 run('TypeScript', npx, ['tsc', '--noEmit']);
 run('Tests', npx, ['jest', '--ci', '--runInBand']);
@@ -104,8 +112,8 @@ const out = wantApk
 
 console.log(`${C.green}${C.bold}Build complete.${C.reset}`);
 if (warnings.length) {
-  console.log(`${C.yellow}  Skipped gates: ${warnings.join(', ')}${C.reset}`);
-  console.log(`${C.yellow}  These must pass before a Play upload.${C.reset}`);
+  console.log(`${C.yellow}  Not enforced this run: ${warnings.join(', ')}${C.reset}`);
+  console.log(`${C.yellow}  The binary is fine; these are review-time concerns.${C.reset}`);
 }
 if (fs.existsSync(out)) {
   const mb = (fs.statSync(out).size / 1024 / 1024).toFixed(1);
@@ -119,6 +127,11 @@ const appJson = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'))
 console.log(`${C.bold}Before uploading — these cannot be verified automatically:${C.reset}`);
 console.log(`  • versionCode is ${C.bold}${appJson.android.versionCode}${C.reset} — Play rejects a duplicate. Bump it if this
     number was already uploaded.`);
+if (skipPrivacy || wantApk) {
+  console.log('  • Play Console → Store listing → Privacy policy: the URL you enter is');
+  console.log('    FETCHED during review. Re-run `npm run check:privacy-url` against it');
+  console.log('    if you ever point it back at a single-page app.');
+}
 console.log('  • Play Console → App access: demo credentials present and the account');
 console.log('    still logs in and has data on every screen.');
 console.log('  • Screenshots uploaded for phone AND both tablet slots.');
