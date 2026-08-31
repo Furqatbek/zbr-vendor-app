@@ -130,6 +130,11 @@ Outputs:
 
 **Use the APK for push testing** — you can sideload it; the AAB is Play-only.
 
+The privacy-policy gate is a **hard failure for the AAB** (it blocks Play review)
+but only a **warning for `--apk`**, since a sideloaded test build never reaches
+Play. Everything else — signing, backend URLs, versionCode, tests — is enforced
+for both.
+
 ---
 
 ## 6. Version numbers — automatic

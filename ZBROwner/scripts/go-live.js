@@ -38,6 +38,8 @@ const C = {
   red: '\x1b[31m', green: '\x1b[32m', yellow: '\x1b[33m', cyan: '\x1b[36m',
 };
 
+const warnings = [];
+
 function run(label, cmd, cmdArgs, opts = {}) {
   process.stdout.write(`${C.cyan}▸${C.reset} ${C.bold}${label}${C.reset}\n`);
   const res = spawnSync(cmd, cmdArgs, {
@@ -46,6 +48,11 @@ function run(label, cmd, cmdArgs, opts = {}) {
     shell: opts.shell ?? isWindows, // npm/npx need a shell on Windows
   });
   if (res.status !== 0) {
+    if (opts.nonFatal) {
+      console.warn(`${C.yellow}⚠ ${label} — continuing (${opts.nonFatal})${C.reset}\n`);
+      warnings.push(label);
+      return;
+    }
     console.error(`\n${C.red}✖ FAILED: ${label}${C.reset}`);
     console.error(`${C.dim}  Nothing was built. Fix the above and re-run.${C.reset}\n`);
     process.exit(res.status || 1);
@@ -61,7 +68,12 @@ console.log(`${C.dim}${checksOnly ? 'checks only (no build)' : wantApk ? 'buildi
 // ── gates ───────────────────────────────────────────────────────────────────
 run('Release + push configuration', 'node', ['scripts/check-release-config.js']);
 run('Push configuration', 'node', ['scripts/check-push-config.js']);
-run('Privacy policy URL serves a real policy', 'node', ['scripts/check-privacy-url.js']);
+// The privacy policy blocks Play REVIEW, not the correctness of the binary.
+// A sideloadable APK is for device testing and never reaches Play, so this is
+// only a hard gate for the AAB.
+run('Privacy policy URL serves a real policy', 'node', ['scripts/check-privacy-url.js'], {
+  nonFatal: wantApk ? 'APK is for device testing, not Play upload' : undefined,
+});
 run('TypeScript', npx, ['tsc', '--noEmit']);
 run('Tests', npx, ['jest', '--ci', '--runInBand']);
 run('Lint', npx, ['eslint', '.']);
@@ -91,6 +103,10 @@ const out = wantApk
   : path.join(root, 'android/app/build/outputs/bundle/release/app-release.aab');
 
 console.log(`${C.green}${C.bold}Build complete.${C.reset}`);
+if (warnings.length) {
+  console.log(`${C.yellow}  Skipped gates: ${warnings.join(', ')}${C.reset}`);
+  console.log(`${C.yellow}  These must pass before a Play upload.${C.reset}`);
+}
 if (fs.existsSync(out)) {
   const mb = (fs.statSync(out).size / 1024 / 1024).toFixed(1);
   console.log(`  ${out}  ${C.dim}(${mb} MB)${C.reset}\n`);
