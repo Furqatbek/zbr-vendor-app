@@ -68,6 +68,38 @@ macOS/Linux: `export ANDROID_HOME=$HOME/Library/Android/sdk`
 
 ---
 
+## 2b. ⚠️ This app cannot run in Expo Go
+
+`npm start` + `a` opens **Expo Go**, which is a generic prebuilt shell. This app
+will install there and then fail in the exact area you are usually testing:
+
+- Expo Go **dropped remote push in SDK 53** — `getDevicePushTokenAsync()` cannot
+  work, so no FCM/APNs token is ever issued.
+- It has no `google-services.json`, so Firebase never initialises.
+- Config plugins (`withReleaseSigning`, `expo-build-properties`, the
+  notification channel and bundled alarm sound) do not exist in it.
+
+Use a **development build** instead — same fast refresh, but it is really your
+app with your native configuration:
+
+```powershell
+npm run android      # expo run:android — prebuild + compile + install + Metro
+```
+
+First run takes 5-15 minutes while Gradle downloads the toolchain; later runs are
+quick. Requires the JAVA_HOME / ANDROID_HOME setup in §2.
+
+For push testing prefer a **real device** over the emulator: the test that
+matters — app force-killed, screen off — depends on Doze and OEM battery
+behaviour that emulators do not reproduce. Build a sideloadable APK with
+`npm run go-live -- --apk`.
+
+> Emulator showing `INSTALL_FAILED_INSUFFICIENT_STORAGE`? Android Studio ->
+> Device Manager -> ⋮ -> **Wipe Data**, or Edit -> Show Advanced Settings ->
+> **Internal Storage** -> 8192 MB.
+
+---
+
 ## 3. Backend URLs — already configured
 
 Both env files are **committed and point at production**, so a fresh clone
