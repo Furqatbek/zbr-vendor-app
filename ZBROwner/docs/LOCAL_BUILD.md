@@ -33,10 +33,35 @@ version bump — with `npm run check:release` failing the build if either is wro
 
 - **Node 20+**
 - **JDK 17** (`java -version` → 17.x). Android Gradle Plugin 8 requires it.
-- **Android Studio** → SDK Platform 35 + Build-Tools + Platform-Tools
-- `ANDROID_HOME` set:
-  - Windows: `setx ANDROID_HOME "%LOCALAPPDATA%\Android\Sdk"`
-  - macOS/Linux: `export ANDROID_HOME=$HOME/Library/Android/sdk`
+- **Android Studio** → SDK Platform 36 + Build-Tools + Platform-Tools
+
+### Windows: JAVA_HOME
+
+`keytool : is not recognized` or a path that starts with `\bin\keytool.exe`
+means `JAVA_HOME` is unset. **Android Studio already ships a JDK** — you rarely
+need to install another:
+
+```powershell
+Test-Path "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe"
+
+# if False, find any JDK on the machine:
+Get-ChildItem "C:\Program Files","C:\Program Files (x86)","$env:LOCALAPPDATA\Programs" `
+  -Filter keytool.exe -Recurse -ErrorAction SilentlyContinue |
+  Select-Object -First 5 FullName
+```
+
+```powershell
+setx JAVA_HOME "C:\Program Files\Android\Android Studio\jbr"
+setx ANDROID_HOME "$env:LOCALAPPDATA\Android\Sdk"
+```
+
+⚠️ `setx` only affects **new** shells — open a fresh PowerShell window, then
+confirm with `java -version` (must be 17.x) and `keytool -help`.
+
+No JDK at all? Install **Temurin 17** and tick "Set JAVA_HOME":
+<https://adoptium.net/temurin/releases/?version=17>
+
+macOS/Linux: `export ANDROID_HOME=$HOME/Library/Android/sdk`
 
 > iOS release builds require **macOS + Xcode** and an Apple Developer account.
 > Play Store is Android-only, so this doc covers Android; iOS is unchanged.
@@ -75,10 +100,20 @@ conclude the change did not work.
 
 ## 4. Signing key (one time — **do not lose this**)
 
-```bash
-keytool -genkey -v -keystore zbr-owner-upload.jks \
-  -keyalg RSA -keysize 2048 -validity 10000 -alias zbr-owner
+```powershell
+mkdir C:\keys -Force
+keytool -genkeypair -v -keystore C:\keys\zbr-owner-upload.jks -alias zbr-owner -keyalg RSA -keysize 2048 -validity 10000
 ```
+
+One line — PowerShell does not accept bash's `\` continuation. If `keytool` is
+not found, see the JAVA_HOME section in §2, or call it by full path:
+
+```powershell
+& "$env:JAVA_HOME\bin\keytool.exe" -genkeypair -v -keystore C:\keys\zbr-owner-upload.jks -alias zbr-owner -keyalg RSA -keysize 2048 -validity 10000
+```
+
+It asks for a keystore password (reuse it for the key), then certificate details
+that are never shown to users.
 
 Store the `.jks` **outside the repo** — `*.jks` is gitignored, and it must stay
 that way. Back it up somewhere durable (password manager / company vault).
