@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
@@ -8,6 +9,7 @@ import { CONTACT, hasLegalLinks } from '../../constants/contact';
 
 export default function AboutScreen() {
   const t = useT();
+  const router = useRouter();
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -39,7 +41,6 @@ export default function AboutScreen() {
               { label: t('aboutScreen.termsOfService'), icon: 'document-text-outline' as const, url: CONTACT.termsUrl },
               { label: t('aboutScreen.privacyPolicy'), icon: 'shield-checkmark-outline' as const, url: CONTACT.privacyPolicyUrl },
               { label: t('aboutScreen.licenses'), icon: 'code-slash-outline' as const, url: CONTACT.licensesUrl },
-              { label: t('aboutScreen.deleteAccount'), icon: 'trash-outline' as const, url: CONTACT.dataDeletionUrl },
             ].filter((l) => !!l.url) as { label: string; icon: any; url: string }[]).map((link, index, arr) => (
               <TouchableOpacity
                 key={link.label}
@@ -55,6 +56,22 @@ export default function AboutScreen() {
           </Card>
         </>
       )}
+
+      {/* Account deletion is handled in-app, not by an external link: Apple
+          5.1.1(v) requires the flow to start inside the app. This row is never
+          gated on contact.ts — the destination always exists. */}
+      <Text style={styles.sectionTitle}>{t('aboutScreen.account')}</Text>
+      <Card style={styles.linksCard}>
+        <TouchableOpacity
+          style={styles.linkRow}
+          activeOpacity={0.7}
+          onPress={() => router.push('/settings/delete-account')}
+        >
+          <Ionicons name="trash-outline" size={20} color={Colors.danger} />
+          <Text style={[styles.linkLabel, styles.dangerLabel]}>{t('aboutScreen.deleteAccount')}</Text>
+          <Ionicons name="chevron-forward" size={16} color={Colors.gray400} />
+        </TouchableOpacity>
+      </Card>
 
       <Text style={styles.copyright}>{t('aboutScreen.copyright')}</Text>
     </ScrollView>
@@ -76,5 +93,6 @@ const styles = StyleSheet.create({
   linkRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.base, gap: Spacing.md, minHeight: 48 },
   linkBorder: { borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
   linkLabel: { ...Typography.body, color: Colors.black, flex: 1 },
+  dangerLabel: { color: Colors.danger },
   copyright: { ...Typography.caption1, color: Colors.gray400, textAlign: 'center', marginTop: Spacing.md },
 });

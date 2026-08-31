@@ -132,6 +132,10 @@ function AppStack() {
         options={{ headerShown: true, title: t('screenTitles.notifications'), headerTintColor: Colors.accent }}
       />
       <Stack.Screen
+        name="settings/delete-account"
+        options={{ headerShown: true, title: t('deleteAccount.title'), headerTintColor: Colors.accent }}
+      />
+      <Stack.Screen
         name="settings/order-history"
         options={{ headerShown: true, title: t('screenTitles.orderHistory'), headerTintColor: Colors.accent }}
       />

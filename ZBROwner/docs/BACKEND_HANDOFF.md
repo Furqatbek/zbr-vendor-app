@@ -58,6 +58,7 @@ the §0 asks and what the client adjusted in response:
 | 6 | Build the **feature-flagged endpoints** (§7) | UIs hidden until each exists. | Low | 🟡 Open |
 | 7 | **Idempotent** order mutations | Safe retries across deploys. | Medium | ✅ Done |
 | 8 | **Send FCM/APNs pushes** per [`PUSH_SETUP.md`](./PUSH_SETUP.md) §3 — high priority, `channel_id: orders_v2`, numeric `data.orderId`, prune dead tokens | **A locked phone only wakes for a remote push.** The WebSocket cannot deliver when the app is backgrounded — this is what makes vendors miss orders. | **High** | 🔴 Open — **client side done, credentials ready (§6)** |
+| 9 | **`DELETE /api/v1/auth/account`** (§2.1) | App Store Guideline **5.1.1(v)**: an app with accounts must let the user delete it **from inside the app**. Apple rejects a link to a web form. The screen is built and shipped; without the endpoint it shows an error to every vendor who taps it. | **Yes — gates iOS submission** | 🔴 Open |
 
 ---
 
@@ -98,6 +99,57 @@ Client behavior you should know:
   rotation, that's fine — the client persists the new pair before continuing.
 - Field name is exactly **`refreshToken`** and it must be the **refresh** token
   (a past cross-app bug sent the access token — the vendor app does not).
+
+### 2.1 Account deletion — `DELETE /api/v1/auth/account` 🔴 NOT IMPLEMENTED
+
+This is a **store-review blocker on iOS**, not a nice-to-have. App Store Review
+Guideline 5.1.1(v) requires that an app offering account creation also let the
+user **initiate deletion inside the app**. A link to a web form satisfies
+Google's Play policy but **not** Apple's — they reject on it.
+
+The client screen (`app/settings/delete-account.tsx`) is built, reachable from
+**More → Delete account** and **About → Account**, and already calls this
+endpoint. Until it exists, every vendor who confirms deletion sees the raw
+error. There is no client-side fallback to hide it — a fake success dialog on a
+deletion request is exactly the thing Apple checks for.
+
+**Contract**
+
+| | |
+|---|---|
+| Method / path | `DELETE /api/v1/auth/account` |
+| Auth | `Authorization: Bearer <access token>` — deletes **the caller's own account**. Never accept a user id in the path or body. |
+| Body | Optional `{ "reason": "<free text, ≤500 chars>" }`. Absent when the vendor leaves the field blank. Ignore it if you don't want to store it — do not 400 on it. |
+| Success | `200` (or `204`) with the standard `{ success: true }` envelope. The client clears the session and returns to login on success. |
+| Failure | Standard error envelope with a **human-readable `message`** — the client shows it verbatim in the alert. e.g. "Settle your outstanding payout balance before deleting." |
+
+**Ordering the client guarantees:** it calls `POST /api/v1/notifications/unregister`
+with the device token **before** this request, while the access token is still
+valid. If that call fails it is swallowed — so **also purge the account's device
+tokens server-side** as part of deletion. A surviving token means we keep pushing
+order alerts to a deleted vendor's phone.
+
+**What deletion must actually do** (the in-app copy promises this, so it has to be true):
+
+1. Stop routing orders to the restaurant **immediately** and take it out of the
+   customer app's listings. This is the part vendors care about — a "deleted"
+   account that still receives orders is a support incident.
+2. Revoke all refresh tokens and delete all device push tokens for the user.
+3. Remove or irreversibly anonymize personal data: name, email, phone, login
+   credentials, staff records.
+4. Financial and fiscal records that Uzbek law requires you to retain may be
+   **kept**, but must be detached from a usable login. The screen tells the
+   vendor exactly this, so don't retain more than that.
+
+**Grace period:** if you implement a soft-delete window (e.g. 30 days before
+purge), say so and we will add it to the confirmation copy in all four locales.
+Apple accepts a delayed purge; it does **not** accept the account staying usable
+or the vendor having to email support to finish the job. Today's copy says
+"immediately" and "cannot be undone" — those two must match your implementation.
+
+**Data Safety / App Privacy:** once this ships, both store listings can declare
+in-app account deletion, which is what the Play Data safety form and the App
+Privacy questionnaire ask for.
 
 ---
 

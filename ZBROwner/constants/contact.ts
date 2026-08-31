@@ -21,7 +21,13 @@ export const CONTACT = {
   termsUrl: null as string | null,
   /** Open-source licenses page. Null hides the row. */
   licensesUrl: null as string | null,
-  /** Where vendors request account/data deletion. Declared in Play Console. */
+  /**
+   * Optional web page for account/data deletion requests, declared in Play
+   * Console → Data safety. Deletion itself is in-app
+   * (`app/settings/delete-account.tsx`) because Apple 5.1.1(v) does not accept
+   * a link out; this is only a convenience mirror for the Play listing and is
+   * not rendered anywhere in the app.
+   */
   dataDeletionUrl: null as string | null,
 
   /** Support phone in E.164, e.g. '+998712000000'. Null hides the card. */
@@ -32,9 +38,14 @@ export const CONTACT = {
   liveChatUrl: null as string | null,
 } as const;
 
-/** True when at least one legal link is configured. */
+/**
+ * True when at least one legal link is configured — i.e. the Legal card in
+ * About would render at least one row. `dataDeletionUrl` is deliberately not
+ * counted: it has no row (deletion is in-app), so counting it would render an
+ * empty card.
+ */
 export const hasLegalLinks = Boolean(
-  CONTACT.privacyPolicyUrl || CONTACT.termsUrl || CONTACT.licensesUrl || CONTACT.dataDeletionUrl,
+  CONTACT.privacyPolicyUrl || CONTACT.termsUrl || CONTACT.licensesUrl,
 );
 
 /** True when at least one support channel is configured. */

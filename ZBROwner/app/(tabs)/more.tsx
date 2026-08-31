@@ -210,6 +210,17 @@ export default function MoreScreen() {
         <Text style={styles.logoutText}>{t('more.logOut')}</Text>
       </TouchableOpacity>
 
+      {/* Account deletion. Apple 5.1.1(v) requires this to be findable and
+          startable inside the app — a link out to a web form is not accepted. */}
+      <TouchableOpacity
+        style={styles.deleteAccountButton}
+        activeOpacity={0.7}
+        onPress={() => router.push('/settings/delete-account')}
+      >
+        <Ionicons name="trash-outline" size={18} color={Colors.gray500} />
+        <Text style={styles.deleteAccountText}>{t('more.deleteAccount')}</Text>
+      </TouchableOpacity>
+
       <Text style={styles.versionText}>{t('more.appVersion')}</Text>
 
       {/* Logout Confirmation Modal */}
@@ -270,6 +281,8 @@ const styles = StyleSheet.create({
   langLabelActive: { fontWeight: '600', color: Colors.accent },
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.base, marginTop: Spacing.base, gap: Spacing.sm, minHeight: 48 },
   logoutText: { ...Typography.headline, color: Colors.danger },
+  deleteAccountButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.sm, gap: 6, minHeight: 44 },
+  deleteAccountText: { ...Typography.subhead, color: Colors.gray500 },
   versionText: { ...Typography.caption1, color: Colors.gray400, textAlign: 'center', marginTop: Spacing.md },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: Colors.white, borderRadius: BorderRadius.card, padding: Spacing.xl, width: '85%', alignItems: 'center' },

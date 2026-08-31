@@ -26,6 +26,9 @@ export const ENDPOINTS = {
   logout: '/api/v1/auth/logout',
   passwordReset: '/api/v1/auth/password-reset',
   passwordResetConfirm: '/api/v1/auth/password-reset/confirm',
+  // Account deletion — required in-app by App Store Review Guideline 5.1.1(v)
+  // and Play's Data deletion policy. See docs/BACKEND_HANDOFF.md.
+  deleteAccount: '/api/v1/auth/account',
 
   // Restaurant
   myRestaurants: '/api/v1/restaurants/my',

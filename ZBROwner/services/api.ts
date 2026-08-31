@@ -145,6 +145,26 @@ export function confirmPasswordReset(token: string, newPassword: string): Promis
   });
 }
 
+/**
+ * Permanently delete the signed-in vendor's account.
+ *
+ * Required in-app by App Store Review Guideline 5.1.1(v): an app with accounts
+ * must let the user *initiate* deletion from inside the app — a link to a web
+ * form does not satisfy Apple (it does satisfy Google).
+ *
+ * The server is the authority on what deletion means here: a vendor account is
+ * attached to a restaurant with live orders and payout history, so the backend
+ * decides whether to soft-delete, anonymise, or schedule a grace period, and
+ * what to do with records it must retain for tax/accounting law. The client
+ * only initiates it and then drops the local session.
+ */
+export function deleteAccount(reason?: string): Promise<ApiResponse> {
+  return apiFetch<ApiResponse>(ENDPOINTS.deleteAccount, {
+    method: 'DELETE',
+    ...(reason ? { body: JSON.stringify({ reason }) } : {}),
+  });
+}
+
 // ── Restaurant API ──
 
 export function fetchMyRestaurants(): Promise<MyRestaurantsResponse> {

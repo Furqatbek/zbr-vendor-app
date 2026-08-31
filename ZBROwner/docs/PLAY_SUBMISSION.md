@@ -135,25 +135,29 @@ Answer for **every** row above:
 
 ## 4. Account deletion
 
-Google requires an in-app deletion path **for apps that allow account creation
-in-app**. This app does **not** — there is no sign-up, only login and password
-reset — so that specific requirement does not bind.
+**Shipped in-app.** A full deletion flow lives at
+`app/settings/delete-account.tsx`, reachable from **More → Delete account** and
+**About → Account**, translated in all four locales. It explains the
+consequences, takes an optional reason, requires the vendor to type their own
+email address to confirm, and then calls `DELETE /api/v1/auth/account`.
 
-However, Data Safety still asks whether users can request data deletion, and
-answering *No* is a bad look for an app holding business and location data.
+That covers both stores:
 
-**Recommended (small, removes all ambiguity):**
-1. Publish a deletion-request page (can be a section of the privacy policy) with
-   an email address or form.
-2. Add a **"Delete account & data"** row in the More screen linking to it.
-3. Declare that URL in Play Console → App content → **Data deletion**.
+- **Google** — Data safety → *Data deletion*: answer **Yes, users can request
+  data deletion**, and describe the in-app path. You may additionally publish a
+  web deletion-request page and declare its URL; that is optional now.
+- **Apple** — Guideline **5.1.1(v)** requires deletion to be *initiated in the
+  app*. A web link does not satisfy Apple, which is why this is a real screen
+  and not an external row.
 
-**The in-app row is already built.** Set `dataDeletionUrl` in
-`constants/contact.ts` and a **"Delete account & data"** row appears in About →
-Legal (translated in all four locales). Until it is set the row is hidden rather
-than shipped as a dead button.
+> ⚠️ **The backend endpoint does not exist yet.** `DELETE /api/v1/auth/account`
+> is documented as a blocking ask in
+> [`BACKEND_HANDOFF.md` §2.1](./BACKEND_HANDOFF.md). Until it ships, the screen
+> surfaces the server error to the vendor — deliberately, because a fake success
+> on a deletion request is precisely what reviewers test for. **Do not submit to
+> the App Store before the endpoint is live**; a reviewer will walk this flow.
 
-The same file drives the Privacy Policy, Terms and Licenses rows, and the Help
+`constants/contact.ts` drives the Privacy Policy, Terms and Licenses rows, and the Help
 Center's phone/email/chat cards — all hidden until configured. **`privacyPolicyUrl`
 is required for submission**; the rest are optional but recommended.
 

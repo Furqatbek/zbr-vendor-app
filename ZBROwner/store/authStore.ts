@@ -1,10 +1,9 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { AuthUser, AuthTokens, RefreshResponse, Restaurant } from '../types';
-import { Platform } from 'react-native';
-import * as Application from 'expo-application';
-import { configureAuth, login as apiLogin, logout as apiLogout, fetchMyRestaurants, unregisterDeviceToken } from '../services/api';
+import type { AuthUser, RefreshResponse, Restaurant } from '../types';
+import { configureAuth, login as apiLogin, logout as apiLogout, deleteAccount as apiDeleteAccount, fetchMyRestaurants, unregisterDeviceToken } from '../services/api';
 import { setSecureItem, deleteSecureItem, migrateFromAsyncStorage } from '../utils/secureStorage';
+import { getDeviceId } from '../utils/deviceId';
 import { useStore } from './index';
 
 // Sensitive credentials — kept in the OS keystore via secureStorage.
@@ -32,6 +31,8 @@ interface AuthStore {
   initialize: () => Promise<void>;
   login: (emailOrPhone: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  /** Permanently delete the account, then drop the local session. Throws on failure. */
+  deleteAccount: (reason?: string) => Promise<void>;
   clearSession: () => void;
   loadRestaurants: () => Promise<void>;
   selectRestaurant: (id: number) => void;
@@ -163,10 +164,7 @@ export const useAuthStore = create<AuthStore>((set, get) => {
       const { refreshToken } = get();
       // Unregister device token so backend stops sending push notifications
       try {
-        const deviceId = Platform.OS === 'android'
-          ? (Application.getAndroidId() ?? 'android-unknown')
-          : (Application.applicationId ?? 'ios-unknown');
-        await unregisterDeviceToken(deviceId);
+        await unregisterDeviceToken(await getDeviceId());
       } catch {
         // Non-fatal
       }
@@ -177,6 +175,25 @@ export const useAuthStore = create<AuthStore>((set, get) => {
       } catch {
         // Proceed with local logout even if API call fails
       }
+      useStore.getState().setPushToken(null);
+      get().clearSession();
+    },
+
+    deleteAccount: async (reason?: string) => {
+      // Unregister push FIRST, while the token is still valid — afterwards the
+      // account may be gone and the call would fail, leaving the backend
+      // pushing to a device that no longer has an account.
+      try {
+        await unregisterDeviceToken(await getDeviceId());
+      } catch {
+        // Non-fatal — deletion is the user's intent and must not be blocked.
+      }
+
+      // Deliberately NOT wrapped in try/catch: if the server refuses, the caller
+      // must surface a real error rather than clear the session and imply the
+      // account was deleted when it was not.
+      await apiDeleteAccount(reason);
+
       useStore.getState().setPushToken(null);
       get().clearSession();
     },
