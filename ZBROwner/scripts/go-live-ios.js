@@ -270,12 +270,12 @@ console.log(
   }${C.reset}`,
 );
 
-run('Archiving', 'xcodebuild', [
-  '-workspace', path.join(iosDir, workspace),
-  '-scheme', scheme,
-  '-configuration', 'Release',
-  '-destination', 'generic/platform=iOS',
-  '-archivePath', archivePath,
+// BOTH xcodebuild invocations need these. The archive creates the development
+// certificate and profile; the export creates the App Store DISTRIBUTION
+// profile and re-signs with it. Passing them only to the archive gets you a
+// successful build and then 'exportArchive No profiles for <bundle id> were
+// found' — the export having no way to reach the portal.
+const portalAuth = [
   '-allowProvisioningUpdates',
   ...(ascKeyPath
     ? [
@@ -284,6 +284,15 @@ run('Archiving', 'xcodebuild', [
         '-authenticationKeyIssuerID', process.env.ZBR_ASC_ISSUER_ID,
       ]
     : []),
+];
+
+run('Archiving', 'xcodebuild', [
+  '-workspace', path.join(iosDir, workspace),
+  '-scheme', scheme,
+  '-configuration', 'Release',
+  '-destination', 'generic/platform=iOS',
+  '-archivePath', archivePath,
+  ...portalAuth,
   `DEVELOPMENT_TEAM=${process.env.ZBR_APPLE_TEAM_ID}`,
   'CODE_SIGN_STYLE=Automatic',
   'archive',
@@ -313,6 +322,7 @@ run('Exporting .ipa', 'xcodebuild', [
   '-archivePath', archivePath,
   '-exportOptionsPlist', exportOptions,
   '-exportPath', exportPath,
+  ...portalAuth,
 ], { logPath: logFor('export') });
 
 const ipa = fs.existsSync(exportPath)
