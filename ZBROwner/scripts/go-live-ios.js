@@ -152,6 +152,13 @@ run('iOS release configuration', 'node', [
 ], {
   nonFatal: checksOnly && process.platform !== 'darwin' ? 'not on macOS, checks-only run' : undefined,
 });
+// Only meaningful with an API key, and it costs a network round trip — but it
+// is the only check that can prove ZBR_APPLE_TEAM_ID is the team the credential
+// actually belongs to. A wrong team id is indistinguishable from a missing
+// Xcode account in xcodebuild's output, and costs a full archive to discover.
+if (process.env.ZBR_ASC_KEY_ID) {
+  run('App Store Connect credentials', 'node', ['scripts/check-asc-key.js']);
+}
 run('Push configuration', 'node', ['scripts/check-push-config.js']);
 run('Privacy policy URL serves a real policy', 'node', ['scripts/check-privacy-url.js'], {
   nonFatal: skipPrivacy ? '--skip-privacy: policy handled in App Store Connect' : undefined,
