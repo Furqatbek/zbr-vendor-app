@@ -197,6 +197,12 @@ for (const key of REQUIRED_VARS) {
   }
 }
 
+// Declared here rather than beside the other credential checks below: the
+// toolchain block reads them, and a const cannot be used above its own line.
+const TEAM_ID = process.env.ZBR_APPLE_TEAM_ID;
+const KEY_ID = process.env.ZBR_ASC_KEY_ID;
+const ISSUER_ID = process.env.ZBR_ASC_ISSUER_ID;
+
 // ── Toolchain ───────────────────────────────────────────────────────────────
 if (process.platform !== 'darwin') {
   problems.push(
@@ -261,9 +267,6 @@ if (process.platform !== 'darwin') {
 // altool authenticates with an App Store Connect API key. This is a DIFFERENT
 // key from the APNs .p8 used to send pushes — same file format, different key,
 // and mixing them up produces an opaque auth error.
-const TEAM_ID = process.env.ZBR_APPLE_TEAM_ID;
-const KEY_ID = process.env.ZBR_ASC_KEY_ID;
-const ISSUER_ID = process.env.ZBR_ASC_ISSUER_ID;
 
 const APPLE_ID = process.env.ZBR_APPLE_ID;
 const APP_PASSWORD = process.env.ZBR_APP_SPECIFIC_PASSWORD;
