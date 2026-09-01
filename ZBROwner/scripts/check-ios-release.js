@@ -218,19 +218,42 @@ if (process.platform !== 'darwin') {
     // security is missing or returned non-zero; treat as "cannot tell".
   }
   const hasDistribution = /Apple Distribution|iPhone Distribution/.test(identities);
+
+  // Xcode records the teams its signed-in accounts belong to here. Without an
+  // account, automatic signing cannot reach the developer portal and the
+  // archive dies with 'No Account for Team "X"' — after several minutes of
+  // compiling. Checking it up front turns that into an instant failure.
+  let xcodeTeams = '';
+  try {
+    xcodeTeams = require('child_process')
+      .execSync('defaults read com.apple.dt.Xcode IDEProvisioningTeams 2>/dev/null', {
+        encoding: 'utf8',
+      });
+  } catch {
+    // Key absent (no account ever added) or Xcode preferences unreadable.
+  }
+  const teamSignedIn = TEAM_ID && xcodeTeams.includes(TEAM_ID);
+
+  if (teamSignedIn) {
+    ok.push(`Xcode is signed in to team ${TEAM_ID}`);
+  } else if (process.env.ZBR_ASC_KEY_ID) {
+    ok.push('Xcode has no account for this team, but the API key can sign in its place');
+  } else {
+    problems.push(
+      `Xcode has no signed-in account for team ${TEAM_ID}. Automatic signing cannot\n` +
+        '     reach the developer portal, and the archive fails with\n' +
+        `     'No Account for Team "${TEAM_ID}"' after several minutes of compiling.\n` +
+        '     Fix it in the GUI — there is no CLI equivalent:\n' +
+        '       Xcode → Settings → Accounts → + → Apple ID → sign in\n' +
+        '     Use the Apple ID that belongs to this team. An app-specific password\n' +
+        '     does NOT cover this: it authorises uploads, not the portal.',
+    );
+  }
+
   if (hasDistribution) {
     ok.push('Signing certificate present (Apple Distribution)');
-  } else if (!process.env.ZBR_ASC_KEY_ID) {
-    warnings.push(
-      'No Apple Distribution certificate in the keychain, and no App Store Connect\n' +
-        '     API key to create one with. xcodebuild will try to make it via\n' +
-        '     -allowProvisioningUpdates, which needs your Apple ID signed into Xcode:\n' +
-        '       Xcode → Settings → Accounts → + → Apple ID\n' +
-        '     An app-specific password does not cover this — it authorises uploads,\n' +
-        '     not the developer portal.',
-    );
-  } else {
-    ok.push('No distribution certificate yet — the API key can create one');
+  } else if (teamSignedIn || process.env.ZBR_ASC_KEY_ID) {
+    ok.push('No distribution certificate yet — xcodebuild will create one');
   }
 }
 
