@@ -125,9 +125,14 @@ if (!hasFlag('no-bump')) {
   console.log(`${C.yellow}▸ Skipping buildNumber bump (--no-bump)${C.reset}\n`);
 }
 
-run('Regenerating ios/ from app.json', 'npx', ['expo', 'prebuild', '--platform', 'ios', '--clean'], {
-  shell: true,
-});
+// --no-install skips the npm install AND the pod install that prebuild would
+// otherwise run for us. node_modules is already present (tsc, jest and eslint
+// just ran out of it), so the npm step is pure waste, and it is the step that
+// looks hung: it prints nothing for minutes. Pods are run explicitly below, so
+// without this flag they would be installed twice.
+run('Regenerating ios/ from app.json', 'npx', [
+  'expo', 'prebuild', '--platform', 'ios', '--clean', '--no-install',
+], { shell: true });
 
 const iosDir = path.join(root, 'ios');
 const workspace = fs
@@ -140,6 +145,13 @@ if (!workspace) {
 const scheme = workspace.replace('.xcworkspace', '');
 console.log(`${C.dim}  workspace: ${workspace}  scheme: ${scheme}${C.reset}\n`);
 
+// The first run on a machine clones the CocoaPods spec repo and can sit with no
+// output for several minutes. That is normal, so say so before it starts rather
+// than leaving it looking hung.
+console.log(
+  `${C.dim}  The first pod install on a machine downloads the spec repo — several\n` +
+    `  minutes with little output is normal. Later runs are fast.${C.reset}`,
+);
 run('CocoaPods install', 'pod', ['install'], { cwd: iosDir, shell: true });
 
 // Everything generated lives OUTSIDE ios/, which `prebuild --clean` wipes.

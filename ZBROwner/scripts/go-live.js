@@ -121,7 +121,12 @@ if (!hasFlag('no-bump')) {
   console.log(`${C.yellow}▸ Skipping versionCode bump (--no-bump)${C.reset}\n`);
 }
 
-run('Regenerating android/ from app.json', npx, ['expo', 'prebuild', '--platform', 'android', '--clean']);
+// --no-install skips the npm install prebuild would otherwise run. node_modules
+// is already present (tsc, jest and eslint just ran out of it), so it is pure
+// waste — and it is the step that looks hung, printing nothing for minutes.
+run('Regenerating android/ from app.json', npx, [
+  'expo', 'prebuild', '--platform', 'android', '--clean', '--no-install',
+]);
 
 const gradlew = isWindows ? 'gradlew.bat' : './gradlew';
 const task = wantApk ? 'assembleRelease' : 'bundleRelease';
