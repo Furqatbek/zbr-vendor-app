@@ -91,7 +91,11 @@ if (!plistPath) {
     problems.push(
       `buildNumber mismatch — the archive would ship ${plistBuild}, not ${buildNumber}.\n` +
         `     app.json says ${buildNumber}; ${path.relative(root, plistPath)} says ${plistBuild}.\n` +
-        '     Run `npm run prebuild:ios` to regenerate the native project.',
+        '     Either regenerate the project at the current number:\n' +
+        '       npm run prebuild:ios\n' +
+        '     or let the build bump past both — drop --no-bump and re-run.\n' +
+        '     app.json is version-controlled, so a pull can move buildNumber\n' +
+        '     backwards past a local bump. Commit it after each release build.',
     );
   } else {
     ok.push('Info.plist build number is in sync');
