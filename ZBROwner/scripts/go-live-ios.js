@@ -93,6 +93,10 @@ function summarizeErrors(logPath) {
   console.error(`${C.dim}  Full log: ${logPath}${C.reset}`);
 }
 
+// No step here passes `shell: true`. This script is macOS-only, where every
+// command it runs (npx, pod, xcodebuild, xcrun) is a real executable on PATH.
+// Node 22 deprecates args-with-shell because the shell concatenates rather
+// than escapes them; go-live.js still needs it on Windows for npx.cmd.
 function run(label, cmd, cmdArgs, opts = {}) {
   process.stdout.write(`${C.cyan}▸${C.reset} ${C.bold}${label}${C.reset}\n`);
 
@@ -163,9 +167,9 @@ run('Push configuration', 'node', ['scripts/check-push-config.js']);
 run('Privacy policy URL serves a real policy', 'node', ['scripts/check-privacy-url.js'], {
   nonFatal: skipPrivacy ? '--skip-privacy: policy handled in App Store Connect' : undefined,
 });
-run('TypeScript', 'npx', ['tsc', '--noEmit'], { shell: true });
-run('Tests', 'npx', ['jest', '--ci', '--runInBand'], { shell: true });
-run('Lint', 'npx', ['eslint', '.'], { shell: true });
+run('TypeScript', 'npx', ['tsc', '--noEmit']);
+run('Tests', 'npx', ['jest', '--ci', '--runInBand']);
+run('Lint', 'npx', ['eslint', '.']);
 
 if (checksOnly) {
   console.log(`${C.green}${C.bold}All gates passed.${C.reset} Re-run without --checks to build.\n`);
@@ -198,7 +202,7 @@ if (!hasFlag('no-bump')) {
 // without this flag they would be installed twice.
 run('Regenerating ios/ from app.json', 'npx', [
   'expo', 'prebuild', '--platform', 'ios', '--clean', '--no-install',
-], { shell: true });
+]);
 
 // prebuild generates the .xcodeproj; the .xcworkspace is created by CocoaPods.
 // So the scheme name has to come from the project here, and the workspace can
