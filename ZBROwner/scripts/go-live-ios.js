@@ -31,8 +31,8 @@
 
 const { spawnSync } = require('child_process');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
+const { KEY_DIRS, findAscKey } = require('./lib/asc-key');
 
 const root = path.resolve(__dirname, '..');
 const args = process.argv.slice(2);
@@ -241,12 +241,27 @@ const exportPath = path.join(buildDir, 'ipa');
 // developer portal: an App Store Connect API key if one is configured, and
 // otherwise the Apple ID signed into Xcode (Settings -> Accounts), because an
 // app-specific password authenticates uploads but not the portal.
-const ascKeyPath = process.env.ZBR_ASC_KEY_ID
-  ? [
-      path.join(os.homedir(), '.appstoreconnect', 'private_keys', `AuthKey_${process.env.ZBR_ASC_KEY_ID}.p8`),
-      path.join(os.homedir(), 'private_keys', `AuthKey_${process.env.ZBR_ASC_KEY_ID}.p8`),
-    ].find((p) => fs.existsSync(p))
-  : null;
+//
+// The key path comes from the shared helper the preflight also uses. These two
+// once kept their own copies of the search list, the one here being a directory
+// shorter — so a key in that directory passed the check and was then silently
+// omitted from the xcodebuild command, which failed with 'No Account for Team'
+// as though no key existed at all.
+const ascKeyPath = findAscKey(process.env.ZBR_ASC_KEY_ID);
+
+if (process.env.ZBR_ASC_KEY_ID && !ascKeyPath) {
+  console.error(
+    `\n${C.red}\u2716 ZBR_ASC_KEY_ID is set but AuthKey_${process.env.ZBR_ASC_KEY_ID}.p8 was not found.${C.reset}`,
+  );
+  console.error(`${C.dim}  Looked in:\n${KEY_DIRS.map((d) => `    ${d}`).join('\n')}${C.reset}\n`);
+  process.exit(1);
+}
+
+console.log(
+  `${C.dim}  Portal auth: ${
+    ascKeyPath ? `API key ${ascKeyPath}` : "Xcode's signed-in account (no API key configured)"
+  }${C.reset}`,
+);
 
 run('Archiving', 'xcodebuild', [
   '-workspace', path.join(iosDir, workspace),

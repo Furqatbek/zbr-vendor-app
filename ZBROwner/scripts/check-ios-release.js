@@ -17,7 +17,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
+const { KEY_DIRS, findAscKey, listAscKeys } = require('./lib/asc-key');
 
 const root = path.resolve(__dirname, '..');
 const problems = [];
@@ -357,13 +357,9 @@ if (!TEAM_ID) {
 // app-specific password. The API key is better for repeat use (no 2FA, works
 // unattended); the password is faster to get hold of the first time.
 if (KEY_ID && ISSUER_ID) {
-  const KEY_DIRS = [
-    path.join(os.homedir(), '.appstoreconnect', 'private_keys'),
-    path.join(os.homedir(), 'private_keys'),
-    path.join(root, 'private_keys'),
-  ];
   const keyName = `AuthKey_${KEY_ID}.p8`;
   const searched = KEY_DIRS.map((d) => path.join(d, keyName));
+  const foundKey = findAscKey(KEY_ID);
 
   // Both ids are 10 alphanumerics, so shape alone cannot tell them apart — but
   // they are never equal, and confusing them is the easy mistake to make.
@@ -385,13 +381,14 @@ if (KEY_ID && ISSUER_ID) {
       `ZBR_ASC_ISSUER_ID is "${ISSUER_ID}" — the issuer id is a UUID, shown above\n` +
         '     the key list in App Store Connect → Users and Access → Integrations.',
     );
-  } else if (searched.some((p) => fs.existsSync(p))) {
-    ok.push(`Upload auth: App Store Connect API key (${keyName})`);
+  } else if (foundKey) {
+    // Print the resolved PATH, not just the filename: go-live-ios.js passes this
+    // exact path to xcodebuild, so seeing it here is the proof the archive will
+    // authenticate rather than fall back to Xcode's account.
+    ok.push(`Upload auth: App Store Connect API key at ${foundKey}`);
   } else {
     // Naming the keys that ARE present usually reveals the right Key ID.
-    const present = KEY_DIRS.filter((d) => fs.existsSync(d)).flatMap((d) =>
-      fs.readdirSync(d).filter((f) => /^AuthKey_.+\.p8$/.test(f)).map((f) => path.join(d, f)),
-    );
+    const present = listAscKeys();
     credential.push(
       `${keyName} not found. altool looks for it in:\n` +
         searched.map((p) => `       ${p}`).join('\n') +
