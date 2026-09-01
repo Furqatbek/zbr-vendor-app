@@ -434,7 +434,8 @@ if (KEY_ID && ISSUER_ID) {
       '\n' +
       '     B) App Store Connect API key (better for repeat/CI use)\n' +
       '        App Store Connect → Users and Access → Integrations → App Store\n' +
-      '        Connect API → + (role: App Manager). The .p8 downloads ONCE.\n' +
+      '        Connect API → + (role: ADMIN — App Manager cannot create the\n' +
+      '        distribution certificate). The .p8 downloads ONCE.\n' +
       '          export ZBR_ASC_KEY_ID=XXXXXXXXXX\n' +
       '          export ZBR_ASC_ISSUER_ID=<issuer uuid>\n' +
       '          mv ~/Downloads/AuthKey_*.p8 ~/.appstoreconnect/private_keys/\n' +

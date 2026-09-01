@@ -97,8 +97,7 @@ function makeToken(privateKey) {
   if (res.status === 403) {
     console.log('\n  PROBLEM  403 Forbidden — the key authenticates but lacks permission.');
     console.log('           Creating signing certificates and provisioning profiles needs');
-    console.log('           the Admin or App Manager role. A Developer-role key gets');
-    console.log('           exactly this far and no further.\n');
+    console.log('           the Admin role. A lower-role key gets this far and no further.\n');
     process.exit(1);
   }
   if (!res.ok) {
@@ -166,8 +165,12 @@ function makeToken(privateKey) {
 
   if (teamIds.length) {
     console.log(`  ok      Team ${teamIds.join(' / ')} matches ZBR_APPLE_TEAM_ID\n`);
-    console.log('Credentials are fully consistent. If xcodebuild still fails, the');
-    console.log('problem is in Xcode\'s local state, not in the credentials.\n');
+    console.log('Credentials are consistent.\n');
+    console.log('Note: this proves READ access. Creating the distribution certificate');
+    console.log('needs the ADMIN role, and there is no way to test that without');
+    console.log('actually creating one. If the export fails with "Cloud signing');
+    console.log('permission error", the key is below Admin — revoke it and issue a new');
+    console.log('one, as a key\'s role cannot be changed.\n');
     return;
   }
 

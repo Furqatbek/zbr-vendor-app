@@ -84,8 +84,15 @@ work, and the generated one is `xxxx-xxxx-xxxx-xxxx`.
 
 **B) App Store Connect API key** — better for repeat or CI use: no 2FA, and it
 survives a password change. App Store Connect → Users and Access → Integrations
-→ App Store Connect API → **+**, role **App Manager**. The `.p8` downloads
+→ App Store Connect API → **+**, role **Admin**. The `.p8` downloads
 **once**; Apple never shows it again.
+
+> **It must be Admin.** Only an Admin key can access cloud-managed
+> distribution certificates. An App Manager key reads certificates and App IDs
+> perfectly well — so `check:asc-key` passes — and then the export fails with
+> `Cloud signing permission error` / `No signing certificate "iOS Distribution"
+> found`. A key's role cannot be changed after creation: revoke it and make a
+> new one.
 
 ```bash
 mkdir -p ~/.appstoreconnect/private_keys
