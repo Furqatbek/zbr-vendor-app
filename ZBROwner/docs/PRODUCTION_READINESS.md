@@ -203,7 +203,10 @@ backend endpoint lands. (`d13baee`)
   Play rejects a duplicate. (`9e043bf`)
 - `expo-image-picker` used but not registered as a plugin in `app.json` — no
   `NSPhotoLibraryUsageDescription`; will bite on App Store review / camera use.
-- `expo-av` (order alarm) is deprecated in favor of `expo-audio`/`expo-video`.
+- ~~`expo-av` (order alarm) is deprecated in favor of `expo-audio`/`expo-video`.~~
+  **Done** — expo-av was removed. It no longer compiles against this SDK: its
+  `EXAV.h` imports `ExpoModulesCore/EXEventEmitter.h`, which is gone, so an iOS
+  archive fails with "could not build Objective-C module 'EXAV'".
 - Dead/unreachable UI shipped in bundle: `settings/payments.tsx` (fully built,
   menu entry commented out), `settings/staff.tsx`, `settings/sold-items.tsx`.
 - Dead buttons (no `onPress`): Reports "Export PDF", order-detail chat bubble,

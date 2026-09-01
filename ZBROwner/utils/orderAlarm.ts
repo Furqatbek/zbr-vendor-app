@@ -1,13 +1,16 @@
 /**
  * Persistent alarm sound for new incoming orders.
  * Plays a repeating alert tone until explicitly stopped.
- * Uses expo-av with system notification sound as fallback.
+ *
+ * Uses expo-audio. expo-av was removed: it no longer compiles against this SDK
+ * (its EXAV.h imports ExpoModulesCore/EXEventEmitter.h, which no longer exists),
+ * so an iOS archive fails outright with "could not build Objective-C module
+ * 'EXAV'". Android never surfaced it because the break is in the iOS sources.
  */
-import { Audio } from 'expo-av';
-import { Platform } from 'react-native';
+import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 
-let sound: Audio.Sound | null = null;
+let player: AudioPlayer | null = null;
 let hapticInterval: ReturnType<typeof setInterval> | null = null;
 
 /**
@@ -16,28 +19,31 @@ let hapticInterval: ReturnType<typeof setInterval> | null = null;
  */
 export async function startAlarm() {
   // Already playing
-  if (sound) return;
+  if (player) return;
 
   try {
-    // playsInSilentModeIOS is what makes the alarm audible with the ringer off,
-    // and it needs no background mode.
+    // playsInSilentMode is what makes the alarm audible with the ringer off,
+    // and it needs no background mode. (expo-av called this playsInSilentModeIOS.)
     //
-    // staysActiveInBackground is deliberately false: this alarm only plays while
+    // shouldPlayInBackground is deliberately false: this alarm only plays while
     // the NewOrderAlert modal is on screen, i.e. always in the foreground.
     // Claiming background audio would mean declaring the "audio" UIBackgroundMode
     // without ever using it — an App Store rejection reason. Screen-off alerting
     // comes from the FCM/APNs notification channel sound, not from here.
-    await Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-      shouldDuckAndroid: false,
+    //
+    // doNotMix takes exclusive audio focus: a new order must not be a quiet layer
+    // under whatever else is playing in the restaurant.
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+      interruptionMode: 'doNotMix',
     });
 
-    const { sound: loaded } = await Audio.Sound.createAsync(
-      require('../assets/sounds/new_order.wav'),
-      { isLooping: true, volume: 1.0, shouldPlay: true },
-    );
-    sound = loaded;
+    const created = createAudioPlayer(require('../assets/sounds/new_order.wav'));
+    created.loop = true;
+    created.volume = 1.0;
+    created.play();
+    player = created;
   } catch {
     // Sound file may be missing — fall back to haptics only
   }
@@ -58,13 +64,15 @@ export async function stopAlarm() {
     hapticInterval = null;
   }
 
-  if (sound) {
+  if (player) {
     try {
-      await sound.stopAsync();
-      await sound.unloadAsync();
+      player.pause();
+      // remove() releases the native player. Without it each alert would leak
+      // one, and they are a finite resource.
+      player.remove();
     } catch {
-      // Already unloaded
+      // Already released
     }
-    sound = null;
+    player = null;
   }
 }

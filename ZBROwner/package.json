@@ -54,7 +54,7 @@
     "eslint-config-expo": "~55.0.1",
     "expo": "~55.0.8",
     "expo-application": "~55.0.10",
-    "expo-av": "^16.0.8",
+    "expo-audio": "~55.0.18",
     "expo-build-properties": "~55.0.17",
     "expo-constants": "^55.0.9",
     "expo-haptics": "^55.0.9",

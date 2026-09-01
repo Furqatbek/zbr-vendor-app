@@ -46,7 +46,7 @@ not just `app.json`, because libraries inject their own permissions.
 | `INTERNET` | API + WebSocket |
 | `POST_NOTIFICATIONS` | new-order alerts |
 | `VIBRATE`, `WAKE_LOCK` | order alarm |
-| `MODIFY_AUDIO_SETTINGS` | alarm playback (expo-av) |
+| `MODIFY_AUDIO_SETTINGS` | alarm playback (expo-audio) |
 | `ACCESS_COARSE_LOCATION` | one-shot foreground capture of the restaurant's coordinates (Balanced accuracy; **FINE is blocked**) |
 
 > The list above is the **exact** set that survives into the release manifest.
