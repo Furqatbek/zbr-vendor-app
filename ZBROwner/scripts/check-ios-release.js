@@ -231,10 +231,15 @@ const EXPECTED_VARS = new Set([
 for (const name of Object.keys(process.env)) {
   if (!name.startsWith('ZBR_') || EXPECTED_VARS.has(name)) continue;
   if (/PASS|SPECIFIC/.test(name)) {
-    problems.push(
-      `${name} is set, but the variable this reads is ZBR_APP_SPECIFIC_PASSWORD.\n` +
-        `       unset ${name}\n` +
-        '       export ZBR_APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx',
+    // Only fatal when the real variable is absent — then this is almost
+    // certainly where the password went. Once ZBR_APP_SPECIFIC_PASSWORD is set,
+    // a leftover from an earlier attempt is untidy, not broken.
+    (APP_PASSWORD ? warnings : problems).push(
+      APP_PASSWORD
+        ? `${name} is set but unused — a leftover. Tidy up with: unset ${name}`
+        : `${name} is set, but the variable this reads is ZBR_APP_SPECIFIC_PASSWORD.\n` +
+          `       unset ${name}\n` +
+          '       export ZBR_APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx',
     );
   } else if (/APPLE|ASC|TEAM|ISSUER|KEY/.test(name)) {
     warnings.push(`${name} is set but unused — did you mean one of ${[...EXPECTED_VARS].join(', ')}?`);
