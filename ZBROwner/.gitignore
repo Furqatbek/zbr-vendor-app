@@ -41,3 +41,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# release artifacts — the .xcarchive, the .ipa, and the generated
+# ExportOptions.plist that carries the Apple team id
+/build
