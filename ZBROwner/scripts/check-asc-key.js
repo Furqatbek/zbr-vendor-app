@@ -126,8 +126,53 @@ function makeToken(privateKey) {
     process.exit(1);
   }
 
+  // Nothing in the API returns "the team id" as a field, but every certificate
+  // Apple issues carries it as the OU of its subject. Reading it back beats
+  // asking someone to transcribe it from a web page — that transcription is
+  // exactly where a wrong team id comes from.
+  let teamIds = [];
+  try {
+    const certRes = await call('certificates?limit=200');
+    if (certRes.ok) {
+      const certs = (await certRes.json()).data ?? [];
+      const found = new Set();
+      for (const c of certs) {
+        const content = c.attributes?.certificateContent;
+        if (!content) continue;
+        try {
+          const subject = new crypto.X509Certificate(Buffer.from(content, 'base64')).subject;
+          const m = subject.match(/OU=([A-Z0-9]{10})/);
+          if (m) found.add(m[1]);
+        } catch {
+          // Unparseable certificate; the others still tell us what we need.
+        }
+      }
+      teamIds = [...found];
+    }
+  } catch {
+    // Non-fatal: the checks above already passed.
+  }
+
   console.log(`${'─'.repeat(50)}`);
-  console.log('The key is valid and can see the App ID. If xcodebuild still reports');
-  console.log(`"No Account for Team ${TEAM_ID}", that team id does not match the team`);
-  console.log('this key belongs to — check developer.apple.com → Membership details.\n');
+
+  if (teamIds.length && TEAM_ID && !teamIds.includes(TEAM_ID)) {
+    console.log(`  PROBLEM  ZBR_APPLE_TEAM_ID is ${TEAM_ID}, but this key's certificates`);
+    console.log(`           belong to team ${teamIds.join(' / ')}.`);
+    console.log('           That mismatch is exactly what makes xcodebuild report');
+    console.log(`           'No Account for Team "${TEAM_ID}"'. Fix it with:`);
+    console.log(`             export ZBR_APPLE_TEAM_ID=${teamIds[0]}\n`);
+    process.exit(1);
+  }
+
+  if (teamIds.length) {
+    console.log(`  ok      Team ${teamIds.join(' / ')} matches ZBR_APPLE_TEAM_ID\n`);
+    console.log('Credentials are fully consistent. If xcodebuild still fails, the');
+    console.log('problem is in Xcode\'s local state, not in the credentials.\n');
+    return;
+  }
+
+  console.log('The key is valid and can see the App ID, but this team has no');
+  console.log('certificates yet, so the team id could not be confirmed from Apple.');
+  console.log(`If xcodebuild still reports 'No Account for Team ${TEAM_ID}', compare`);
+  console.log('that value with developer.apple.com → Membership details.\n');
 })();
