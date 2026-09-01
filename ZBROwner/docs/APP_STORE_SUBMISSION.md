@@ -114,6 +114,18 @@ The password reaches `altool` as `@env:ZBR_APP_SPECIFIC_PASSWORD`, so it is read
 from the environment rather than passed as an argument — it never shows up in
 the process list.
 
+**Sign in to Xcode** — Xcode → Settings → Accounts → **+** → Apple ID. This is
+what lets `xcodebuild -allowProvisioningUpdates` create your distribution
+certificate and App Store provisioning profile on the first archive. An
+app-specific password does **not** cover this: it authorises uploads, not the
+developer portal. (If you use the API key route instead, the key is passed to
+`xcodebuild` and covers it.)
+
+`prebuild --clean` regenerates the Xcode project with no team selected, so
+`go-live:ios` passes `DEVELOPMENT_TEAM` and `CODE_SIGN_STYLE=Automatic` on the
+`xcodebuild` command line every run. There is nothing to set in the Xcode UI,
+and anything you do set there is wiped by the next prebuild.
+
 **App Store Connect record** — create the app with bundle ID `com.zbr.owner`,
 matching `app.json` exactly. Register the App ID first at
 developer.apple.com → Identifiers, with **Push Notifications** capability

@@ -31,6 +31,7 @@
 
 const { spawnSync } = require('child_process');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
@@ -172,12 +173,39 @@ fs.mkdirSync(buildDir, { recursive: true });
 const archivePath = path.join(buildDir, `${scheme}.xcarchive`);
 const exportPath = path.join(buildDir, 'ipa');
 
+// `prebuild --clean` regenerates the project with no DEVELOPMENT_TEAM, so the
+// team has to be supplied on the command line — setting it only in
+// ExportOptions.plist is too late, that is read at export time and the archive
+// fails first with "Signing for X requires a development team".
+//
+// -allowProvisioningUpdates lets Xcode create the distribution certificate and
+// App Store provisioning profile on first use. It needs credentials for the
+// developer portal: an App Store Connect API key if one is configured, and
+// otherwise the Apple ID signed into Xcode (Settings -> Accounts), because an
+// app-specific password authenticates uploads but not the portal.
+const ascKeyPath = process.env.ZBR_ASC_KEY_ID
+  ? [
+      path.join(os.homedir(), '.appstoreconnect', 'private_keys', `AuthKey_${process.env.ZBR_ASC_KEY_ID}.p8`),
+      path.join(os.homedir(), 'private_keys', `AuthKey_${process.env.ZBR_ASC_KEY_ID}.p8`),
+    ].find((p) => fs.existsSync(p))
+  : null;
+
 run('Archiving', 'xcodebuild', [
   '-workspace', path.join(iosDir, workspace),
   '-scheme', scheme,
   '-configuration', 'Release',
   '-destination', 'generic/platform=iOS',
   '-archivePath', archivePath,
+  '-allowProvisioningUpdates',
+  ...(ascKeyPath
+    ? [
+        '-authenticationKeyPath', ascKeyPath,
+        '-authenticationKeyID', process.env.ZBR_ASC_KEY_ID,
+        '-authenticationKeyIssuerID', process.env.ZBR_ASC_ISSUER_ID,
+      ]
+    : []),
+  `DEVELOPMENT_TEAM=${process.env.ZBR_APPLE_TEAM_ID}`,
+  'CODE_SIGN_STYLE=Automatic',
   'archive',
 ]);
 

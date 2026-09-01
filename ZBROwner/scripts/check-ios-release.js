@@ -205,6 +205,33 @@ if (process.platform !== 'darwin') {
   );
 } else {
   ok.push('Running on macOS');
+
+  // Automatic signing can create the distribution certificate on first use, but
+  // only if Xcode can authenticate to the developer portal. An app-specific
+  // password does NOT do that — it authorises uploads, not the portal — so
+  // without an API key the Apple ID must be signed into Xcode itself.
+  let identities = '';
+  try {
+    identities = require('child_process')
+      .execSync('security find-identity -v -p codesigning 2>/dev/null', { encoding: 'utf8' });
+  } catch {
+    // security is missing or returned non-zero; treat as "cannot tell".
+  }
+  const hasDistribution = /Apple Distribution|iPhone Distribution/.test(identities);
+  if (hasDistribution) {
+    ok.push('Signing certificate present (Apple Distribution)');
+  } else if (!process.env.ZBR_ASC_KEY_ID) {
+    warnings.push(
+      'No Apple Distribution certificate in the keychain, and no App Store Connect\n' +
+        '     API key to create one with. xcodebuild will try to make it via\n' +
+        '     -allowProvisioningUpdates, which needs your Apple ID signed into Xcode:\n' +
+        '       Xcode → Settings → Accounts → + → Apple ID\n' +
+        '     An app-specific password does not cover this — it authorises uploads,\n' +
+        '     not the developer portal.',
+    );
+  } else {
+    ok.push('No distribution certificate yet — the API key can create one');
+  }
 }
 
 // ── Upload credentials ──────────────────────────────────────────────────────
