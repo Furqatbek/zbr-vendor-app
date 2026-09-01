@@ -236,18 +236,49 @@ if (!TEAM_ID) {
 // app-specific password. The API key is better for repeat use (no 2FA, works
 // unattended); the password is faster to get hold of the first time.
 if (KEY_ID && ISSUER_ID) {
-  const keyName = `AuthKey_${KEY_ID}.p8`;
-  const searched = [
-    path.join(os.homedir(), '.appstoreconnect', 'private_keys', keyName),
-    path.join(os.homedir(), 'private_keys', keyName),
-    path.join(root, 'private_keys', keyName),
+  const KEY_DIRS = [
+    path.join(os.homedir(), '.appstoreconnect', 'private_keys'),
+    path.join(os.homedir(), 'private_keys'),
+    path.join(root, 'private_keys'),
   ];
-  if (searched.some((p) => fs.existsSync(p))) {
+  const keyName = `AuthKey_${KEY_ID}.p8`;
+  const searched = KEY_DIRS.map((d) => path.join(d, keyName));
+
+  // Both ids are 10 alphanumerics, so shape alone cannot tell them apart — but
+  // they are never equal, and confusing them is the easy mistake to make.
+  if (TEAM_ID && KEY_ID === TEAM_ID) {
+    problems.push(
+      `ZBR_ASC_KEY_ID is set to your TEAM id (${KEY_ID}). They are different\n` +
+        '     identifiers that happen to share a format:\n' +
+        '       team id  — identifies your Apple Developer organisation\n' +
+        '       key id   — identifies one App Store Connect API key\n' +
+        '     Either use the Apple ID route instead:\n' +
+        '       unset ZBR_ASC_KEY_ID ZBR_ASC_ISSUER_ID\n' +
+        '       export ZBR_APPLE_ID=you@example.com\n' +
+        '       export ZBR_APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx\n' +
+        '     or take the real Key ID from App Store Connect → Users and Access\n' +
+        '     → Integrations → App Store Connect API.',
+    );
+  } else if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(ISSUER_ID)) {
+    problems.push(
+      `ZBR_ASC_ISSUER_ID is "${ISSUER_ID}" — the issuer id is a UUID, shown above\n` +
+        '     the key list in App Store Connect → Users and Access → Integrations.',
+    );
+  } else if (searched.some((p) => fs.existsSync(p))) {
     ok.push(`Upload auth: App Store Connect API key (${keyName})`);
   } else {
+    // Naming the keys that ARE present usually reveals the right Key ID.
+    const present = KEY_DIRS.filter((d) => fs.existsSync(d)).flatMap((d) =>
+      fs.readdirSync(d).filter((f) => /^AuthKey_.+\.p8$/.test(f)).map((f) => path.join(d, f)),
+    );
     problems.push(
       `${keyName} not found. altool looks for it in:\n` +
-        searched.map((p) => `       ${p}`).join('\n'),
+        searched.map((p) => `       ${p}`).join('\n') +
+        (present.length
+          ? '\n     These API keys ARE present — set ZBR_ASC_KEY_ID to match one:\n' +
+            present.map((p) => `       ${p}`).join('\n')
+          : '\n     No AuthKey_*.p8 anywhere. Either download the key from App Store\n' +
+            '     Connect, or use the Apple ID + app-specific password route instead.'),
     );
   }
 } else if (APPLE_ID && APP_PASSWORD) {
