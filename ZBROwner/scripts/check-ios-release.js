@@ -229,6 +229,11 @@ if (process.platform !== 'darwin') {
   // account, automatic signing cannot reach the developer portal and the
   // archive dies with 'No Account for Team "X"' — after several minutes of
   // compiling. Checking it up front turns that into an instant failure.
+  //
+  // This key is not a documented interface and newer Xcode releases may not
+  // write it, so absence proves nothing — only a populated list that EXCLUDES
+  // the configured team is evidence of a real problem. Guessing either way
+  // would be worse than saying so.
   let xcodeTeams = '';
   try {
     xcodeTeams = require('child_process')
@@ -236,23 +241,37 @@ if (process.platform !== 'darwin') {
         encoding: 'utf8',
       });
   } catch {
-    // Key absent (no account ever added) or Xcode preferences unreadable.
+    // Key absent (no account ever added, or this Xcode does not write it).
   }
-  const teamSignedIn = TEAM_ID && xcodeTeams.includes(TEAM_ID);
+  const knownTeams = [...new Set(
+    [...xcodeTeams.matchAll(/\b([A-Z0-9]{10})\b/g)].map((m) => m[1]),
+  )];
 
-  if (teamSignedIn) {
+  const teamSignedIn = Boolean(TEAM_ID) && knownTeams.includes(TEAM_ID);
+
+  if (!TEAM_ID) {
+    // The missing team is already reported below; a second message about an
+    // Xcode account for team "undefined" would only obscure the real cause.
+  } else if (teamSignedIn) {
     ok.push(`Xcode is signed in to team ${TEAM_ID}`);
   } else if (process.env.ZBR_ASC_KEY_ID) {
-    ok.push('Xcode has no account for this team, but the API key can sign in its place');
-  } else {
+    ok.push('Xcode account not confirmed, but the API key authenticates in its place');
+  } else if (knownTeams.length) {
     problems.push(
-      `Xcode has no signed-in account for team ${TEAM_ID}. Automatic signing cannot\n` +
-        '     reach the developer portal, and the archive fails with\n' +
-        `     'No Account for Team "${TEAM_ID}"' after several minutes of compiling.\n` +
-        '     Fix it in the GUI — there is no CLI equivalent:\n' +
-        '       Xcode → Settings → Accounts → + → Apple ID → sign in\n' +
-        '     Use the Apple ID that belongs to this team. An app-specific password\n' +
-        '     does NOT cover this: it authorises uploads, not the portal.',
+      `Xcode has accounts, but none for team ${TEAM_ID}. It knows: ${knownTeams.join(', ')}\n` +
+        `     Either ZBR_APPLE_TEAM_ID is wrong — try one of the above — or the\n` +
+        '     signed-in Apple ID is not a member of that team.',
+    );
+  } else if (hasDistribution) {
+    ok.push('Xcode account not confirmed, but a distribution certificate is installed');
+  } else {
+    warnings.push(
+      `Could not confirm an Xcode account for team ${TEAM_ID} — this Xcode may not\n` +
+        '     record one where the check looks. If the archive fails with\n' +
+        `     'No Account for Team "${TEAM_ID}"', sign in at\n` +
+        '       Xcode → Settings → Accounts → + → Apple ID\n' +
+        '     and confirm that account lists this team. An app-specific password\n' +
+        '     does NOT cover this: it authorises uploads, not the developer portal.',
     );
   }
 
