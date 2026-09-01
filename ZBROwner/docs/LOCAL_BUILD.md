@@ -8,6 +8,11 @@ account, no cloud service.**
 > on expo-router, expo-notifications, expo-secure-store and others, and those
 > stay. `npx expo prebuild` runs entirely on your machine and needs no account.
 
+> **iOS lives in its own guide.** This page is Android/Gradle. For the App Store
+> — `npm run go-live:ios`, Xcode setup, App Privacy answers — see
+> [`APP_STORE_SUBMISSION.md`](./APP_STORE_SUBMISSION.md). The gate chain and the
+> flag conventions are identical on both platforms.
+
 ---
 
 ## 1. What dropping EAS changes

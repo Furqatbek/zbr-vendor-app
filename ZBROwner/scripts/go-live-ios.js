@@ -1,0 +1,227 @@
+#!/usr/bin/env node
+/**
+ * One command to archive and upload an iOS build to App Store Connect.
+ *
+ * The Android counterpart is go-live.js; the gate list is deliberately the
+ * same, because the JS bundle and its baked-in EXPO_PUBLIC_* values are shared.
+ * What differs is everything after the gates: xcodebuild instead of Gradle, and
+ * an actual upload step, since App Store Connect has no "drag the file in"
+ * equivalent to the Play Console upload box.
+ *
+ *   config      wrong host, duplicate build number, dev APNs entitlement
+ *   push        google-services.json / APNs sanity (shared with Android)
+ *   privacy     a policy URL that 200s but serves no policy
+ *   typecheck / tests / lint
+ *   bump        buildNumber +1 (App Store Connect rejects a duplicate)
+ *   prebuild    regenerates ios/ so it cannot be stale
+ *   pods        CocoaPods install
+ *   archive     xcodebuild archive
+ *   export      xcodebuild -exportArchive -> .ipa
+ *   upload      xcrun altool --upload-app
+ *
+ * Usage — prefer the named scripts, npm mangles `-- --flag`:
+ *   npm run go-live:ios             gates -> archive -> upload to App Store Connect
+ *   npm run go-live:ios:checks      gates only, no build (runs anywhere)
+ *   npm run go-live:ios:no-upload   archive and export an .ipa, upload manually
+ *   npm run go-live:ios:no-bump     rebuild without consuming a build number
+ *
+ * Requires macOS with Xcode, plus ZBR_APPLE_TEAM_ID, ZBR_ASC_KEY_ID and
+ * ZBR_ASC_ISSUER_ID — see docs/APP_STORE_SUBMISSION.md.
+ */
+
+const { spawnSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+const root = path.resolve(__dirname, '..');
+const args = process.argv.slice(2);
+
+// npm parses unknown dashed args as its own config and drops them before the
+// script sees them, leaving npm_config_<name> behind. See go-live.js.
+function hasFlag(name) {
+  if (args.includes(`--${name}`)) return true;
+  if (name.startsWith('no-')) {
+    return process.env[`npm_config_${name.slice(3).replace(/-/g, '_')}`] === 'false';
+  }
+  const env = process.env[`npm_config_${name.replace(/-/g, '_')}`];
+  return env === 'true' || env === '';
+}
+
+const checksOnly = hasFlag('checks');
+const skipUpload = hasFlag('no-upload');
+const skipPrivacy = hasFlag('skip-privacy');
+
+const C = {
+  reset: '\x1b[0m', bold: '\x1b[1m', dim: '\x1b[2m',
+  red: '\x1b[31m', green: '\x1b[32m', yellow: '\x1b[33m', cyan: '\x1b[36m',
+};
+
+const warnings = [];
+
+function run(label, cmd, cmdArgs, opts = {}) {
+  process.stdout.write(`${C.cyan}▸${C.reset} ${C.bold}${label}${C.reset}\n`);
+  const res = spawnSync(cmd, cmdArgs, {
+    cwd: opts.cwd || root,
+    stdio: 'inherit',
+    shell: opts.shell ?? false,
+  });
+  if (res.status !== 0) {
+    if (opts.nonFatal) {
+      console.warn(`${C.yellow}⚠ ${label} — continuing (${opts.nonFatal})${C.reset}\n`);
+      warnings.push(label);
+      return;
+    }
+    console.error(`\n${C.red}✖ FAILED: ${label}${C.reset}`);
+    console.error(`${C.dim}  Nothing was uploaded. Fix the above and re-run.${C.reset}\n`);
+    process.exit(res.status || 1);
+  }
+  console.log(`${C.green}✔${C.reset} ${label}\n`);
+}
+
+console.log(`\n${C.bold}ZBR Owner — iOS release${C.reset}`);
+console.log(
+  `${C.dim}${
+    checksOnly ? 'checks only (no build)' : skipUpload ? 'archive + export, no upload' : 'archive -> App Store Connect'
+  }${C.reset}`,
+);
+if (skipPrivacy) console.log(`${C.yellow}--skip-privacy: the policy URL check will warn, not block${C.reset}`);
+console.log('');
+
+// ── gates ───────────────────────────────────────────────────────────────────
+// checksOnly is allowed to run on Linux/Windows so the config can be validated
+// away from the Mac; anything past the gates genuinely needs Xcode.
+run('iOS release configuration', 'node', ['scripts/check-ios-release.js'], {
+  nonFatal: checksOnly && process.platform !== 'darwin' ? 'not on macOS, checks-only run' : undefined,
+});
+run('Push configuration', 'node', ['scripts/check-push-config.js']);
+run('Privacy policy URL serves a real policy', 'node', ['scripts/check-privacy-url.js'], {
+  nonFatal: skipPrivacy ? '--skip-privacy: policy handled in App Store Connect' : undefined,
+});
+run('TypeScript', 'npx', ['tsc', '--noEmit'], { shell: true });
+run('Tests', 'npx', ['jest', '--ci', '--runInBand'], { shell: true });
+run('Lint', 'npx', ['eslint', '.'], { shell: true });
+
+if (checksOnly) {
+  console.log(`${C.green}${C.bold}All gates passed.${C.reset} Re-run without --checks to build.\n`);
+  process.exit(0);
+}
+
+if (process.platform !== 'darwin') {
+  console.error(`\n${C.red}✖ An iOS archive requires macOS with Xcode.${C.reset}\n`);
+  process.exit(1);
+}
+
+// ── build ───────────────────────────────────────────────────────────────────
+// Bump BEFORE prebuild: Xcode stamps the archive from Info.plist, which
+// prebuild generates from app.json.
+if (!hasFlag('no-bump')) {
+  run('Bumping buildNumber (+1)', 'node', ['scripts/bump-version-code.js']);
+} else {
+  console.log(`${C.yellow}▸ Skipping buildNumber bump (--no-bump)${C.reset}\n`);
+}
+
+run('Regenerating ios/ from app.json', 'npx', ['expo', 'prebuild', '--platform', 'ios', '--clean'], {
+  shell: true,
+});
+
+const iosDir = path.join(root, 'ios');
+const workspace = fs
+  .readdirSync(iosDir)
+  .find((f) => f.endsWith('.xcworkspace'));
+if (!workspace) {
+  console.error(`\n${C.red}✖ No .xcworkspace in ios/ after prebuild.${C.reset}\n`);
+  process.exit(1);
+}
+const scheme = workspace.replace('.xcworkspace', '');
+console.log(`${C.dim}  workspace: ${workspace}  scheme: ${scheme}${C.reset}\n`);
+
+run('CocoaPods install', 'pod', ['install'], { cwd: iosDir, shell: true });
+
+// Everything generated lives OUTSIDE ios/, which `prebuild --clean` wipes.
+const buildDir = path.join(root, 'build', 'ios');
+fs.mkdirSync(buildDir, { recursive: true });
+
+const archivePath = path.join(buildDir, `${scheme}.xcarchive`);
+const exportPath = path.join(buildDir, 'ipa');
+
+run('Archiving', 'xcodebuild', [
+  '-workspace', path.join(iosDir, workspace),
+  '-scheme', scheme,
+  '-configuration', 'Release',
+  '-destination', 'generic/platform=iOS',
+  '-archivePath', archivePath,
+  'archive',
+]);
+
+// Written fresh each run so a changed team id can never be served from a stale
+// file, and because ios/ is not the place for it — prebuild --clean deletes it.
+const exportOptions = path.join(buildDir, 'ExportOptions.plist');
+fs.writeFileSync(
+  exportOptions,
+  `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key><string>app-store-connect</string>
+  <key>teamID</key><string>${process.env.ZBR_APPLE_TEAM_ID}</string>
+  <key>signingStyle</key><string>automatic</string>
+  <key>uploadSymbols</key><true/>
+  <key>destination</key><string>export</string>
+</dict>
+</plist>
+`,
+);
+
+run('Exporting .ipa', 'xcodebuild', [
+  '-exportArchive',
+  '-archivePath', archivePath,
+  '-exportOptionsPlist', exportOptions,
+  '-exportPath', exportPath,
+]);
+
+const ipa = fs.existsSync(exportPath)
+  ? fs.readdirSync(exportPath).find((f) => f.endsWith('.ipa'))
+  : null;
+if (!ipa) {
+  console.error(`\n${C.red}✖ No .ipa produced in ${exportPath}${C.reset}\n`);
+  process.exit(1);
+}
+const ipaPath = path.join(exportPath, ipa);
+const mb = (fs.statSync(ipaPath).size / 1024 / 1024).toFixed(1);
+
+if (skipUpload) {
+  console.log(`${C.green}${C.bold}Archive complete.${C.reset}`);
+  console.log(`  ${ipaPath}  ${C.dim}(${mb} MB)${C.reset}`);
+  console.log(`${C.dim}  Upload it with Transporter.app, or re-run without --no-upload.${C.reset}\n`);
+  process.exit(0);
+}
+
+// altool --upload-app targets App Store Connect. notarytool is NOT the
+// replacement for it — that superseded altool's notarization subcommands only,
+// and talks to the notary service, which has nothing to do with the App Store.
+run('Uploading to App Store Connect', 'xcrun', [
+  'altool', '--upload-app',
+  '-f', ipaPath,
+  '-t', 'ios',
+  '--apiKey', process.env.ZBR_ASC_KEY_ID,
+  '--apiIssuer', process.env.ZBR_ASC_ISSUER_ID,
+]);
+
+const appJson = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8')).expo;
+
+console.log(`${C.green}${C.bold}Uploaded.${C.reset}`);
+console.log(`  ${ipaPath}  ${C.dim}(${mb} MB)${C.reset}`);
+console.log(`  version ${appJson.version} (${appJson.ios.buildNumber})\n`);
+if (warnings.length) {
+  console.log(`${C.yellow}  Not enforced this run: ${warnings.join(', ')}${C.reset}`);
+  console.log(`${C.yellow}  The binary is fine; these are review-time concerns.${C.reset}\n`);
+}
+
+console.log(`${C.bold}Next — these cannot be verified from here:${C.reset}`);
+console.log('  • Processing takes 5-30 min. Watch App Store Connect → TestFlight;');
+console.log('    a failure arrives by email, not in this terminal.');
+console.log('  • Export compliance is pre-answered by ITSAppUsesNonExemptEncryption.');
+console.log(`  • ${C.yellow}Account deletion (Guideline 5.1.1(v)) needs the backend endpoint${C.reset}`);
+console.log('    DELETE /api/v1/auth/account. A reviewer WILL walk that flow.');
+console.log('  • App Privacy answers and the demo account: docs/APP_STORE_SUBMISSION.md.');
+console.log(`\n${C.dim}Ship to TestFlight first — no review delay for internal testers.${C.reset}\n`);
