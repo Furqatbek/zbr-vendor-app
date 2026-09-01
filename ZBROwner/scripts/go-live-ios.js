@@ -145,6 +145,10 @@ run('iOS release configuration', 'node', [
   // Tells the check that this run stops at an .ipa, so missing upload
   // credentials warn instead of blocking.
   ...(skipUpload ? ['--no-upload'] : []),
+  // A build run regenerates ios/ a few steps below, so state already in the
+  // native project is about to be overwritten. --checks stops before that and
+  // must keep judging the project as it stands.
+  ...(checksOnly ? [] : ['--will-prebuild']),
 ], {
   nonFatal: checksOnly && process.platform !== 'darwin' ? 'not on macOS, checks-only run' : undefined,
 });

@@ -27,6 +27,11 @@ const ok = [];
 const expo = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8')).expo;
 const ios = expo?.ios ?? {};
 
+// go-live-ios.js passes this: that run bumps and then regenerates ios/ from
+// app.json, so anything already in the native project is about to be
+// overwritten and cannot affect the archive.
+const willPrebuild = process.argv.slice(2).includes('--will-prebuild');
+
 // ── Identity ────────────────────────────────────────────────────────────────
 if (!ios.bundleIdentifier) {
   problems.push('app.json: expo.ios.bundleIdentifier is missing.');
@@ -88,7 +93,13 @@ if (!plistPath) {
   const plistBuild = stringAfter('CFBundleVersion');
   // Expo templates leave $(CURRENT_PROJECT_VERSION) here, resolved by Xcode.
   if (plistBuild && !plistBuild.startsWith('$') && String(buildNumber) !== plistBuild) {
-    problems.push(
+    // A mismatch only reaches the archive when the project is NOT regenerated
+    // first — i.e. a hand-run xcodebuild. Blocking a run that prebuilds anyway
+    // would be refusing to start over a file that step is about to rewrite.
+    (willPrebuild ? ok : problems).push(
+      willPrebuild
+      ? `Info.plist says ${plistBuild}, app.json says ${buildNumber} — prebuild will resolve it`
+      :
       `buildNumber mismatch — the archive would ship ${plistBuild}, not ${buildNumber}.\n` +
         `     app.json says ${buildNumber}; ${path.relative(root, plistPath)} says ${plistBuild}.\n` +
         '     Either regenerate the project at the current number:\n' +
