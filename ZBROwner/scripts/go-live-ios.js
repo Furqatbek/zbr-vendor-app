@@ -90,7 +90,12 @@ console.log('');
 // ── gates ───────────────────────────────────────────────────────────────────
 // checksOnly is allowed to run on Linux/Windows so the config can be validated
 // away from the Mac; anything past the gates genuinely needs Xcode.
-run('iOS release configuration', 'node', ['scripts/check-ios-release.js'], {
+run('iOS release configuration', 'node', [
+  'scripts/check-ios-release.js',
+  // Tells the check that this run stops at an .ipa, so missing upload
+  // credentials warn instead of blocking.
+  ...(skipUpload ? ['--no-upload'] : []),
+], {
   nonFatal: checksOnly && process.platform !== 'darwin' ? 'not on macOS, checks-only run' : undefined,
 });
 run('Push configuration', 'node', ['scripts/check-push-config.js']);

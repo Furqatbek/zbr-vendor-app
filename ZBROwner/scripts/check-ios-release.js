@@ -218,6 +218,12 @@ const ISSUER_ID = process.env.ZBR_ASC_ISSUER_ID;
 const APPLE_ID = process.env.ZBR_APPLE_ID;
 const APP_PASSWORD = process.env.ZBR_APP_SPECIFIC_PASSWORD;
 
+// With --no-upload the run stops at an exported .ipa, so missing upload
+// credentials are not a reason to refuse to build. Signing still needs the team
+// id, which is checked above regardless.
+const uploadPlanned = !process.argv.slice(2).includes('--no-upload');
+const credential = uploadPlanned ? problems : warnings;
+
 if (!TEAM_ID) {
   problems.push(
     'ZBR_APPLE_TEAM_ID is not set. It goes in the export options that tell Xcode\n' +
@@ -247,7 +253,7 @@ if (KEY_ID && ISSUER_ID) {
   // Both ids are 10 alphanumerics, so shape alone cannot tell them apart — but
   // they are never equal, and confusing them is the easy mistake to make.
   if (TEAM_ID && KEY_ID === TEAM_ID) {
-    problems.push(
+    credential.push(
       `ZBR_ASC_KEY_ID is set to your TEAM id (${KEY_ID}). They are different\n` +
         '     identifiers that happen to share a format:\n' +
         '       team id  — identifies your Apple Developer organisation\n' +
@@ -260,7 +266,7 @@ if (KEY_ID && ISSUER_ID) {
         '     → Integrations → App Store Connect API.',
     );
   } else if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(ISSUER_ID)) {
-    problems.push(
+    credential.push(
       `ZBR_ASC_ISSUER_ID is "${ISSUER_ID}" — the issuer id is a UUID, shown above\n` +
         '     the key list in App Store Connect → Users and Access → Integrations.',
     );
@@ -271,7 +277,7 @@ if (KEY_ID && ISSUER_ID) {
     const present = KEY_DIRS.filter((d) => fs.existsSync(d)).flatMap((d) =>
       fs.readdirSync(d).filter((f) => /^AuthKey_.+\.p8$/.test(f)).map((f) => path.join(d, f)),
     );
-    problems.push(
+    credential.push(
       `${keyName} not found. altool looks for it in:\n` +
         searched.map((p) => `       ${p}`).join('\n') +
         (present.length
@@ -283,7 +289,7 @@ if (KEY_ID && ISSUER_ID) {
   }
 } else if (APPLE_ID && APP_PASSWORD) {
   if (!/^[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}$/i.test(APP_PASSWORD)) {
-    problems.push(
+    credential.push(
       'ZBR_APP_SPECIFIC_PASSWORD is not in the xxxx-xxxx-xxxx-xxxx form Apple issues.\n' +
         '     Your normal Apple ID password will NOT work — generate an app-specific\n' +
         '     one at https://account.apple.com → Sign-In and Security → App-Specific\n' +
@@ -293,13 +299,14 @@ if (KEY_ID && ISSUER_ID) {
     ok.push(`Upload auth: Apple ID ${APPLE_ID} with an app-specific password`);
   }
 } else if (KEY_ID || ISSUER_ID) {
-  problems.push(
+  credential.push(
     'Incomplete App Store Connect API key — set BOTH ZBR_ASC_KEY_ID and\n' +
       '     ZBR_ASC_ISSUER_ID, or use the Apple ID route instead.',
   );
 } else {
-  problems.push(
-    'No upload credentials — the upload step cannot authenticate. Pick either:\n' +
+  credential.push(
+    `No upload credentials configured${uploadPlanned ? ' — the upload step cannot authenticate' : " (fine for --no-upload; you'll upload the .ipa yourself)"}.\n` +
+      '     Pick either:\n' +
       '\n' +
       '     A) Apple ID + app-specific password (quickest to set up)\n' +
       '        https://account.apple.com → Sign-In and Security → App-Specific\n' +
