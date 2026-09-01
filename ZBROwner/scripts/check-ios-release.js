@@ -218,6 +218,29 @@ const ISSUER_ID = process.env.ZBR_ASC_ISSUER_ID;
 const APPLE_ID = process.env.ZBR_APPLE_ID;
 const APP_PASSWORD = process.env.ZBR_APP_SPECIFIC_PASSWORD;
 
+// A near-miss variable name looks exactly like having set nothing at all, and
+// ZBR_APPLE_SPECIFIC_PASSWORD is one character of muscle memory away from the
+// real one. Name what was actually found rather than repeating the setup text.
+const EXPECTED_VARS = new Set([
+  'ZBR_APPLE_ID',
+  'ZBR_APP_SPECIFIC_PASSWORD',
+  'ZBR_APPLE_TEAM_ID',
+  'ZBR_ASC_KEY_ID',
+  'ZBR_ASC_ISSUER_ID',
+]);
+for (const name of Object.keys(process.env)) {
+  if (!name.startsWith('ZBR_') || EXPECTED_VARS.has(name)) continue;
+  if (/PASS|SPECIFIC/.test(name)) {
+    problems.push(
+      `${name} is set, but the variable this reads is ZBR_APP_SPECIFIC_PASSWORD.\n` +
+        `       unset ${name}\n` +
+        '       export ZBR_APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx',
+    );
+  } else if (/APPLE|ASC|TEAM|ISSUER|KEY/.test(name)) {
+    warnings.push(`${name} is set but unused — did you mean one of ${[...EXPECTED_VARS].join(', ')}?`);
+  }
+}
+
 // With --no-upload the run stops at an exported .ipa, so missing upload
 // credentials are not a reason to refuse to build. Signing still needs the team
 // id, which is checked above regardless.
@@ -288,7 +311,13 @@ if (KEY_ID && ISSUER_ID) {
     );
   }
 } else if (APPLE_ID && APP_PASSWORD) {
-  if (!/^[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}$/i.test(APP_PASSWORD)) {
+  if (!APPLE_ID.includes('@')) {
+    credential.push(
+      `ZBR_APPLE_ID is "${APPLE_ID}" — it must be the EMAIL ADDRESS you sign in to\n` +
+        '     Apple with, not your name. Quote it if it contains spaces, or the shell\n' +
+        '     keeps only the first word.',
+    );
+  } else if (!/^[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}$/i.test(APP_PASSWORD)) {
     credential.push(
       'ZBR_APP_SPECIFIC_PASSWORD is not in the xxxx-xxxx-xxxx-xxxx form Apple issues.\n' +
         '     Your normal Apple ID password will NOT work — generate an app-specific\n' +
