@@ -12,7 +12,7 @@ a local Mac, with no EAS. The Play equivalent is
 |---|---|---|---|
 | 1 | **`DELETE /api/v1/auth/account`** | backend | Guideline **5.1.1(v)**: an app with accounts must let the user delete one **from inside the app**. The screen ships in this build and a reviewer **will** walk it — with no endpoint they hit a server error. Contract in [`BACKEND_HANDOFF.md`](./BACKEND_HANDOFF.md) §2.1. |
 | 2 | **Apple Developer Program membership** | you | $99/yr. Nothing below works without it. |
-| 3 | **App Store Connect API key** | you | §2. The upload step authenticates with it. |
+| 3 | **Upload credentials** | you | §2. Either an Apple ID with an app-specific password, or an App Store Connect API key. |
 | 4 | **Reviewer demo account** | you | Same problem as Play: no public sign-up, so a reviewer sees a login wall. §5. |
 | 5 | **Screenshots** | you | 6.7" iPhone required; 12.9" iPad required because `supportsTablet: true`. |
 | 6 | **Privacy policy URL** | you | Required in the App Store Connect listing, and Apple fetches it. |
@@ -65,26 +65,54 @@ sudo xcodebuild -license accept
 brew install cocoapods          # or: sudo gem install cocoapods
 ```
 
-**App Store Connect API key** — App Store Connect → Users and Access →
-Integrations → App Store Connect API → **+**, role **App Manager**. Download
-the `.p8` **once**; Apple never shows it again.
+**Team ID** — the 10-character code at developer.apple.com → Membership
+details. If you already have a signing certificate installed it is also in the
+parentheses here:
+
+```bash
+security find-identity -v -p codesigning
+#   1) A1B2… "Apple Distribution: Your Company (ABCDE12345)"
+#                                                ^^^^^^^^^^
+```
+
+**Upload credentials** — `altool` takes either. Pick one:
+
+**A) Apple ID + app-specific password** — quickest. At
+[account.apple.com](https://account.apple.com) → Sign-In and Security →
+App-Specific Passwords → generate one. Your normal Apple ID password will not
+work, and the generated one is `xxxx-xxxx-xxxx-xxxx`.
+
+**B) App Store Connect API key** — better for repeat or CI use: no 2FA, and it
+survives a password change. App Store Connect → Users and Access → Integrations
+→ App Store Connect API → **+**, role **App Manager**. The `.p8` downloads
+**once**; Apple never shows it again.
 
 ```bash
 mkdir -p ~/.appstoreconnect/private_keys
 mv ~/Downloads/AuthKey_XXXXXXXXXX.p8 ~/.appstoreconnect/private_keys/
 ```
 
-> This is a **different key from the APNs `.p8`** you already have for push.
-> Same file format, different key, different purpose. Swapping them produces an
-> unhelpful authentication error.
+> The API key is a **different key from the APNs `.p8`** you already have for
+> push. Same file format, different key, different purpose. Swapping them
+> produces an unhelpful authentication error.
 
-**Environment** — add to `~/.zshrc`:
+**Environment** — add to `~/.zshrc`, then `source ~/.zshrc`:
 
 ```bash
-export ZBR_APPLE_TEAM_ID=XXXXXXXXXX      # developer.apple.com → Membership details
-export ZBR_ASC_KEY_ID=XXXXXXXXXX         # the 10-character Key ID
+export ZBR_APPLE_TEAM_ID=XXXXXXXXXX               # always required
+
+# route A
+export ZBR_APPLE_ID=you@example.com
+export ZBR_APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx
+
+# ...or route B
+export ZBR_ASC_KEY_ID=XXXXXXXXXX                  # the 10-character Key ID
 export ZBR_ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
+
+The password reaches `altool` as `@env:ZBR_APP_SPECIFIC_PASSWORD`, so it is read
+from the environment rather than passed as an argument — it never shows up in
+the process list.
 
 **App Store Connect record** — create the app with bundle ID `com.zbr.owner`,
 matching `app.json` exactly. Register the App ID first at
@@ -204,7 +232,7 @@ Test with `npm run push:test:ios` against a TestFlight build, phone locked.
 - [ ] `DELETE /api/v1/auth/account` live on production — **blocks review**
 - [ ] Apple Developer membership active
 - [ ] App ID registered with Push Notifications; App Store Connect record created
-- [ ] `ZBR_APPLE_TEAM_ID`, `ZBR_ASC_KEY_ID`, `ZBR_ASC_ISSUER_ID` exported; `.p8` in place
+- [ ] `ZBR_APPLE_TEAM_ID` exported, plus one upload credential set (§2)
 - [ ] `npm run check:ios` clean
 - [ ] Demo account works from outside Uzbekistan and has data on every screen
 - [ ] Screenshots for iPhone **and** iPad

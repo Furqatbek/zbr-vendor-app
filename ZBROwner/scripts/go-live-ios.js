@@ -199,12 +199,16 @@ if (skipUpload) {
 // altool --upload-app targets App Store Connect. notarytool is NOT the
 // replacement for it — that superseded altool's notarization subcommands only,
 // and talks to the notary service, which has nothing to do with the App Store.
+//
+// Either credential form works; check-ios-release.js has already established
+// that one of them is complete. The password is passed via @env: so it is read
+// from the environment by altool itself and never appears in the process list.
+const auth = process.env.ZBR_ASC_KEY_ID
+  ? ['--apiKey', process.env.ZBR_ASC_KEY_ID, '--apiIssuer', process.env.ZBR_ASC_ISSUER_ID]
+  : ['-u', process.env.ZBR_APPLE_ID, '-p', '@env:ZBR_APP_SPECIFIC_PASSWORD'];
+
 run('Uploading to App Store Connect', 'xcrun', [
-  'altool', '--upload-app',
-  '-f', ipaPath,
-  '-t', 'ios',
-  '--apiKey', process.env.ZBR_ASC_KEY_ID,
-  '--apiIssuer', process.env.ZBR_ASC_ISSUER_ID,
+  'altool', '--upload-app', '-f', ipaPath, '-t', 'ios', ...auth,
 ]);
 
 const appJson = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8')).expo;

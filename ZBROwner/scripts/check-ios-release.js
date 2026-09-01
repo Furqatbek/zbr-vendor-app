@@ -215,42 +215,75 @@ const TEAM_ID = process.env.ZBR_APPLE_TEAM_ID;
 const KEY_ID = process.env.ZBR_ASC_KEY_ID;
 const ISSUER_ID = process.env.ZBR_ASC_ISSUER_ID;
 
+const APPLE_ID = process.env.ZBR_APPLE_ID;
+const APP_PASSWORD = process.env.ZBR_APP_SPECIFIC_PASSWORD;
+
 if (!TEAM_ID) {
   problems.push(
     'ZBR_APPLE_TEAM_ID is not set. It goes in the export options that tell Xcode\n' +
-      '     which team to sign the archive for.\n' +
-      '     Find it at https://developer.apple.com/account → Membership details.',
+      '     which team to sign the archive for. It is the 10-character code in\n' +
+      '     https://developer.apple.com/account → Membership details, and it is also\n' +
+      '     in the parentheses here if you already have a certificate installed:\n' +
+      '       security find-identity -v -p codesigning',
   );
+} else if (!/^[A-Z0-9]{10}$/.test(TEAM_ID)) {
+  warnings.push(`ZBR_APPLE_TEAM_ID is "${TEAM_ID}" — team ids are 10 alphanumerics.`);
 } else {
   ok.push(`Apple team: ${TEAM_ID}`);
 }
 
-if (!KEY_ID || !ISSUER_ID) {
-  problems.push(
-    'App Store Connect API key not configured — the upload step cannot authenticate.\n' +
-      '     Create one at App Store Connect → Users and Access → Integrations → App\n' +
-      '     Store Connect API (role: App Manager), then set:\n' +
-      '       ZBR_ASC_KEY_ID      the 10-character Key ID\n' +
-      '       ZBR_ASC_ISSUER_ID   the issuer UUID shown above the key list\n' +
-      '     and save AuthKey_<KEY_ID>.p8 in ~/.appstoreconnect/private_keys/\n' +
-      '     This is NOT the APNs key used for push — a separate key, same format.',
-  );
-} else {
+// altool accepts either an App Store Connect API key or an Apple ID with an
+// app-specific password. The API key is better for repeat use (no 2FA, works
+// unattended); the password is faster to get hold of the first time.
+if (KEY_ID && ISSUER_ID) {
   const keyName = `AuthKey_${KEY_ID}.p8`;
   const searched = [
     path.join(os.homedir(), '.appstoreconnect', 'private_keys', keyName),
     path.join(os.homedir(), 'private_keys', keyName),
     path.join(root, 'private_keys', keyName),
   ];
-  const found = searched.find((p) => fs.existsSync(p));
-  if (found) {
-    ok.push(`App Store Connect API key: ${keyName}`);
+  if (searched.some((p) => fs.existsSync(p))) {
+    ok.push(`Upload auth: App Store Connect API key (${keyName})`);
   } else {
     problems.push(
       `${keyName} not found. altool looks for it in:\n` +
         searched.map((p) => `       ${p}`).join('\n'),
     );
   }
+} else if (APPLE_ID && APP_PASSWORD) {
+  if (!/^[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}$/i.test(APP_PASSWORD)) {
+    problems.push(
+      'ZBR_APP_SPECIFIC_PASSWORD is not in the xxxx-xxxx-xxxx-xxxx form Apple issues.\n' +
+        '     Your normal Apple ID password will NOT work — generate an app-specific\n' +
+        '     one at https://account.apple.com → Sign-In and Security → App-Specific\n' +
+        '     Passwords.',
+    );
+  } else {
+    ok.push(`Upload auth: Apple ID ${APPLE_ID} with an app-specific password`);
+  }
+} else if (KEY_ID || ISSUER_ID) {
+  problems.push(
+    'Incomplete App Store Connect API key — set BOTH ZBR_ASC_KEY_ID and\n' +
+      '     ZBR_ASC_ISSUER_ID, or use the Apple ID route instead.',
+  );
+} else {
+  problems.push(
+    'No upload credentials — the upload step cannot authenticate. Pick either:\n' +
+      '\n' +
+      '     A) Apple ID + app-specific password (quickest to set up)\n' +
+      '        https://account.apple.com → Sign-In and Security → App-Specific\n' +
+      '        Passwords → generate one, then:\n' +
+      '          export ZBR_APPLE_ID=you@example.com\n' +
+      '          export ZBR_APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx\n' +
+      '\n' +
+      '     B) App Store Connect API key (better for repeat/CI use)\n' +
+      '        App Store Connect → Users and Access → Integrations → App Store\n' +
+      '        Connect API → + (role: App Manager). The .p8 downloads ONCE.\n' +
+      '          export ZBR_ASC_KEY_ID=XXXXXXXXXX\n' +
+      '          export ZBR_ASC_ISSUER_ID=<issuer uuid>\n' +
+      '          mv ~/Downloads/AuthKey_*.p8 ~/.appstoreconnect/private_keys/\n' +
+      '        This is NOT the APNs key used for push — separate key, same format.',
+  );
 }
 
 // ── Report ──────────────────────────────────────────────────────────────────
