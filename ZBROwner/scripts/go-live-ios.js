@@ -59,13 +59,61 @@ const C = {
 
 const warnings = [];
 
+const shellQuote = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
+
+/**
+ * Reprint the `error:` lines from a saved log.
+ *
+ * xcodebuild emits thousands of lines and puts the failure in the middle, then
+ * buries it under a wall of "Run script build phase … will be run during every
+ * build" notes. By the time it stops, the actual error has scrolled out of the
+ * terminal — so the last thing printed must be the errors, not the notes.
+ */
+function summarizeErrors(logPath) {
+  let log;
+  try {
+    log = fs.readFileSync(logPath, 'utf8');
+  } catch {
+    return;
+  }
+  const seen = new Set();
+  for (const line of log.split('\n')) {
+    // "note:" and "warning:" are noise; only "error:" stops a build.
+    if (!/(^|\s)error:/.test(line) || /\berror: 0\b/.test(line)) continue;
+    const trimmed = line.trim();
+    if (!seen.has(trimmed)) seen.add(trimmed);
+  }
+  if (!seen.size) {
+    console.error(`${C.dim}  No "error:" line in the log — full output: ${logPath}${C.reset}`);
+    return;
+  }
+  console.error(`\n${C.bold}The actual error${seen.size > 1 ? 's' : ''}:${C.reset}`);
+  for (const line of [...seen].slice(0, 12)) console.error(`  ${C.red}${line}${C.reset}`);
+  if (seen.size > 12) console.error(`${C.dim}  …and ${seen.size - 12} more${C.reset}`);
+  console.error(`${C.dim}  Full log: ${logPath}${C.reset}`);
+}
+
 function run(label, cmd, cmdArgs, opts = {}) {
   process.stdout.write(`${C.cyan}▸${C.reset} ${C.bold}${label}${C.reset}\n`);
-  const res = spawnSync(cmd, cmdArgs, {
-    cwd: opts.cwd || root,
-    stdio: 'inherit',
-    shell: opts.shell ?? false,
-  });
+
+  // With logPath the command still streams to the terminal, via tee, and is
+  // saved so the failure can be extracted afterwards. pipefail is required or
+  // the exit status would be tee's, which is always 0.
+  const res = opts.logPath
+    ? spawnSync(
+        'bash',
+        [
+          '-c',
+          `set -o pipefail; ${[cmd, ...cmdArgs].map(shellQuote).join(' ')} 2>&1 | tee ${shellQuote(opts.logPath)}`,
+        ],
+        { cwd: opts.cwd || root, stdio: 'inherit' },
+      )
+    : spawnSync(cmd, cmdArgs, {
+        cwd: opts.cwd || root,
+        stdio: 'inherit',
+        shell: opts.shell ?? false,
+      });
+
   if (res.status !== 0) {
     if (opts.nonFatal) {
       console.warn(`${C.yellow}⚠ ${label} — continuing (${opts.nonFatal})${C.reset}\n`);
@@ -73,7 +121,8 @@ function run(label, cmd, cmdArgs, opts = {}) {
       return;
     }
     console.error(`\n${C.red}✖ FAILED: ${label}${C.reset}`);
-    console.error(`${C.dim}  Nothing was uploaded. Fix the above and re-run.${C.reset}\n`);
+    if (opts.logPath) summarizeErrors(opts.logPath);
+    console.error(`${C.dim}\n  Nothing was uploaded. Fix the above and re-run.${C.reset}\n`);
     process.exit(res.status || 1);
   }
   console.log(`${C.green}✔${C.reset} ${label}\n`);
@@ -118,6 +167,11 @@ if (process.platform !== 'darwin') {
 }
 
 // ── build ───────────────────────────────────────────────────────────────────
+// Logs live alongside the artifacts, outside ios/ which prebuild --clean wipes.
+const logDir = path.join(root, 'build', 'ios', 'logs');
+fs.mkdirSync(logDir, { recursive: true });
+const logFor = (name) => path.join(logDir, `${name}.log`);
+
 // Bump BEFORE prebuild: Xcode stamps the archive from Info.plist, which
 // prebuild generates from app.json.
 if (!hasFlag('no-bump')) {
@@ -154,7 +208,7 @@ console.log(
   `${C.dim}  The first pod install on a machine downloads the spec repo — several\n` +
     `  minutes with little output is normal. Later runs are fast.${C.reset}`,
 );
-run('CocoaPods install', 'pod', ['install'], { cwd: iosDir, shell: true });
+run('CocoaPods install', 'pod', ['install'], { cwd: iosDir, logPath: logFor('pod-install') });
 
 const workspace = fs.readdirSync(iosDir).find((f) => f.endsWith('.xcworkspace'));
 if (!workspace) {
@@ -207,7 +261,7 @@ run('Archiving', 'xcodebuild', [
   `DEVELOPMENT_TEAM=${process.env.ZBR_APPLE_TEAM_ID}`,
   'CODE_SIGN_STYLE=Automatic',
   'archive',
-]);
+], { logPath: logFor('archive') });
 
 // Written fresh each run so a changed team id can never be served from a stale
 // file, and because ios/ is not the place for it — prebuild --clean deletes it.
@@ -233,7 +287,7 @@ run('Exporting .ipa', 'xcodebuild', [
   '-archivePath', archivePath,
   '-exportOptionsPlist', exportOptions,
   '-exportPath', exportPath,
-]);
+], { logPath: logFor('export') });
 
 const ipa = fs.existsSync(exportPath)
   ? fs.readdirSync(exportPath).find((f) => f.endsWith('.ipa'))
@@ -265,7 +319,7 @@ const auth = process.env.ZBR_ASC_KEY_ID
 
 run('Uploading to App Store Connect', 'xcrun', [
   'altool', '--upload-app', '-f', ipaPath, '-t', 'ios', ...auth,
-]);
+], { logPath: logFor('upload') });
 
 const appJson = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8')).expo;
 
