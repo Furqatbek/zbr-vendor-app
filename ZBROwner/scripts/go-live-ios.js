@@ -134,16 +134,17 @@ run('Regenerating ios/ from app.json', 'npx', [
   'expo', 'prebuild', '--platform', 'ios', '--clean', '--no-install',
 ], { shell: true });
 
+// prebuild generates the .xcodeproj; the .xcworkspace is created by CocoaPods.
+// So the scheme name has to come from the project here, and the workspace can
+// only be looked for AFTER pod install.
 const iosDir = path.join(root, 'ios');
-const workspace = fs
-  .readdirSync(iosDir)
-  .find((f) => f.endsWith('.xcworkspace'));
-if (!workspace) {
-  console.error(`\n${C.red}✖ No .xcworkspace in ios/ after prebuild.${C.reset}\n`);
+const project = fs.readdirSync(iosDir).find((f) => f.endsWith('.xcodeproj'));
+if (!project) {
+  console.error(`\n${C.red}✖ No .xcodeproj in ios/ after prebuild.${C.reset}\n`);
   process.exit(1);
 }
-const scheme = workspace.replace('.xcworkspace', '');
-console.log(`${C.dim}  workspace: ${workspace}  scheme: ${scheme}${C.reset}\n`);
+const scheme = project.replace('.xcodeproj', '');
+console.log(`${C.dim}  scheme: ${scheme}${C.reset}\n`);
 
 // The first run on a machine clones the CocoaPods spec repo and can sit with no
 // output for several minutes. That is normal, so say so before it starts rather
@@ -153,6 +154,16 @@ console.log(
     `  minutes with little output is normal. Later runs are fast.${C.reset}`,
 );
 run('CocoaPods install', 'pod', ['install'], { cwd: iosDir, shell: true });
+
+const workspace = fs.readdirSync(iosDir).find((f) => f.endsWith('.xcworkspace'));
+if (!workspace) {
+  console.error(
+    `\n${C.red}✖ No .xcworkspace in ios/ after pod install.${C.reset}\n` +
+      `${C.dim}  CocoaPods creates it. Check the pod install output above.${C.reset}\n`,
+  );
+  process.exit(1);
+}
+console.log(`${C.dim}  workspace: ${workspace}${C.reset}\n`);
 
 // Everything generated lives OUTSIDE ios/, which `prebuild --clean` wipes.
 const buildDir = path.join(root, 'build', 'ios');
