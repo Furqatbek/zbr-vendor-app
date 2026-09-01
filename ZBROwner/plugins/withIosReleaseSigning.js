@@ -1,30 +1,39 @@
 const { withXcodeProject } = require('@expo/config-plugins');
 
 /**
- * Make the Release configuration sign for DISTRIBUTION.
+ * Pin the signing TEAM on the Release configuration.
  *
- * The Expo iOS template sets, at the PROJECT level, for both Debug and Release:
+ * `prebuild --clean` regenerates the Xcode project on every build, so anything
+ * set in Xcode's Signing & Capabilities editor survives exactly until the next
+ * prebuild. This is the iOS counterpart of plugins/withReleaseSigning.js.
+ * go-live-ios.js also passes DEVELOPMENT_TEAM on the xcodebuild command line;
+ * writing it here as well is what makes opening the project in Xcode behave the
+ * same as the scripted build.
  *
- *     "CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+ * ── Do NOT set CODE_SIGN_IDENTITY here ──────────────────────────────────────
  *
- * and the app target's Release configuration does not override it. With
- * automatic signing, Xcode picks the profile type from that identity — so an
- * archive looks for a *development* profile and fails with:
+ * An earlier version of this plugin forced "Apple Distribution" on Release,
+ * reasoning that an App Store build needs a distribution identity. That is
+ * wrong, and Xcode rejects it outright:
  *
- *     error: No profiles for 'com.zbr.owner' were found: Xcode couldn't find
- *     any iOS App Development provisioning profiles matching 'com.zbr.owner'.
+ *     error: ZBROwner has conflicting provisioning settings. ZBROwner is
+ *     automatically signed for development, but a conflicting code signing
+ *     identity Apple Distribution has been manually specified.
  *
- * which reads like a missing profile but is really the wrong profile type being
- * requested. An App Store archive needs "Apple Distribution".
+ * Under automatic signing the ARCHIVE is signed for development by design.
+ * Distribution happens at export: `xcodebuild -exportArchive` with
+ * `method: app-store-connect` re-signs the app with the distribution
+ * certificate and the App Store provisioning profile. So the template's
+ * project-level "iPhone Developer" identity is correct and must be left alone.
  *
- * This is the iOS counterpart of plugins/withReleaseSigning.js: `prebuild
- * --clean` regenerates the project every build, so the fix has to be a plugin.
- * Editing the setting in Xcode would survive exactly until the next prebuild.
+ * The error that prompted the change —
  *
- * DEVELOPMENT_TEAM is written in too when ZBR_APPLE_TEAM_ID is set, so opening
- * the project in Xcode behaves the same as the scripted build. go-live-ios.js
- * also passes it on the command line, which covers the case where prebuild ran
- * in a shell that did not have the variable.
+ *     No profiles for 'com.zbr.owner' were found: Xcode couldn't find any iOS
+ *     App Development provisioning profiles matching 'com.zbr.owner'
+ *
+ * — was not the wrong profile TYPE. It was a missing account: nothing could
+ * authenticate to the developer portal to create the development profile that
+ * the archive legitimately wanted. An App Store Connect API key fixed it.
  */
 module.exports = function withIosReleaseSigning(config) {
   return withXcodeProject(config, (cfg) => {
@@ -43,12 +52,6 @@ module.exports = function withIosReleaseSigning(config) {
       if (!settings.PRODUCT_BUNDLE_IDENTIFIER) continue;
       if (entry.name !== 'Release') continue;
 
-      // Both halves need their quotes written literally. The pbxproj grammar
-      // rejects a bare key containing brackets — an unquoted
-      // CODE_SIGN_IDENTITY[sdk=iphoneos*] fails the next parse with
-      // 'Expected "/*", "=", or [A-Za-z0-9_.] but "[" found' — and a value
-      // containing a space must be quoted as well.
-      settings['"CODE_SIGN_IDENTITY[sdk=iphoneos*]"'] = '"Apple Distribution"';
       settings.CODE_SIGN_STYLE = 'Automatic';
       if (team) settings.DEVELOPMENT_TEAM = team;
       patched += 1;
@@ -57,8 +60,7 @@ module.exports = function withIosReleaseSigning(config) {
     if (patched === 0) {
       throw new Error(
         'withIosReleaseSigning: no Release configuration with a ' +
-          'PRODUCT_BUNDLE_IDENTIFIER was found. The template layout changed — ' +
-          'the archive would silently sign for development again.',
+          'PRODUCT_BUNDLE_IDENTIFIER was found — the template layout changed.',
       );
     }
 
