@@ -142,6 +142,54 @@ Verify everything with `npm run check:ios` before archiving.
 
 ---
 
+## 2.7 Reproducing a review rejection locally
+
+A reviewer's "blank screen upon launch" cannot be diagnosed from a TestFlight
+build alone: the release bundle strips `console.*` except `console.error`, and
+nothing is shown on screen. Build the same Release configuration onto the same
+simulator and read the log.
+
+```bash
+xcrun simctl list devices available | grep iPad      # find the exact device name
+npx expo run:ios --configuration Release --device "iPad Air 11-inch (M3)"
+```
+
+`--configuration Release` matters. A Debug build has a dev bundle, a red error
+screen and full console output, so it hides exactly the failures that only
+appear in review.
+
+With the app running, stream its log — `console.error` survives the strip, so an
+ErrorBoundary catch or a caught promise rejection shows up here:
+
+```bash
+xcrun simctl spawn booted log stream --level debug \
+  --predicate 'processImagePath CONTAINS "ZBROwner"'
+```
+
+**Test on iPad, not just iPhone.** `supportsTablet: true` means Apple reviews on
+an iPad and the app must work there. That is the device this app was rejected
+on.
+
+### Blank screen: the two causes fixed in build 9
+
+Both rendered nothing and logged nothing, which is why the screen was white
+rather than showing an error:
+
+1. **`app/index.ts` called `Redirect(...)` as a function** instead of rendering
+   `<Redirect />`. `Redirect` returns `null` and navigates from inside
+   `useFocusEffect`; called directly, its hooks are hoisted into the calling
+   component and the focus effect re-registers on every render. When the
+   navigation does not fire, what is left on screen is the `null`. The file was
+   `.ts` rather than `.tsx` precisely because it avoided JSX — that extension is
+   the tell.
+2. **`I18nProvider` returned `null` until AsyncStorage resolved**, with no
+   `.catch()`. It sits above the auth splash, so any read failure was a
+   permanent white screen with not even a spinner. It now settles on rejection,
+   has a 1.5s deadline for a promise that never settles, and renders the app
+   background rather than nothing.
+
+---
+
 ## 3. Version numbers
 
 `npm run version:bump` increments **both** `android.versionCode` and
