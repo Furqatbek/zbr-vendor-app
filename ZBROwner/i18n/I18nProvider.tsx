@@ -70,9 +70,9 @@ export default function I18nProvider({ children }: Props) {
 
   const ctx = useMemo(() => ({ locale, setLocale, t }), [locale, setLocale, t]);
 
-  // Don't render children until we've loaded the saved locale. Rendering the
-  // app background rather than null means a stall shows the same colour the
-  // splash screen ends on, instead of a bare white rectangle.
+  // Don't render children until we've loaded the saved locale. Rendering a real
+  // View in the app's own background colour, rather than null, means the tree is
+  // never empty — and it now resolves within 1.5s in the worst case.
   if (!loaded) return <View style={styles.gate} />;
 
   return (
