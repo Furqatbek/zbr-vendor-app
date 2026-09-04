@@ -163,6 +163,10 @@ run('iOS release configuration', 'node', [
 if (process.env.ZBR_ASC_KEY_ID) {
   run('App Store Connect credentials', 'node', ['scripts/check-asc-key.js']);
 }
+// A package off the SDK's major line builds and uploads cleanly, then fails
+// on device with "Cannot find native module" and a blank screen. Nothing
+// else in this gate list can see it.
+run('Expo SDK alignment', 'node', ['scripts/check-sdk-alignment.js']);
 run('Push configuration', 'node', ['scripts/check-push-config.js']);
 run('Privacy policy URL serves a real policy', 'node', ['scripts/check-privacy-url.js'], {
   nonFatal: skipPrivacy ? '--skip-privacy: policy handled in App Store Connect' : undefined,

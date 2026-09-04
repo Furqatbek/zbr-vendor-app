@@ -90,6 +90,10 @@ console.log('');
 
 // ── gates ───────────────────────────────────────────────────────────────────
 run('Release + push configuration', 'node', ['scripts/check-release-config.js']);
+// A package off the SDK's major line builds and uploads cleanly, then fails
+// on device with "Cannot find native module" and a blank screen. Nothing
+// else in this gate list can see it.
+run('Expo SDK alignment', 'node', ['scripts/check-sdk-alignment.js']);
 run('Push configuration', 'node', ['scripts/check-push-config.js']);
 // The privacy policy blocks Play REVIEW, not the correctness of the binary, so
 // it is downgraded to a warning when the artifact isn't going to Play (--apk)
