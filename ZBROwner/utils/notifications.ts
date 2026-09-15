@@ -196,3 +196,24 @@ export async function sendLocalNotification(
     trigger: null,
   });
 }
+
+/**
+ * Mirror the unread count onto the app icon badge.
+ *
+ * The OS sets that badge from the `badge` field in the push payload and then
+ * leaves it alone — only the app can clear it. Nothing here ever called this,
+ * so the badge stuck at whatever the last push said even after every
+ * notification had been read. The in-app tab badge was correct the whole time,
+ * which is what made it look like a display bug rather than a missing call.
+ *
+ * Best-effort: a device that denies the badge permission throws, and failing to
+ * update a badge must never break the caller.
+ */
+export async function setAppBadgeCount(count: number) {
+  if (Platform.OS === 'web') return;
+  try {
+    await Notifications.setBadgeCountAsync(Math.max(0, Math.trunc(count)));
+  } catch {
+    // Badge permission denied, or the platform does not support it.
+  }
+}

@@ -207,6 +207,12 @@ export const useAuthStore = create<AuthStore>((set, get) => {
         STORAGE_KEYS.RESTAURANTS,
         STORAGE_KEYS.SELECTED_RESTAURANT_ID,
       ]);
+      // Also clears the OS app-icon badge, via the store setter. A signed-out
+      // device showing "3 unread" from the previous account is wrong, and the
+      // badge would otherwise persist until someone read notifications they can
+      // no longer reach.
+      useStore.getState().setUnreadNotifCount(0);
+
       set({
         user: null,
         restaurants: [],

@@ -62,7 +62,16 @@ export default function I18nProvider({ children }: Props) {
   const t = useCallback(
     (key: TranslationKey, params?: Record<string, string | number>): string => {
       const dict = translations[locale] as Record<string, unknown>;
-      const value = getNestedValue(dict, key);
+      let value = getNestedValue(dict, key);
+
+      // getNestedValue returns the key path when it finds nothing, which puts a
+      // raw "notifInbox.foo" on screen. English is a far better last resort than
+      // a dotted identifier, so fall back to it before giving up.
+      if (value === key && locale !== 'en') {
+        const english = getNestedValue(translations.en as Record<string, unknown>, key);
+        if (english !== key) value = english;
+      }
+
       return interpolate(value, params);
     },
     [locale]

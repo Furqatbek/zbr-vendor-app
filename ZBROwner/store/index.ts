@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { Order, Review, RevenueData, OrderStatus, CourierRating, FinancialReportData } from '../types';
 import { fetchRatings, fetchRestaurantReviews, fetchRestaurantOrders, fetchActiveOrders, updateOrderStatus as apiUpdateOrderStatus, cancelOrder as apiCancelOrder, fetchFinancialReport } from '../services/api';
 import { useAuthStore } from './authStore';
+import { setAppBadgeCount } from '../utils/notifications';
 
 // Order IDs with an in-flight optimistic mutation (accept/decline/status).
 // A WS-driven loadOrders that lands mid-PATCH would otherwise overwrite the
@@ -360,5 +361,11 @@ export const useStore = create<AppStore>((set, get) => ({
     })),
 
   unreadNotifCount: 0,
-  setUnreadNotifCount: (count) => set({ unreadNotifCount: count }),
+  // Every path that changes the unread count funnels through here — the
+  // inbox screen, mark-all-read, and the increment on an incoming push — so
+  // this is the one place that can keep the OS app-icon badge in step.
+  setUnreadNotifCount: (count) => {
+    set({ unreadNotifCount: count });
+    setAppBadgeCount(count);
+  },
 }));

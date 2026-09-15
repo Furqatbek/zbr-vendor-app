@@ -160,6 +160,27 @@ export default function NotificationsScreen() {
     ALERT: 'notifInbox.alerts',
   };
 
+  /**
+   * Label for the category chip on a notification.
+   *
+   * filterKeys covers the NotificationCategory union, but the backend is not
+   * bound by our types: any category outside it indexes to undefined, and
+   * t(undefined) renders a raw key path — or throws. The API already sends a
+   * human label in categoryDisplayName, so prefer that, then our translation,
+   * and fall back to the raw value made readable. None of those is a dotted
+   * identifier.
+   */
+  const categoryLabel = (item: AppNotification): string => {
+    if (item.categoryDisplayName) return item.categoryDisplayName;
+    const key = filterKeys[item.category];
+    if (key) return t(key);
+    return String(item.category)
+      .toLowerCase()
+      .split('_')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  };
+
   const renderNotification = ({ item }: { item: AppNotification }) => {
     const iconName = CATEGORY_ICONS[item.category] ?? 'notifications-outline';
     const iconColor = CATEGORY_COLORS[item.category] ?? Colors.gray500;
@@ -183,7 +204,7 @@ export default function NotificationsScreen() {
                 <Text style={styles.notifTime}>{item.timeAgo ?? formatTime(item.createdAt)}</Text>
                 <View style={[styles.categoryBadge, { backgroundColor: iconColor + '15' }]}>
                   <Text style={[styles.categoryBadgeText, { color: iconColor }]}>
-                    {t(filterKeys[item.category])}
+                    {categoryLabel(item)}
                   </Text>
                 </View>
               </View>
