@@ -11,6 +11,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import { useAuthStore } from '../store/authStore';
 import { useStore } from '../store';
 import NewOrderAlert from '../components/NewOrderAlert';
+import OrderCancelledAlert from '../components/OrderCancelledAlert';
 import ErrorBoundary from '../components/ErrorBoundary';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -49,6 +50,9 @@ function OrderAlertOverlay() {
   const router = useRouter();
   const incomingOrder = useStore((s) => s.incomingOrder);
   const showOrderAlert = useStore((s) => s.showOrderAlert);
+  // Both alerts drive the same alarm sound; stacking them would leave two
+  // components racing to start and stop it.
+  const cancellationPending = useStore((s) => s.cancelledAlerts.length > 0);
   const dismissOrderAlert = useStore((s) => s.dismissOrderAlert);
   const acceptOrder = useStore((s) => s.acceptOrder);
   const declineOrder = useStore((s) => s.declineOrder);
@@ -79,10 +83,29 @@ function OrderAlertOverlay() {
   return (
     <NewOrderAlert
       order={incomingOrder}
-      visible={showOrderAlert}
+      visible={showOrderAlert && !cancellationPending}
       onAccept={handleAccept}
       onDecline={handleDecline}
       onView={handleView}
+    />
+  );
+}
+
+/**
+ * A cancelled order outranks a new one: the new-order alert can wait a few
+ * seconds, whereas every second spent cooking a cancelled order is wasted. Both
+ * use the same alarm, so showing them together would be incoherent anyway.
+ */
+function CancelledOrderOverlay() {
+  const queue = useStore((s) => s.cancelledAlerts);
+  const acknowledge = useStore((s) => s.acknowledgeCancellation);
+  const next = queue[0] ?? null;
+
+  return (
+    <OrderCancelledAlert
+      order={next}
+      visible={next !== null}
+      onAcknowledge={acknowledge}
     />
   );
 }
@@ -93,6 +116,7 @@ function AppStack() {
 
   return (
     <>
+    <CancelledOrderOverlay />
     <OrderAlertOverlay />
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.white } }}>
       <Stack.Screen name="login" />

@@ -436,6 +436,13 @@ export default {
     copyright: '© 2026 ZBR. Барча ҳуқуқлар ҳимояланган.',
   },
 
+  cancelledAlert: {
+    title: 'Буюртма бекор қилинди',
+    stopCooking: 'Бу буюртмани тайёрлашни тўхтатинг',
+    reason: 'Сабаб: {{reason}}',
+    acknowledge: 'Тушунарли',
+  },
+
   notifInbox: {
     unreadCount: '{{count}} ўқилмаган',
     markAllRead: 'Барчасини ўқилган деб белгилаш',

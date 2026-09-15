@@ -458,6 +458,13 @@ export default {
   },
 
   // Notification inbox
+  cancelledAlert: {
+    title: 'Order cancelled',
+    stopCooking: 'Stop preparing this order',
+    reason: 'Reason: {{reason}}',
+    acknowledge: 'Got it',
+  },
+
   notifInbox: {
     unreadCount: '{{count}} unread',
     markAllRead: 'Mark all read',

@@ -436,6 +436,13 @@ export default {
     copyright: '© 2026 ZBR. Barcha huquqlar himoyalangan.',
   },
 
+  cancelledAlert: {
+    title: 'Buyurtma bekor qilindi',
+    stopCooking: 'Bu buyurtmani tayyorlashni to\'xtating',
+    reason: 'Sabab: {{reason}}',
+    acknowledge: 'Tushunarli',
+  },
+
   notifInbox: {
     unreadCount: '{{count}} o\'qilmagan',
     markAllRead: 'Barchasini o\'qilgan deb belgilash',

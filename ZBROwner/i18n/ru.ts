@@ -436,6 +436,13 @@ export default {
     copyright: '© 2026 ZBR. Все права защищены.',
   },
 
+  cancelledAlert: {
+    title: 'Заказ отменён',
+    stopCooking: 'Прекратите готовить этот заказ',
+    reason: 'Причина: {{reason}}',
+    acknowledge: 'Понятно',
+  },
+
   notifInbox: {
     unreadCount: '{{count}} непрочитанных',
     markAllRead: 'Прочитать все',

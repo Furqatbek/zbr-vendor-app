@@ -19,6 +19,48 @@ function mergePreservingPending(incoming: Order[], current: Order[]): Order[] {
   );
 }
 
+/**
+ * Statuses in which food is already committed — the restaurant has accepted the
+ * order and is spending time and ingredients on it. A cancellation from any of
+ * these has to interrupt someone; a cancellation from 'created' costs nothing
+ * and must not.
+ */
+const COOKING_STATUSES: OrderStatus[] = ['accepted', 'preparing', 'ready'];
+const CANCELLED_STATUSES: OrderStatus[] = ['cancelled', 'refunded'];
+
+/**
+ * Orders that went from being cooked to cancelled since the last refresh.
+ *
+ * This runs on every refresh rather than only on the WebSocket message,
+ * because the socket is the one delivery path that can silently fail: a
+ * backgrounded app, a dropped connection, a deploy drain. Diffing server state
+ * means a missed message still surfaces on the next poll or pull-to-refresh.
+ *
+ * A vendor cancelling from inside the app updates local state optimistically
+ * first, so the previous status is already 'cancelled' and no alert fires — the
+ * alert is only ever about someone else's decision.
+ */
+function detectCancellations(incoming: Order[], current: Order[]): Order[] {
+  if (current.length === 0) return []; // first load is not a transition
+  const previousStatus = new Map(current.map((o) => [o.id, o.status]));
+  return incoming.filter((o) => {
+    const before = previousStatus.get(o.id);
+    return (
+      before !== undefined &&
+      COOKING_STATUSES.includes(before) &&
+      CANCELLED_STATUSES.includes(o.status)
+    );
+  });
+}
+
+/** Append newly cancelled orders without duplicating one already queued. */
+function queueCancellations(queued: Order[], detected: Order[]): Order[] {
+  if (detected.length === 0) return queued;
+  const known = new Set(queued.map((o) => o.id));
+  const additions = detected.filter((o) => !known.has(o.id));
+  return additions.length ? [...queued, ...additions] : queued;
+}
+
 interface AppStore {
   // Restaurant
   isOpen: boolean;
@@ -69,6 +111,10 @@ interface AppStore {
   triggerOrderAlert: (order: Order) => void;
   dismissOrderAlert: () => void;
 
+  /** Orders cancelled while being cooked, awaiting explicit acknowledgement. */
+  cancelledAlerts: Order[];
+  acknowledgeCancellation: (orderId: string) => void;
+
   // Push Notifications
   pushToken: string | null;
   setPushToken: (token: string | null) => void;
@@ -105,7 +151,10 @@ export const useStore = create<AppStore>((set, get) => ({
     set({ ordersLoading: true, ordersError: false });
     try {
       const res = await fetchRestaurantOrders(restaurant.id, { page: 0, size: 100 });
-      set((s) => ({ orders: mergePreservingPending(res.content, s.orders) }));
+      set((s) => ({
+        orders: mergePreservingPending(res.content, s.orders),
+        cancelledAlerts: queueCancellations(s.cancelledAlerts, detectCancellations(res.content, s.orders)),
+      }));
     } catch {
       set({ ordersError: true });
     } finally {
@@ -118,7 +167,10 @@ export const useStore = create<AppStore>((set, get) => ({
     set({ ordersLoading: true, ordersError: false });
     try {
       const res = await fetchActiveOrders(restaurant.id, { page: 0, size: 100 });
-      set((s) => ({ orders: mergePreservingPending(res.content, s.orders) }));
+      set((s) => ({
+        orders: mergePreservingPending(res.content, s.orders),
+        cancelledAlerts: queueCancellations(s.cancelledAlerts, detectCancellations(res.content, s.orders)),
+      }));
     } catch {
       set({ ordersError: true });
     } finally {
@@ -343,6 +395,10 @@ export const useStore = create<AppStore>((set, get) => ({
   showOrderAlert: false,
   triggerOrderAlert: (order) => set({ incomingOrder: order, showOrderAlert: true }),
   dismissOrderAlert: () => set({ showOrderAlert: false, incomingOrder: null }),
+
+  cancelledAlerts: [],
+  acknowledgeCancellation: (orderId) =>
+    set((s) => ({ cancelledAlerts: s.cancelledAlerts.filter((o) => o.id !== orderId) })),
 
   pushToken: null,
   setPushToken: (token) => set({ pushToken: token }),
