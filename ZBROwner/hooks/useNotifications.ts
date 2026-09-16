@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   registerForPushNotifications,
@@ -15,6 +15,8 @@ import { createStompClient } from '../utils/websocket';
 import { registerDeviceToken } from '../services/api';
 import { useStore } from '../store';
 import { useAuthStore } from '../store/authStore';
+import { handleOrderEvent } from '../utils/orderEvents';
+import { REALTIME_TRANSPORT, FOREGROUND_POLL_MS } from '../constants/features';
 
 /**
  * Call once in root layout. Handles:
@@ -103,17 +105,10 @@ export function useNotifications() {
   useEffect(() => {
     const receivedSub = addNotificationReceivedListener(async (notification) => {
       const data = notification.request.content.data as Record<string, any> | undefined;
-      if (data?.type === 'NEW_ORDER_RECEIVED') {
-        const store = useStore.getState();
-        await store.loadOrders();
-        const orderId = data.orderId ? String(data.orderId) : null;
-        const newOrder = orderId
-          ? useStore.getState().orders.find((o) => o.id === orderId)
-          : useStore.getState().orders.find((o) => o.status === 'created');
-        if (newOrder && !store.showOrderAlert) {
-          useStore.getState().triggerOrderAlert(newOrder);
-        }
-      }
+      // Same handler the socket uses, so both transports behave identically and
+      // can run together during a migration. It also covers cancellations: the
+      // reload it performs is what surfaces them.
+      await handleOrderEvent(String(data?.type ?? ''), data?.orderId);
     });
 
     // Validate the id before interpolating it into a route path — a spoofed
@@ -149,9 +144,58 @@ export function useNotifications() {
     };
   }, [router]);
 
+  // 2b. Foreground poll — the backstop for a push that never arrived.
+  //
+  // Push is best-effort: neither FCM nor APNs guarantees delivery or ordering,
+  // and iOS throttles by priority. Without a socket held open there is nothing
+  // else watching, so a missed push would otherwise mean a missed order until
+  // the vendor happened to pull-to-refresh.
+  //
+  // It runs only while the app is in the foreground, which is the only time a
+  // vendor can act on what it finds, and stops on background so it costs
+  // nothing when the app is idle. Reloading also re-runs the cancellation diff.
+  useEffect(() => {
+    if (!restaurant?.id) return;
+    if (REALTIME_TRANSPORT === 'websocket') return;
+
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    const start = () => {
+      if (timer) return;
+      timer = setInterval(() => {
+        useStore.getState().loadOrders();
+      }, FOREGROUND_POLL_MS);
+    };
+    const stop = () => {
+      if (timer) clearInterval(timer);
+      timer = null;
+    };
+
+    if (AppState.currentState === 'active') start();
+
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        // Catch up immediately: anything that happened while backgrounded is
+        // already stale, and waiting a full interval to notice is too slow.
+        useStore.getState().loadOrders();
+        start();
+      } else {
+        stop();
+      }
+    });
+
+    return () => {
+      stop();
+      sub.remove();
+    };
+  }, [restaurant?.id]);
+
   // 3. STOMP WebSocket – connect when we have a restaurant and access token
   useEffect(() => {
     if (!restaurant?.id) return;
+    // A held-open socket per signed-in vendor is the cost this avoids. See
+    // constants/features.ts for the reasoning and the tradeoff.
+    if (REALTIME_TRANSPORT === 'push') return;
 
     // Clean up previous connection
     if (stompRef.current) {
@@ -169,36 +213,28 @@ export function useNotifications() {
       const store = useStore.getState();
       switch (message.type) {
         case 'new_order': {
-          // The restaurant orders topic now also carries status changes
-          // (accept/ready/cancelled/etc). Only treat status === 'created'
-          // as an actual new order so we don't fire the alarm on a cancel.
+          // This topic also carries status changes, so the payload's status is
+          // what distinguishes a genuinely new order from an accept or a
+          // cancel. The shared handler does the rest, and dedupes against push
+          // when both transports are enabled.
           const payload = message.payload as Record<string, any> | undefined;
           const rawStatus: unknown = payload?.status ?? payload?.order?.status;
           const status = typeof rawStatus === 'string' ? rawStatus.toLowerCase() : undefined;
-          await store.loadOrders();
-          if (status && status !== 'created') break;
+          const orderId = payload?.id ?? payload?.orderId ?? null;
+          const isNew = !status || status === 'created';
 
-          const orderId = payload?.id ? String(payload.id) : payload?.orderId ? String(payload.orderId) : null;
-          const latest = useStore.getState();
-          const newOrder = orderId
-            ? latest.orders.find((o) => o.id === orderId)
-            : latest.orders.find((o) => o.status === 'created');
-          if (newOrder) {
-            // Dedupe: a duplicate WS delivery or a reconnect re-emitting the
-            // same created order shouldn't re-trigger the alarm/modal if it's
-            // already showing for that order.
-            const alreadyShowing = latest.showOrderAlert && latest.incomingOrder?.id === newOrder.id;
-            if (!alreadyShowing) {
-              latest.triggerOrderAlert(newOrder);
-            }
+          await handleOrderEvent(isNew ? 'NEW_ORDER_RECEIVED' : 'ORDER_UPDATED', orderId);
+
+          if (isNew) {
+            const newOrder = useStore.getState().orders.find((o) => String(o.id) === String(orderId));
+            sendLocalNotification(
+              'New Order',
+              newOrder
+                ? `${newOrder.orderNumber} – ${newOrder.customerName}`
+                : 'You have a new order waiting.',
+              ORDERS_CHANNEL,
+            );
           }
-          sendLocalNotification(
-            'New Order',
-            newOrder
-              ? `${newOrder.orderNumber} – ${newOrder.customerName}`
-              : 'You have a new order waiting.',
-            ORDERS_CHANNEL,
-          );
           break;
         }
         case 'order_update':

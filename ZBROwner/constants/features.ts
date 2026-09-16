@@ -19,3 +19,35 @@ export const FEATURES = {
   // showed "Review flagged for review." while doing nothing at all.
   reviewReports: false,
 } as const;
+
+/**
+ * How the app learns about order events.
+ *
+ *   'push'      — FCM/APNs only. No socket is opened.
+ *   'websocket' — STOMP only. The original behaviour.
+ *   'both'      — run together; the shared handler in utils/orderEvents.ts
+ *                 dedupes, so this is safe and is how to migrate.
+ *
+ * Default is 'push', because a STOMP subscription is a connection the backend
+ * holds open per signed-in vendor: a thousand vendors is a thousand sockets,
+ * plus the heartbeats, reconnect storms after a deploy, and the memory behind
+ * each one. FCM and APNs already run that fan-out infrastructure, and the app
+ * keeps no connection at all between orders.
+ *
+ * The tradeoff is real and worth stating: push delivery is best-effort, not
+ * guaranteed. Neither Google nor Apple promises delivery or ordering, and iOS
+ * throttles by priority. That is why the app also polls while it is in the
+ * foreground (see hooks/useNotifications.ts) — the poll is the safety net, the
+ * push is what makes the alarm instant.
+ */
+export const REALTIME_TRANSPORT: 'push' | 'websocket' | 'both' = 'push';
+
+/**
+ * How often to re-check orders while the app is open and in the foreground.
+ *
+ * Only a backstop for a push that never arrived, so it can be slow. At one
+ * request per vendor per 45s, a thousand vendors is roughly 22 requests a
+ * second — far cheaper than a thousand held-open sockets, and it stops
+ * entirely when the app is backgrounded.
+ */
+export const FOREGROUND_POLL_MS = 45_000;

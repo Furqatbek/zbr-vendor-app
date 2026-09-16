@@ -57,7 +57,7 @@ the §0 asks and what the client adjusted in response:
 | 5 | Fix **`isOpen` vs `isCurrentlyOpen`** | Was true while `isOpen:false`. | Medium | ✅ Done |
 | 6 | Build the **feature-flagged endpoints** (§7) | UIs hidden until each exists. | Low | 🟡 Open |
 | 7 | **Idempotent** order mutations | Safe retries across deploys. | Medium | ✅ Done |
-| 8 | **Send FCM/APNs pushes** per [`PUSH_SETUP.md`](./PUSH_SETUP.md) §3 — high priority, `channel_id: orders_v2`, numeric `data.orderId`, prune dead tokens | **A locked phone only wakes for a remote push.** The WebSocket cannot deliver when the app is backgrounded — this is what makes vendors miss orders. | **High** | 🔴 Open — **client side done, credentials ready (§6)** |
+| 8 | **Send FCM/APNs pushes** per [`PUSH_ORDER_EVENTS.md`](./PUSH_ORDER_EVENTS.md) — the full contract with curl examples, and the reason the vendor order socket can be retired | **A locked phone only wakes for a remote push.** The WebSocket cannot deliver when the app is backgrounded — this is what makes vendors miss orders. | **High** | 🔴 Open — **client side done, credentials ready (§6)** |
 | 9 | **`DELETE /api/v1/auth/account`** (§2.1) | App Store Guideline **5.1.1(v)**: an app with accounts must let the user delete it **from inside the app**. Apple rejects a link to a web form. The screen is built and shipped; without the endpoint it shows an error to every vendor who taps it. | **Yes — gates iOS submission** | 🔴 Open |
 
 ---
