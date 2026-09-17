@@ -176,7 +176,12 @@ run('iOS release configuration', 'node', [
 // actually belongs to. A wrong team id is indistinguishable from a missing
 // Xcode account in xcodebuild's output, and costs a full archive to discover.
 if (process.env.ZBR_ASC_KEY_ID) {
-  run('App Store Connect credentials', 'node', ['scripts/check-asc-key.js']);
+  run('App Store Connect credentials', 'node', [
+    'scripts/check-asc-key.js',
+    // The bump happens after the gates, so tell the check what the build
+    // number will actually be by the time anything is uploaded.
+    ...(!checksOnly && !hasFlag('no-bump') ? ['--will-bump'] : []),
+  ]);
 }
 // A package off the SDK's major line builds and uploads cleanly, then fails
 // on device with "Cannot find native module" and a blank screen. Nothing

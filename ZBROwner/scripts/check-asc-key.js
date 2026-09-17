@@ -21,8 +21,14 @@ const { KEY_DIRS, findAscKey } = require('./lib/asc-key');
 const KEY_ID = process.env.ZBR_ASC_KEY_ID;
 const ISSUER_ID = process.env.ZBR_ASC_ISSUER_ID;
 const TEAM_ID = process.env.ZBR_APPLE_TEAM_ID;
-const BUNDLE_ID = JSON.parse(fs.readFileSync(`${__dirname}/../app.json`, 'utf8'))
-  .expo?.ios?.bundleIdentifier;
+const APP_JSON = JSON.parse(fs.readFileSync(`${__dirname}/../app.json`, 'utf8')).expo;
+const BUNDLE_ID = APP_JSON?.ios?.bundleIdentifier;
+// go-live-ios runs this BEFORE bumping, so without knowing a bump is coming the
+// check would reject the pre-bump number and block a run that was about to fix
+// itself — the same sequencing mistake the Info.plist check made.
+const WILL_BUMP = process.argv.slice(2).includes('--will-bump');
+const BUILD_NUMBER = Number(APP_JSON?.ios?.buildNumber) + (WILL_BUMP ? 1 : 0);
+const MARKETING_VERSION = APP_JSON?.version;
 
 const b64url = (buf) =>
   Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -123,6 +129,50 @@ function makeToken(privateKey) {
     console.log('           Push Notifications enabled), or the key belongs to a different');
     console.log(`           team than ZBR_APPLE_TEAM_ID=${TEAM_ID}.\n`);
     process.exit(1);
+  }
+
+  // Two upload rejections in a row came from App Store Connect state that
+  // nothing local could see, each after a full archive:
+  //
+  //   90186  the version's train is closed for new build submissions
+  //   -19232 the bundle version must be higher than the previously uploaded '10'
+  //
+  // Build numbers are unique per APP, not per version train, so a new marketing
+  // version does not reset them. Asking Apple what it already has turns both
+  // into a two-second failure.
+  try {
+    const appRes = await call(`apps?filter[bundleId]=${encodeURIComponent(BUNDLE_ID)}&limit=1`);
+    const appId = appRes.ok ? (await appRes.json()).data?.[0]?.id : null;
+
+    if (appId) {
+      const buildRes = await call(`builds?filter[app]=${appId}&limit=200`);
+      if (buildRes.ok) {
+        const builds = (await buildRes.json()).data ?? [];
+        const numbers = builds
+          .map((b) => Number(b.attributes?.version))
+          .filter((n) => Number.isFinite(n));
+        const highest = numbers.length ? Math.max(...numbers) : 0;
+
+        if (!highest) {
+          console.log('  ok      No builds uploaded yet — any build number is free');
+        } else if (BUILD_NUMBER > highest) {
+          console.log(`  ok      buildNumber ${BUILD_NUMBER} is above the highest uploaded (${highest})`);
+        } else {
+          console.log(
+            `\n  PROBLEM  buildNumber ${BUILD_NUMBER} was already uploaded — the highest`,
+          );
+          console.log(`           App Store Connect has is ${highest}, and it must strictly increase.`);
+          console.log('           Build numbers are unique per APP, not per version, so');
+          console.log(`           moving to a new marketing version (${MARKETING_VERSION}) does not free them.`);
+          console.log(`           Fix with:  npm run version:bump -- --to ${highest + 1}`);
+          if (!WILL_BUMP) console.log('           or re-run the build without --no-bump.');
+          console.log('');
+          process.exit(1);
+        }
+      }
+    }
+  } catch {
+    // Non-fatal: this is a convenience check, and the upload still enforces it.
   }
 
   // Nothing in the API returns "the team id" as a field, but every certificate
