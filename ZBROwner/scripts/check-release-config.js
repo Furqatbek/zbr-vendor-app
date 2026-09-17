@@ -145,12 +145,55 @@ const gradlePropsPaths = [
 let signingConfigured = Boolean(process.env[SIGNING_PROP] || process.env.ORG_GRADLE_PROJECT_ZBR_UPLOAD_STORE_FILE);
 let keystorePath = process.env[SIGNING_PROP] || null;
 
+// Also collect the alias and store password, needed to read the certificate
+// fingerprint out of the keystore below.
+let keyAlias = process.env.ZBR_UPLOAD_KEY_ALIAS || null;
+let storePassword = process.env.ZBR_UPLOAD_STORE_PASSWORD || null;
+
 for (const p of gradlePropsPaths) {
-  if (signingConfigured) break;
   const props = parseEnvFile(p);
-  if (props && props[SIGNING_PROP]) {
+  if (!props) continue;
+  if (!signingConfigured && props[SIGNING_PROP]) {
     signingConfigured = true;
     keystorePath = props[SIGNING_PROP];
+  }
+  keyAlias = keyAlias || props.ZBR_UPLOAD_KEY_ALIAS || null;
+  storePassword = storePassword || props.ZBR_UPLOAD_STORE_PASSWORD || null;
+}
+
+/**
+ * The upload certificate Google Play expects for com.zbr.owner.
+ *
+ * Play pins the upload key on first upload and rejects anything signed with a
+ * different one — "App Bundle signed with the wrong key", naming this
+ * fingerprint. Nothing local knew what Play expected, so a mismatched keystore
+ * was only discoverable after a full build and an upload.
+ *
+ * Not a secret: it is shown in Play Console → Setup → App signing, and is
+ * derivable from any released artifact.
+ *
+ * If the upload key is ever reset (Play Console → App signing → Request upload
+ * key reset, ~2 days), replace this value with the new fingerprint.
+ */
+const EXPECTED_UPLOAD_KEY_SHA1 = '11:3D:C7:A1:E3:F5:B4:D4:59:C6:ED:35:61:88:A8:6C:DB:22:16:40';
+
+/** SHA-1 of the certificate in the configured keystore, or null if unreadable. */
+function keystoreSha1() {
+  if (!keystorePath || !keyAlias || !storePassword) return null;
+  try {
+    const { execFileSync } = require('child_process');
+    // execFileSync, not a shell string: the password must never reach a command
+    // line the shell could log or another process could read.
+    const out = execFileSync(
+      'keytool',
+      ['-list', '-v', '-keystore', keystorePath, '-alias', keyAlias, '-storepass', storePassword],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+    );
+    const m = out.match(/SHA1:\s*([0-9A-F:]{59})/i);
+    return m ? m[1].toUpperCase() : null;
+  } catch {
+    // keytool missing (no JAVA_HOME), wrong password, or unknown alias.
+    return null;
   }
 }
 
@@ -167,6 +210,27 @@ if (!signingConfigured) {
     problems.push(`${SIGNING_PROP} points at a file that does not exist: ${keystorePath}`);
   } else {
     ok.push(`Upload keystore configured${keystorePath ? ` (${keystorePath})` : ''}`);
+
+    const sha1 = keystoreSha1();
+    if (!sha1) {
+      warnings.push(
+        'Could not read the keystore fingerprint (keytool missing, or the alias/\n' +
+          '     password properties are not set). Play checks it at upload, so a wrong\n' +
+          '     keystore would only surface there.',
+      );
+    } else if (sha1 === EXPECTED_UPLOAD_KEY_SHA1) {
+      ok.push(`Upload key matches the certificate Play expects (${sha1.slice(0, 17)}…)`);
+    } else {
+      problems.push(
+        'This keystore is NOT the upload key Play expects for this app.\n' +
+          `     Play wants:  ${EXPECTED_UPLOAD_KEY_SHA1}\n` +
+          `     This key is: ${sha1}\n` +
+          '     Play pins the upload certificate on first upload and rejects any\n' +
+          '     other one. Either sign with the original keystore, or request an\n' +
+          '     upload key reset in Play Console → Setup → App signing (takes about\n' +
+          '     two days), then update EXPECTED_UPLOAD_KEY_SHA1 in this script.',
+      );
+    }
   }
 }
 
