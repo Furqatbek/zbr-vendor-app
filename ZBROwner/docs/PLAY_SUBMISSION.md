@@ -11,13 +11,13 @@ Build instructions: [`LOCAL_BUILD.md`](./LOCAL_BUILD.md).
 
 | # | Blocker | Owner | Why it blocks |
 |---|---|---|---|
-| 1 | **Real TLS backend hostnames** | backend | Inlined into the bundle at build time. Until these exist, no shippable AAB can be produced. `npm run check:release` will refuse to build. |
+| ~~1~~ | ~~Real TLS backend hostnames~~ | backend | ✅ `https://zbrr.uz` / `wss://zbrr.uz`, verified by `check:release` on every build. |
 | 2 | **Privacy policy URL** | you | Handled directly in Play Console — build with `npm run go-live:no-privacy`. Play still fetches whatever URL you enter; §2.5 covers verifying it and the in-app About row. |
 | 3 | **Reviewer login credentials** | you | ⚠️ See §2 — the single most likely cause of rejection for this app. |
 | 4 | **Screenshots (min 2)** | you | Require a running build on a device/emulator. |
 | ~~5~~ | ~~Signing keystore~~ | you | ✅ Configured (`check:release` confirms the upload key). **Back up the keystore and its passwords now** — losing them means never updating this listing again. |
 | 6 | **Support contact details** | you | `constants/contact.ts` — `supportEmail` is still unset, so the Help Center cards stay hidden and Play has no contact email for the listing. |
-| 7 | **`DELETE /api/v1/auth/account`** | backend | In-app account deletion ships in this build (§4) but the endpoint does not exist yet. Blocks **App Store** submission (Guideline 5.1.1(v)); see `BACKEND_HANDOFF.md` §2.1. |
+| 7 | **`DELETE /api/v1/auth/account`** | backend | In-app account deletion ships in this build (§4) but the endpoint does not exist yet, so the screen returns a server error. Google's Data safety form asks whether users can request deletion — answering **Yes** while the flow errors is the kind of mismatch that gets caught. Contract in `BACKEND_HANDOFF.md` §2.1. |
 
 Everything else in this document is either done or is form-filling.
 
