@@ -32,8 +32,16 @@ export const CONTACT = {
 
   /** Support phone in E.164, e.g. '+998712000000'. Null hides the card. */
   supportPhone: null as string | null,
-  /** Monitored support inbox — use the same address as the Play listing. */
-  supportEmail: null as string | null,
+  /**
+   * Monitored support inbox — the same address entered on the Play and App
+   * Store listings.
+   *
+   * This ships inside the app and is public on both listings, so changing it
+   * later means a new build plus edits in two consoles. Worth moving to a
+   * domain address (support@zbrr.uz) once that mailbox exists and someone is
+   * watching it.
+   */
+  supportEmail: 'simple.furqat@gmail.com' as string | null,
   /** Live chat URL. Null hides the card (there is no chat surface today). */
   liveChatUrl: null as string | null,
 } as const;
