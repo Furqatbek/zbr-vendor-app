@@ -177,6 +177,39 @@ for (const p of gradlePropsPaths) {
  */
 const EXPECTED_UPLOAD_KEY_SHA1 = '11:3D:C7:A1:E3:F5:B4:D4:59:C6:ED:35:61:88:A8:6C:DB:22:16:40';
 
+/**
+ * Locate keytool.
+ *
+ * It ships with the JDK but is rarely on PATH — on Windows in particular,
+ * Gradle finds its own JDK while `keytool` in a shell says "not recognized".
+ * Relying on PATH alone made this check silently useless on the machine where
+ * the Android build actually runs, so the JDK is looked up the same way
+ * docs/LOCAL_BUILD.md §2 tells you to set JAVA_HOME.
+ */
+function findKeytool() {
+  const exe = process.platform === 'win32' ? 'keytool.exe' : 'keytool';
+  const candidates = [];
+
+  if (process.env.JAVA_HOME) candidates.push(path.join(process.env.JAVA_HOME, 'bin', exe));
+
+  if (process.platform === 'win32') {
+    candidates.push(
+      `C:\\Program Files\\Android\\Android Studio\\jbr\\bin\\${exe}`,
+      `C:\\Program Files\\Android\\Android Studio\\jre\\bin\\${exe}`,
+    );
+  } else if (process.platform === 'darwin') {
+    candidates.push(
+      `/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/${exe}`,
+      `/usr/bin/${exe}`,
+    );
+  }
+
+  const found = candidates.find((c) => fs.existsSync(c));
+  // Bare name last: if it is on PATH this works, and if not the spawn throws
+  // and the caller degrades to a warning.
+  return found ?? exe;
+}
+
 /** SHA-1 of the certificate in the configured keystore, or null if unreadable. */
 function keystoreSha1() {
   if (!keystorePath || !keyAlias || !storePassword) return null;
@@ -185,14 +218,14 @@ function keystoreSha1() {
     // execFileSync, not a shell string: the password must never reach a command
     // line the shell could log or another process could read.
     const out = execFileSync(
-      'keytool',
+      findKeytool(),
       ['-list', '-v', '-keystore', keystorePath, '-alias', keyAlias, '-storepass', storePassword],
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
     );
     const m = out.match(/SHA1:\s*([0-9A-F:]{59})/i);
     return m ? m[1].toUpperCase() : null;
   } catch {
-    // keytool missing (no JAVA_HOME), wrong password, or unknown alias.
+    // keytool not found, wrong password, or unknown alias.
     return null;
   }
 }
@@ -214,9 +247,12 @@ if (!signingConfigured) {
     const sha1 = keystoreSha1();
     if (!sha1) {
       warnings.push(
-        'Could not read the keystore fingerprint (keytool missing, or the alias/\n' +
-          '     password properties are not set). Play checks it at upload, so a wrong\n' +
-          '     keystore would only surface there.',
+        'Could not read the keystore fingerprint. Either keytool was not found,\n' +
+          '     or ZBR_UPLOAD_KEY_ALIAS / ZBR_UPLOAD_STORE_PASSWORD are not set where\n' +
+          '     this script looks (env, ~/.gradle/gradle.properties, android/).\n' +
+          '     Looked for the JDK via JAVA_HOME and the Android Studio bundle.\n' +
+          '     Play checks the fingerprint at upload, so a wrong keystore would\n' +
+          '     only surface there — see docs/LOCAL_BUILD.md §2.',
       );
     } else if (sha1 === EXPECTED_UPLOAD_KEY_SHA1) {
       ok.push(`Upload key matches the certificate Play expects (${sha1.slice(0, 17)}…)`);
