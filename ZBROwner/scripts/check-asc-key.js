@@ -164,8 +164,12 @@ function makeToken(privateKey) {
           console.log(`           App Store Connect has is ${highest}, and it must strictly increase.`);
           console.log('           Build numbers are unique per APP, not per version, so');
           console.log(`           moving to a new marketing version (${MARKETING_VERSION}) does not free them.`);
-          console.log(`           Fix with:  npm run version:bump -- --to ${highest + 1}`);
-          if (!WILL_BUMP) console.log('           or re-run the build without --no-bump.');
+          console.log('');
+          console.log(`             node scripts/bump-version-code.js --to ${highest + 1}`);
+          console.log('             node scripts/go-live-ios.js --skip-privacy --no-bump');
+          console.log('');
+          console.log('           --no-bump on the second command, because the first already');
+          console.log('           set the number; bumping again would skip one for nothing.');
           console.log('');
           process.exit(1);
         }

@@ -26,8 +26,14 @@ const path = require('path');
 const appJsonPath = path.resolve(__dirname, '..', 'app.json');
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
+// `npm run version:bump -- --to 11` does not reach here: npm parses the
+// unknown --to as its own config and drops it, leaving npm_config_to behind —
+// so the script would silently do a plain +1 instead of the number asked for.
+// Reading the leftover makes both invocations work. See go-live.js.
 const toIndex = args.indexOf('--to');
-const explicit = toIndex !== -1 ? Number(args[toIndex + 1]) : null;
+const explicitFromNpm = process.env.npm_config_to;
+const explicitRaw = toIndex !== -1 ? args[toIndex + 1] : explicitFromNpm;
+const explicit = explicitRaw !== undefined ? Number(explicitRaw) : null;
 
 const raw = fs.readFileSync(appJsonPath, 'utf8');
 const config = JSON.parse(raw);
@@ -45,7 +51,7 @@ let next;
 if (explicit !== null) {
   if (!Number.isInteger(explicit) || explicit <= current) {
     console.error(
-      `\n--to must be an integer greater than the current versionCode (${current}), got ${args[toIndex + 1]}.\n` +
+      `\n--to must be an integer greater than the current versionCode (${current}), got ${explicitRaw}.\n` +
         'versionCode must strictly increase — Play remembers the highest value ever uploaded.\n',
     );
     process.exit(1);
