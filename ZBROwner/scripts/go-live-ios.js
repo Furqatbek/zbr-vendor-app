@@ -78,10 +78,25 @@ function summarizeErrors(logPath) {
   }
   const seen = new Set();
   for (const line of log.split('\n')) {
-    // "note:" and "warning:" are noise; only "error:" stops a build.
-    if (!/(^|\s)error:/.test(line) || /\berror: 0\b/.test(line)) continue;
     const trimmed = line.trim();
-    if (!seen.has(trimmed)) seen.add(trimmed);
+
+    // xcodebuild: "note:" and "warning:" are noise; only "error:" stops a build.
+    const isXcodeError = /(^|\s)error:/.test(line) && !/\berror: 0\b/.test(line);
+
+    // altool speaks a different dialect and never prints "error:". An upload
+    // rejection arrives as an indented key/value block — the useful lines are
+    // the description and the numeric code, e.g.
+    //   code : 90186
+    //   description : Invalid Pre-Release Train. The train version '1.0.0' is
+    //   closed for new build submissions
+    // Without these the summary reported "No error: line in the log" on a
+    // failure the log explained perfectly well.
+    const isAltoolError =
+      /^ERROR:/.test(trimmed) ||
+      /^(description|code|iris-code|NSLocalizedDescription)\s*[:=]/.test(trimmed);
+
+    if (!isXcodeError && !isAltoolError) continue;
+    if (trimmed && !seen.has(trimmed)) seen.add(trimmed);
   }
   if (!seen.size) {
     console.error(`${C.dim}  No "error:" line in the log — full output: ${logPath}${C.reset}`);

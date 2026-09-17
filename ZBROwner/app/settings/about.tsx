@@ -6,6 +6,7 @@ import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme
 import Card from '../../components/Card';
 import { useT } from '../../i18n';
 import { CONTACT, hasLegalLinks } from '../../constants/contact';
+import { APP_VERSION, APP_BUILD } from '../../constants/appVersion';
 
 export default function AboutScreen() {
   const t = useT();
@@ -19,7 +20,7 @@ export default function AboutScreen() {
           <Ionicons name="storefront" size={40} color={Colors.accent} />
         </View>
         <Text style={styles.appName}>{t('aboutScreen.appName')}</Text>
-        <Text style={styles.version}>{t('aboutScreen.version')}</Text>
+        <Text style={styles.version}>{t('aboutScreen.version', { version: APP_VERSION, build: APP_BUILD })}</Text>
         <Text style={styles.tagline}>{t('aboutScreen.tagline')}</Text>
       </View>
 

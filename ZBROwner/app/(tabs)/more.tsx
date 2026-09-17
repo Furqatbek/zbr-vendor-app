@@ -13,6 +13,7 @@ import RatingStars from '../../components/RatingStars';
 import { useI18n, LOCALE_NAMES } from '../../i18n';
 import type { Locale } from '../../i18n';
 import { useRefresh } from '../../hooks/useRefresh';
+import { APP_VERSION, APP_BUILD } from '../../constants/appVersion';
 
 export default function MoreScreen() {
   const isOpen = useStore((s) => s.isOpen);
@@ -80,7 +81,7 @@ export default function MoreScreen() {
     { icon: 'notifications-outline', label: t('more.notificationPrefs'), route: '/settings/notifications', subtitle: t('more.manageAlerts') },
     { icon: 'document-text-outline', label: t('more.orderHistory'), route: '/settings/order-history', subtitle: t('more.totalOrders', { count: orders.length }) },
     { icon: 'help-circle-outline', label: t('more.helpCenter'), route: '/settings/help', subtitle: t('more.faqSupport') },
-    { icon: 'information-circle-outline', label: t('more.about'), route: '/settings/about', subtitle: 'v1.0.0' },
+    { icon: 'information-circle-outline', label: t('more.about'), route: '/settings/about', subtitle: `v${APP_VERSION}` },
   ];
 
   return (
@@ -221,7 +222,7 @@ export default function MoreScreen() {
         <Text style={styles.deleteAccountText}>{t('more.deleteAccount')}</Text>
       </TouchableOpacity>
 
-      <Text style={styles.versionText}>{t('more.appVersion')}</Text>
+      <Text style={styles.versionText}>{t('more.appVersion', { version: APP_VERSION, build: APP_BUILD })}</Text>
 
       {/* Logout Confirmation Modal */}
       <Modal visible={showLogout} transparent animationType="fade">

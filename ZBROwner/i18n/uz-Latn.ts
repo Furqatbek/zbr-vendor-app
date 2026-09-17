@@ -304,7 +304,7 @@ export default {
     logOut: 'Chiqish',
     logOutConfirm: 'Haqiqatan ham chiqmoqchimisiz?',
         deleteAccount: 'Hisobni o\'chirish',
-    appVersion: 'ZBR Owner v1.0.0',
+    appVersion: 'ZBR Owner v{{version}}',
     myRestaurants: 'Mening restoranlarim',
     language: 'Til',
     integration: 'Restoran integratsiyasi',
@@ -418,7 +418,7 @@ export default {
 
   aboutScreen: {
     appName: 'ZBR Owner',
-    version: 'Versiya 1.0.0 (Build 1)',
+    version: 'Versiya {{version}} (Build {{build}})',
     tagline: 'Restoran boshqaruvi — oddiy',
     appDescription: 'ZBR Owner restoran egalariga buyurtmalar, menyu, xodimlar va moliyani bir joydan boshqarishga yordam beradi. Tezlik va soddalik uchun yaratilgan.',
     legal: 'Huquqiy ma\'lumotlar',

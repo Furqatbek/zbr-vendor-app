@@ -318,7 +318,7 @@ export default {
     logOut: 'Log Out',
     logOutConfirm: 'Are you sure you want to log out?',
         deleteAccount: 'Delete account',
-    appVersion: 'ZBR Owner v1.0.0',
+    appVersion: 'ZBR Owner v{{version}}',
     myRestaurants: 'My Restaurants',
     language: 'Language',
     integration: 'Restaurant Integration',
@@ -439,7 +439,7 @@ export default {
   // About
   aboutScreen: {
     appName: 'ZBR Owner',
-    version: 'Version 1.0.0 (Build 1)',
+    version: 'Version {{version}} (Build {{build}})',
     tagline: 'Restaurant management made simple',
     appDescription: 'ZBR Owner helps restaurant owners manage orders, menus, staff, and finances all from one place. Built for speed and simplicity.',
     legal: 'Legal',

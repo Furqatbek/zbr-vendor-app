@@ -207,6 +207,27 @@ check catches that cost a full archive to discover otherwise:
 Use `go-live:ios:no-bump` when re-archiving after a failed upload, so you don't
 burn numbers.
 
+### "The train version 'X' is closed for new build submissions" (90186)
+
+App Store Connect closes a version's *train* once that version is released or
+otherwise finalised. No further builds can be uploaded under it, whatever the
+build number.
+
+The fix is a new marketing version, not a new build number:
+
+```jsonc
+// app.json
+"version": "1.0.2"     // was 1.0.1
+```
+
+Build numbers restart their uniqueness within the new train, so the next
+`go-live:ios` run uploads normally. Create the version in App Store Connect
+(**+ Version or Platform**) to attach the build to it.
+
+The About screen and the More row read the version from the installed binary
+(`constants/appVersion.ts`), so nothing else needs editing — they were hardcoded
+strings and still said "Version 1.0.0 (Build 1)" while build 9 was in review.
+
 > An iOS build advances the Android `versionCode` too, since the two are kept
 > equal. That is harmless — Play only requires the number to strictly increase,
 > never to be contiguous — so expect gaps in the Play sequence.
