@@ -40,6 +40,32 @@ version bump — with `npm run check:release` failing the build if either is wro
 - **JDK 17** (`java -version` → 17.x). Android Gradle Plugin 8 requires it.
 - **Android Studio** → SDK Platform 36 + Build-Tools + Platform-Tools
 
+### Signing credentials go in `keystore.properties`, not `~/.gradle`
+
+Create **`keystore.properties` at the repo root** (gitignored, never committed):
+
+```properties
+ZBR_UPLOAD_STORE_FILE=C:/keys/zbr-owner-upload.jks
+ZBR_UPLOAD_KEY_ALIAS=zbr-owner
+ZBR_UPLOAD_STORE_PASSWORD=...
+ZBR_UPLOAD_KEY_PASSWORD=...
+```
+
+**Not `~/.gradle/gradle.properties`.** That file is global to the machine, so
+every Android project shares it and whichever one wrote these property names
+last wins. This app was once built with another project's keystore that way,
+and Play rejected the upload:
+
+> App Bundle signed with the wrong key … expects SHA1 `11:3D:C7:…`, received
+> `B4:61:99:…`
+
+The global file still works as a fallback for a single-project machine or CI,
+but `keystore.properties` takes precedence, and `check:release` now verifies the
+certificate fingerprint against the one Play expects before anything is built.
+
+Use forward slashes in the path even on Windows — Gradle reads this as a Java
+properties file, where `\` is an escape character.
+
 ### Windows: JAVA_HOME
 
 `keytool : is not recognized` or a path that starts with `\bin\keytool.exe`

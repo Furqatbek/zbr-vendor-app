@@ -137,7 +137,12 @@ for (const key of REQUIRED_VARS) {
 // A release AAB signed with the shared debug keystore is REJECTED at upload
 // ("signed in debug mode"), after the whole build. Catch it before Gradle runs.
 const SIGNING_PROP = 'ZBR_UPLOAD_STORE_FILE';
+// Order matters: the per-project file wins. ~/.gradle/gradle.properties is
+// GLOBAL — every Android project on the machine shares it, so whichever wrote
+// these property names last wins. That is how this app came to be signed with
+// another project's key and rejected by Play for a certificate mismatch.
 const gradlePropsPaths = [
+  path.join(root, 'keystore.properties'),
   path.join(os.homedir(), '.gradle', 'gradle.properties'),
   path.join(root, 'android', 'gradle.properties'),
 ];

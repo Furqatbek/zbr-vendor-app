@@ -45,3 +45,6 @@ yarn-error.*
 # release artifacts — the .xcarchive, the .ipa, and the generated
 # ExportOptions.plist that carries the Apple team id
 /build
+
+# Per-project signing credentials — never commit
+keystore.properties

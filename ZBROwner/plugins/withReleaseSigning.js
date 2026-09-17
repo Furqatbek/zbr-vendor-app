@@ -16,13 +16,22 @@
  * by the next `expo prebuild --clean`. This plugin re-applies the change on
  * every prebuild instead.
  *
- * Credentials are read from Gradle properties, which live OUTSIDE the repo in
- * ~/.gradle/gradle.properties (Windows: %USERPROFILE%\.gradle\gradle.properties):
+ * Credentials come from `keystore.properties` at the REPO ROOT — gitignored,
+ * so it never leaves the machine:
  *
  *     ZBR_UPLOAD_STORE_FILE=C:/keys/zbr-owner-upload.jks
  *     ZBR_UPLOAD_KEY_ALIAS=zbr-owner
  *     ZBR_UPLOAD_STORE_PASSWORD=...
  *     ZBR_UPLOAD_KEY_PASSWORD=...
+ *
+ * It lives beside the project rather than in ~/.gradle/gradle.properties
+ * because that file is GLOBAL: every Android project on the machine shares it,
+ * so whichever one wrote those property names last wins. That is not
+ * hypothetical — this app was once signed with another project's key, and Play
+ * rejected the upload for a certificate mismatch.
+ *
+ * ~/.gradle/gradle.properties still works as a fallback for a single-project
+ * machine or CI, but the per-project file takes precedence.
  *
  * If those properties are absent the release config falls back to the debug
  * keystore so local `assembleRelease` smoke builds still work — but
@@ -34,7 +43,21 @@ const { withAppBuildGradle } = require('@expo/config-plugins');
 
 const RELEASE_SIGNING_CONFIG = `
         release {
-            if (project.hasProperty('ZBR_UPLOAD_STORE_FILE')) {
+            // keystore.properties sits at the repo root, one level above
+            // android/. Checked first so a per-project key always beats
+            // whatever another project left in ~/.gradle/gradle.properties.
+            def zbrKeystoreProps = new Properties()
+            def zbrKeystoreFile = rootProject.file('../keystore.properties')
+            if (zbrKeystoreFile.exists()) {
+                zbrKeystoreFile.withInputStream { zbrKeystoreProps.load(it) }
+            }
+
+            if (zbrKeystoreProps['ZBR_UPLOAD_STORE_FILE']) {
+                storeFile file(zbrKeystoreProps['ZBR_UPLOAD_STORE_FILE'])
+                storePassword zbrKeystoreProps['ZBR_UPLOAD_STORE_PASSWORD']
+                keyAlias zbrKeystoreProps['ZBR_UPLOAD_KEY_ALIAS']
+                keyPassword zbrKeystoreProps['ZBR_UPLOAD_KEY_PASSWORD']
+            } else if (project.hasProperty('ZBR_UPLOAD_STORE_FILE')) {
                 storeFile file(ZBR_UPLOAD_STORE_FILE)
                 storePassword ZBR_UPLOAD_STORE_PASSWORD
                 keyAlias ZBR_UPLOAD_KEY_ALIAS
