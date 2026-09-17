@@ -24,6 +24,12 @@ const ok = [];
 
 const expo = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8')).expo;
 
+// go-live.js passes this: that run bumps and then regenerates android/ from
+// app.json, so whatever build.gradle currently holds is about to be overwritten
+// and cannot reach the AAB. Without it the gate blocks a run that was about to
+// fix itself — the same sequencing mistake the iOS Info.plist check made.
+const willPrebuild = process.argv.slice(2).includes('--will-prebuild');
+
 // ── Versioning (Play rejects duplicates / missing) ──────────────────────────
 const versionCode = expo?.android?.versionCode;
 if (typeof versionCode !== 'number' || !Number.isInteger(versionCode) || versionCode < 1) {
@@ -42,10 +48,16 @@ if (typeof versionCode !== 'number' || !Number.isInteger(versionCode) || version
     const m = fs.readFileSync(appGradlePath, 'utf8').match(/versionCode\s+(\d+)/);
     const gradleVersionCode = m ? Number(m[1]) : null;
     if (gradleVersionCode !== null && gradleVersionCode !== versionCode) {
-      problems.push(
-        `versionCode mismatch — the build would ship ${gradleVersionCode}, not ${versionCode}.\n` +
-          `     app.json says ${versionCode}; android/app/build.gradle says ${gradleVersionCode}.\n` +
-          '     Run `npm run prebuild:android` to regenerate the native project.',
+      (willPrebuild ? ok : problems).push(
+        willPrebuild
+          ? `build.gradle says ${gradleVersionCode}, app.json says ${versionCode} — prebuild will resolve it`
+          : `versionCode mismatch — the build would ship ${gradleVersionCode}, not ${versionCode}.\n` +
+            `     app.json says ${versionCode}; android/app/build.gradle says ${gradleVersionCode}.\n` +
+            '     Either regenerate the project at the current number:\n' +
+            '       npm run prebuild:android\n' +
+            '     or let the build bump past both — drop --no-bump and re-run.\n' +
+            '     app.json is version-controlled, so a pull can move versionCode\n' +
+            '     backwards past a local bump. Commit it after each release build.',
       );
     } else if (gradleVersionCode !== null) {
       ok.push(`android/app/build.gradle versionCode matches (${gradleVersionCode})`);

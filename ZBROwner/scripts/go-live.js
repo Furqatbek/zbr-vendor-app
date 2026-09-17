@@ -89,7 +89,13 @@ if (skipPrivacy) console.log(`${C.yellow}--skip-privacy: the policy URL check wi
 console.log('');
 
 // ── gates ───────────────────────────────────────────────────────────────────
-run('Release + push configuration', 'node', ['scripts/check-release-config.js']);
+run('Release + push configuration', 'node', [
+  'scripts/check-release-config.js',
+  // A build run regenerates android/ below, so state already in build.gradle is
+  // about to be overwritten. --checks stops before that and must keep judging
+  // the project as it stands.
+  ...(checksOnly ? [] : ['--will-prebuild']),
+]);
 // A package off the SDK's major line builds and uploads cleanly, then fails
 // on device with "Cannot find native module" and a blank screen. Nothing
 // else in this gate list can see it.
