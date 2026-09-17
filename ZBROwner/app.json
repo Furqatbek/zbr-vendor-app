@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.zbr.owner",
-      "buildNumber": "9",
+      "buildNumber": "11",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
@@ -35,7 +35,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.zbr.owner",
-      "versionCode": 9,
+      "versionCode": 11,
       "allowBackup": false,
       "googleServicesFile": "./google-services.json",
       "permissions": [
