@@ -2,7 +2,7 @@
 
 **Audience:** ZBR backend team
 **Replaces:** the per-vendor STOMP subscription for order events
-**Client status:** shipped and enabled — the app no longer opens a socket
+**Client status:** implemented, running alongside the socket until you send push
 
 ---
 
@@ -223,8 +223,8 @@ The app has a transport switch in `constants/features.ts`:
 
 | Value | Meaning |
 |---|---|
-| `'push'` | **Current default.** No socket is opened. |
-| `'both'` | Both run; the shared handler dedupes. |
+| `'both'` | **Current default.** Socket and push both active; duplicates are absorbed. |
+| `'push'` | No socket is opened. **Switch to this only once push is live and verified** — until then it would leave vendors with no alarm at all. |
 | `'websocket'` | Original behaviour, no polling. |
 
 Suggested sequence:

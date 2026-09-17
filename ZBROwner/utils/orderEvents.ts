@@ -32,9 +32,6 @@ export const ORDER_EVENT_TYPES = [
 
 export type OrderEventType = (typeof ORDER_EVENT_TYPES)[number];
 
-/** Ids we have already alerted for, so a duplicate delivery stays quiet. */
-const alertedOrderIds = new Set<string>();
-
 export function isOrderEvent(type: unknown): type is OrderEventType {
   return typeof type === 'string' && (ORDER_EVENT_TYPES as readonly string[]).includes(type);
 }
@@ -42,42 +39,18 @@ export function isOrderEvent(type: unknown): type is OrderEventType {
 /**
  * Act on an order event. Safe to call from any transport, and safe to call
  * twice for the same event.
+ *
+ * It only reloads. Both alerts are raised by the store's diff of the result:
+ * a newly appeared order still in 'created' gets the new-order alarm, and an
+ * order that was being cooked and is now cancelled gets the stop-cooking
+ * alarm. Keeping the detection in one place is what makes the foreground poll
+ * a real safety net rather than a partial one — it goes through exactly the
+ * same path as a push.
  */
 export async function handleOrderEvent(
   type: string,
-  orderId?: string | number | null,
+  _orderId?: string | number | null,
 ): Promise<void> {
   if (!isOrderEvent(type)) return;
-
-  const store = useStore.getState();
-
-  // Reloading is what surfaces a cancellation: the store compares each order's
-  // previous status against the incoming one and queues an alert for anything
-  // that was being cooked and is now cancelled.
-  await store.loadOrders();
-
-  if (type !== 'NEW_ORDER_RECEIVED') return;
-
-  const latest = useStore.getState();
-  const id = orderId != null ? String(orderId) : null;
-  const order = id
-    ? latest.orders.find((o) => o.id === id)
-    : latest.orders.find((o) => o.status === 'created');
-
-  if (!order) return;
-
-  // Only alert for an order still awaiting a decision. A duplicate delivery, or
-  // a push arriving after the vendor already accepted on another device, must
-  // not restart the alarm.
-  if (order.status !== 'created') return;
-  if (alertedOrderIds.has(order.id)) return;
-  if (latest.showOrderAlert && latest.incomingOrder?.id === order.id) return;
-
-  alertedOrderIds.add(order.id);
-  latest.triggerOrderAlert(order);
-}
-
-/** Test seam: the dedupe set is process-lifetime state. */
-export function __resetOrderEventDedupe() {
-  alertedOrderIds.clear();
+  await useStore.getState().loadOrders();
 }

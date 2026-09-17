@@ -61,6 +61,29 @@ function queueCancellations(queued: Order[], detected: Order[]): Order[] {
   return additions.length ? [...queued, ...additions] : queued;
 }
 
+/**
+ * Orders that appeared since the last refresh and are still awaiting a
+ * decision.
+ *
+ * Detected from the same diff as cancellations, so EVERY path that refreshes
+ * raises the alarm: push, the socket, the foreground poll, pull-to-refresh.
+ * That matters because the poll is the safety net for a push that never
+ * arrived — a net that silently skipped the most important case would be no
+ * net at all.
+ *
+ * First load is excluded deliberately. Opening the app would otherwise alarm
+ * for every order already sitting in 'created', which is noise: the vendor is
+ * looking at the screen, and the orders board already shows them.
+ */
+function detectNewOrders(incoming: Order[], current: Order[]): Order[] {
+  if (current.length === 0) return [];
+  const known = new Set(current.map((o) => o.id));
+  return incoming.filter((o) => o.status === 'created' && !known.has(o.id));
+}
+
+/** Orders already alarmed for, so a re-delivery or a poll cannot repeat it. */
+const alertedNewOrderIds = new Set<string>();
+
 interface AppStore {
   // Restaurant
   isOpen: boolean;
@@ -151,10 +174,22 @@ export const useStore = create<AppStore>((set, get) => ({
     set({ ordersLoading: true, ordersError: false });
     try {
       const res = await fetchRestaurantOrders(restaurant.id, { page: 0, size: 100 });
-      set((s) => ({
-        orders: mergePreservingPending(res.content, s.orders),
-        cancelledAlerts: queueCancellations(s.cancelledAlerts, detectCancellations(res.content, s.orders)),
-      }));
+      set((s) => {
+        const newOrders = detectNewOrders(res.content, s.orders).filter(
+          (o) => !alertedNewOrderIds.has(o.id),
+        );
+        const alertFor = s.showOrderAlert ? null : (newOrders[0] ?? null);
+        if (alertFor) alertedNewOrderIds.add(alertFor.id);
+
+        return {
+          orders: mergePreservingPending(res.content, s.orders),
+          cancelledAlerts: queueCancellations(
+            s.cancelledAlerts,
+            detectCancellations(res.content, s.orders),
+          ),
+          ...(alertFor ? { incomingOrder: alertFor, showOrderAlert: true } : {}),
+        };
+      });
     } catch {
       set({ ordersError: true });
     } finally {
@@ -167,10 +202,22 @@ export const useStore = create<AppStore>((set, get) => ({
     set({ ordersLoading: true, ordersError: false });
     try {
       const res = await fetchActiveOrders(restaurant.id, { page: 0, size: 100 });
-      set((s) => ({
-        orders: mergePreservingPending(res.content, s.orders),
-        cancelledAlerts: queueCancellations(s.cancelledAlerts, detectCancellations(res.content, s.orders)),
-      }));
+      set((s) => {
+        const newOrders = detectNewOrders(res.content, s.orders).filter(
+          (o) => !alertedNewOrderIds.has(o.id),
+        );
+        const alertFor = s.showOrderAlert ? null : (newOrders[0] ?? null);
+        if (alertFor) alertedNewOrderIds.add(alertFor.id);
+
+        return {
+          orders: mergePreservingPending(res.content, s.orders),
+          cancelledAlerts: queueCancellations(
+            s.cancelledAlerts,
+            detectCancellations(res.content, s.orders),
+          ),
+          ...(alertFor ? { incomingOrder: alertFor, showOrderAlert: true } : {}),
+        };
+      });
     } catch {
       set({ ordersError: true });
     } finally {

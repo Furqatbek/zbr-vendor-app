@@ -2,7 +2,7 @@ import type { Order } from '../types';
 
 import { useStore } from '../store';
 import * as api from '../services/api';
-import { handleOrderEvent, isOrderEvent, __resetOrderEventDedupe } from '../utils/orderEvents';
+import { handleOrderEvent, isOrderEvent } from '../utils/orderEvents';
 
 jest.mock('../services/api', () => ({
   fetchRestaurantOrders: jest.fn(),
@@ -35,14 +35,26 @@ const order = (id: string, status: Order['status']): Order =>
 const serverHas = (orders: Order[]) =>
   (api.fetchRestaurantOrders as jest.Mock).mockResolvedValue({ content: orders });
 
+/** Seed a previous state, since first load never alarms. */
+const seed = async (orders: Order[]) => {
+  serverHas(orders);
+  await useStore.getState().loadOrders();
+};
+
+const reset = () =>
+  useStore.setState({ orders: [], cancelledAlerts: [], showOrderAlert: false, incomingOrder: null });
+
 /**
- * The push payload is a "something changed" nudge, not a carrier of truth —
- * every alert is derived from a fresh fetch. These lock that contract in.
+ * The push payload is a "something changed" nudge: the handler only reloads,
+ * and the store's diff of the result raises both alerts. That is what lets the
+ * foreground poll act as a real safety net — it takes the identical path.
+ *
+ * Order ids are unique per test because the store's "already alarmed" set is
+ * module state, exactly as it is in the running app.
  */
-describe('order events from a push payload', () => {
+describe('order events', () => {
   beforeEach(() => {
-    useStore.setState({ orders: [], cancelledAlerts: [], showOrderAlert: false, incomingOrder: null });
-    __resetOrderEventDedupe();
+    reset();
     jest.clearAllMocks();
   });
 
@@ -59,52 +71,70 @@ describe('order events from a push payload', () => {
     expect(api.fetchRestaurantOrders).not.toHaveBeenCalled();
   });
 
-  it('raises the new-order alert for the order named in the payload', async () => {
-    serverHas([order('7', 'created')]);
-    await handleOrderEvent('NEW_ORDER_RECEIVED', 7);
+  it('raises the new-order alarm for an order that just appeared', async () => {
+    await seed([order('100', 'delivered')]);
 
-    const s = useStore.getState();
-    expect(s.showOrderAlert).toBe(true);
-    expect(s.incomingOrder?.id).toBe('7');
+    serverHas([order('100', 'delivered'), order('101', 'created')]);
+    await handleOrderEvent('NEW_ORDER_RECEIVED', 101);
+
+    expect(useStore.getState().showOrderAlert).toBe(true);
+    expect(useStore.getState().incomingOrder?.id).toBe('101');
   });
 
-  it('accepts a numeric orderId, which is what JSON payloads carry', async () => {
-    serverHas([order('7', 'created')]);
-    await handleOrderEvent('NEW_ORDER_RECEIVED', 7);
-    expect(useStore.getState().incomingOrder?.id).toBe('7');
-  });
-
-  it('does not re-alarm when the same push is delivered twice', async () => {
-    serverHas([order('7', 'created')]);
-    await handleOrderEvent('NEW_ORDER_RECEIVED', 7);
+  it('does not re-alarm when the same event is delivered twice', async () => {
+    await seed([order('200', 'delivered')]);
+    serverHas([order('200', 'delivered'), order('201', 'created')]);
+    await handleOrderEvent('NEW_ORDER_RECEIVED', 201);
     useStore.getState().dismissOrderAlert();
 
-    await handleOrderEvent('NEW_ORDER_RECEIVED', 7);
+    await handleOrderEvent('NEW_ORDER_RECEIVED', 201);
     expect(useStore.getState().showOrderAlert).toBe(false);
   });
 
-  it('stays quiet if the order was already accepted elsewhere', async () => {
-    // A second device, or a push that arrived late. Nothing is awaiting a
-    // decision, so the alarm would be pure noise.
-    serverHas([order('7', 'preparing')]);
-    await handleOrderEvent('NEW_ORDER_RECEIVED', 7);
+  it('stays quiet for an order already accepted elsewhere', async () => {
+    // A second device took it, or the event arrived late.
+    await seed([order('300', 'delivered')]);
+    serverHas([order('300', 'delivered'), order('301', 'preparing')]);
+    await handleOrderEvent('NEW_ORDER_RECEIVED', 301);
     expect(useStore.getState().showOrderAlert).toBe(false);
   });
 
   it('surfaces a cancellation without the payload describing it', async () => {
-    serverHas([order('7', 'preparing')]);
-    await handleOrderEvent('ORDER_UPDATED', 7);
-    expect(useStore.getState().cancelledAlerts).toHaveLength(0);
+    await seed([order('400', 'preparing')]);
 
-    // The backend need only say the order changed; the status diff does the rest.
-    serverHas([order('7', 'cancelled')]);
-    await handleOrderEvent('ORDER_UPDATED', 7);
-    expect(useStore.getState().cancelledAlerts.map((o) => o.id)).toEqual(['7']);
+    // The backend need only say the order changed; the diff does the rest.
+    serverHas([order('400', 'cancelled')]);
+    await handleOrderEvent('ORDER_UPDATED', 400);
+    expect(useStore.getState().cancelledAlerts.map((o) => o.id)).toEqual(['400']);
   });
 
-  it('works when the payload omits orderId entirely', async () => {
-    serverHas([order('9', 'created')]);
-    await handleOrderEvent('NEW_ORDER_RECEIVED');
-    expect(useStore.getState().incomingOrder?.id).toBe('9');
+  it('alarms from a plain refresh, which is how the poll covers a lost push', async () => {
+    await seed([order('500', 'delivered')]);
+
+    // No event at all — just the foreground poll calling loadOrders.
+    serverHas([order('500', 'delivered'), order('501', 'created')]);
+    await useStore.getState().loadOrders();
+
+    expect(useStore.getState().showOrderAlert).toBe(true);
+    expect(useStore.getState().incomingOrder?.id).toBe('501');
+  });
+
+  it('does not alarm on first load, which would fire every time the app opens', async () => {
+    reset();
+    serverHas([order('600', 'created'), order('601', 'created')]);
+    await useStore.getState().loadOrders();
+    expect(useStore.getState().showOrderAlert).toBe(false);
+  });
+
+  it('does not replace an alert already on screen', async () => {
+    await seed([order('700', 'delivered')]);
+    serverHas([order('700', 'delivered'), order('701', 'created')]);
+    await useStore.getState().loadOrders();
+    expect(useStore.getState().incomingOrder?.id).toBe('701');
+
+    // A second order arrives while the vendor is still deciding on the first.
+    serverHas([order('700', 'delivered'), order('701', 'created'), order('702', 'created')]);
+    await useStore.getState().loadOrders();
+    expect(useStore.getState().incomingOrder?.id).toBe('701');
   });
 });

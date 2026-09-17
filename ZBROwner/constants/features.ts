@@ -28,7 +28,14 @@ export const FEATURES = {
  *   'both'      — run together; the shared handler in utils/orderEvents.ts
  *                 dedupes, so this is safe and is how to migrate.
  *
- * Default is 'push', because a STOMP subscription is a connection the backend
+ * Default is 'both' until the backend is actually sending push. Flipping to
+ * 'push' before then would leave vendors with no alarm at all: the socket would
+ * be gone and nothing would be arriving in its place, with only the foreground
+ * poll noticing, up to 45 seconds late and never while backgrounded.
+ *
+ * Switch to 'push' once §8 of docs/PUSH_ORDER_EVENTS.md has been verified on a
+ * real device. That is the whole point of the exercise, because a STOMP
+ * subscription is a connection the backend
  * holds open per signed-in vendor: a thousand vendors is a thousand sockets,
  * plus the heartbeats, reconnect storms after a deploy, and the memory behind
  * each one. FCM and APNs already run that fan-out infrastructure, and the app
@@ -40,7 +47,7 @@ export const FEATURES = {
  * foreground (see hooks/useNotifications.ts) — the poll is the safety net, the
  * push is what makes the alarm instant.
  */
-export const REALTIME_TRANSPORT: 'push' | 'websocket' | 'both' = 'push';
+export const REALTIME_TRANSPORT: 'push' | 'websocket' | 'both' = 'both';
 
 /**
  * How often to re-check orders while the app is open and in the foreground.
