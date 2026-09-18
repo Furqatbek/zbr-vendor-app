@@ -59,6 +59,7 @@ the §0 asks and what the client adjusted in response:
 | 7 | **Idempotent** order mutations | Safe retries across deploys. | Medium | ✅ Done |
 | 8 | **Send FCM/APNs pushes** per [`PUSH_ORDER_EVENTS.md`](./PUSH_ORDER_EVENTS.md) — the full contract with curl examples, and the reason the vendor order socket can be retired | **A locked phone only wakes for a remote push.** The WebSocket cannot deliver when the app is backgrounded — this is what makes vendors miss orders. | **High** | 🔴 Open — **client side done, credentials ready (§6)** |
 | 9 | **`DELETE /api/v1/auth/account`** (§2.1) | App Store Guideline **5.1.1(v)**: an app with accounts must let the user delete it **from inside the app**. Apple rejects a link to a web form. The screen is built and shipped; without the endpoint it shows an error to every vendor who taps it. | **Yes — gates iOS submission** | 🔴 Open |
+| 10 | **Image uploads fail server-side** (§8.5) | `could not create category directory: restaurants/1/logo` — the storage root is not writable. All three uploads (logo, cover, menu item) share the service and all fail. Vendors cannot set any image. | **High** | 🔴 Open |
 
 ---
 
@@ -398,6 +399,58 @@ whatever you build.
 - Import result the client renders: `{ categoriesCreated, categoriesUpdated,
   productsCreated, productsUpdated, productsSkipped, errors[], warnings[] }`.
 - `overwriteExisting: false` = skip duplicates (Import); `true` = update (Sync).
+
+---
+
+## 8.5 Image uploads are failing in production 🔴 BROKEN
+
+**All three image uploads fail**, with the server's own message:
+
+```
+could not create category directory: restaurants/1/logo
+```
+
+The client is not involved in that path — it is the storage root on the
+server's filesystem. The three uploads share one storage service (the
+"category" being logo / cover-image / menu-item), which is why they fail
+identically:
+
+| Endpoint | Category |
+|---|---|
+| `POST /api/v1/restaurants/{id}/logo` | `logo` |
+| `POST /api/v1/restaurants/{id}/cover-image` | `cover-image` |
+| `POST /api/v1/restaurants/{id}/menu/items/{itemId}/image` | `menu-item` |
+
+The request itself is well formed: `multipart/form-data`, field name **`file`**,
+`Authorization: Bearer <access token>`, with the boundary set by the HTTP
+client. The server accepts it, authenticates it, and then cannot write.
+
+**What to check, in order:**
+
+1. **Is the upload root writable by the application user?** Most likely cause.
+   A container running as non-root cannot `mkdir` under a path owned by root.
+2. **Is the filesystem read-only?** Common for hardened container images.
+3. **Does the parent of the upload root exist?** `Files.createDirectories`
+   builds the chain; a plain `mkdir` does not.
+4. **Is the configured path absolute?** A relative path resolves against the
+   process working directory, which differs between running from an IDE and
+   running as a service.
+
+> **Local disk is the wrong home for these regardless.** Uploads written to the
+> app server's filesystem are lost on every redeploy, invisible to a second
+> instance behind a load balancer, and need a mounted volume to survive at all.
+> Object storage (any S3-compatible bucket) removes all three problems and
+> returns a URL the client can use directly. Worth doing now, while no vendor
+> has uploaded anything yet.
+
+**Client behaviour you can rely on while fixing this:** the app shows the
+server's `message` verbatim, which is how the directory error surfaced at all.
+It does not retry, and it does not cache the image locally — a failed upload
+leaves the restaurant or menu item exactly as it was.
+
+**One thing to confirm when it works:** what the response returns. The client
+expects the updated entity (`UpdateRestaurantResponse` / `MenuItemResponse`) and
+re-fetches afterwards, so a bare `200` with no body is tolerated but wasteful.
 
 ---
 
