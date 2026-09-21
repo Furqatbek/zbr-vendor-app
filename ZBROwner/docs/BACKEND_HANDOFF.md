@@ -318,7 +318,7 @@ payments land, tell us and we'll surface it.
   → **Full push contract, payload shapes, and priority requirements:
   [`docs/PUSH_SETUP.md`](./PUSH_SETUP.md) §3.** Key points: `priority: high`
   (Android) / `apns-priority: 10` + `interruption-level: time-sensitive` (iOS),
-  `channel_id: "orders_v2"`, sound `new_order`, a `notification` block **and** a
+  `channel_id: "orders_v3"`, sound `new_order`, a `notification` block **and** a
   `data` block, numeric `data.orderId`, and pruning of dead tokens on
   `UNREGISTERED` / `410`.
   ❓ **Please confirm the `DELETE` contract** — the client currently sends
@@ -337,7 +337,7 @@ The mobile side of push is complete. Everything needed to send is available:
 | APNs Key ID | *ask mobile* | no |
 | APNs `.p8` auth key | *ask mobile — via secret manager* | 🔒 **yes** |
 | `apns-topic` / bundle id | `com.zbr.owner` | no |
-| Android FCM `channel_id` | `orders_v2` | no |
+| Android FCM `channel_id` | `orders_v3` | no |
 | Notification sound | `new_order` (Android) / `new_order.wav` (iOS) | no |
 
 Implementation notes that will save you time:

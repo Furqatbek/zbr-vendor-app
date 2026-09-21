@@ -53,7 +53,7 @@ else can pass while that still fails.
 - Creates Android channels up front:
   | Channel id | Use | Importance | Sound |
   |---|---|---|---|
-  | `orders_v2` | New orders | `MAX` (heads-up, wakes screen) | `new_order.wav` |
+  | `orders_v3` | New orders | `MAX` (heads-up, wakes screen) | `new_order.wav` |
   | `updates_v2` | Status changes | `DEFAULT` | default |
 - Taps navigate to `/order/{orderId}` (including the cold-start tap), after
   validating `orderId` is numeric.
@@ -245,7 +245,7 @@ routing (deep-link hardening).
   "android": {
     "priority": "high",
     "notification": {
-      "channel_id": "orders_v2",
+      "channel_id": "orders_v3",
       "sound": "new_order",
       "notification_priority": "PRIORITY_MAX",
       "visibility": "PUBLIC",
@@ -440,7 +440,7 @@ runs in CI, so a wrong-package `google-services.json` can't be merged.
 - [ ] Firebase service-account key in backend secrets
 
 **Backend**
-- [ ] Sends the FCM payload in §3 with `priority: "high"` + `channel_id: "orders_v2"`
+- [ ] Sends the FCM payload in §3 with `priority: "high"` + `channel_id: "orders_v3"`
 - [ ] Sends the APNs payload in §3 with `apns-priority: 10` + `interruption-level: time-sensitive`
 - [ ] Prunes dead tokens (`UNREGISTERED` / `410`) and upserts by `deviceId`
 - [ ] Does not push to the device that caused the change

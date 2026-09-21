@@ -162,7 +162,7 @@ const message = {
     android: {
       priority: 'high',
       notification: {
-        channel_id: 'orders_v2',
+        channel_id: 'orders_v3',
         sound: 'new_order',
         notification_priority: 'PRIORITY_MAX',
         visibility: 'PUBLIC',
@@ -174,7 +174,7 @@ const message = {
 (async () => {
   console.log('\nSending FCM test push');
   console.log(`  project  : ${sa.project_id}`);
-  console.log(`  channel  : orders_v2   sound: new_order   priority: high`);
+  console.log(`  channel  : orders_v3   sound: new_order   priority: high`);
   console.log(`  device   : ${deviceToken.slice(0, 16)}…${deviceToken.slice(-8)}`);
 
   let accessToken;
@@ -201,7 +201,7 @@ const message = {
   if (res.ok) {
     console.log(`\n  ✅ FCM accepted the push (${body.name || 'sent'}).\n`);
     console.log('  If nothing appears: delivery is fine but presentation is not —');
-    console.log('  check notification permission, the orders_v2 channel in system');
+    console.log('  check notification permission, the orders_v3 channel in system');
     console.log('  settings, and Android OEM battery restrictions.\n');
     return;
   }

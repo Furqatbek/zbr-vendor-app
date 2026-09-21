@@ -90,7 +90,7 @@ curl -X POST \
         "priority": "HIGH",
         "ttl": "120s",
         "notification": {
-          "channel_id": "orders_v2",
+          "channel_id": "orders_v3",
           "sound": "new_order",
           "title": "New order",
           "body": "Tap to open"
@@ -104,10 +104,18 @@ curl -X POST \
 
 - `priority: HIGH` — the only way to wake a device in Doze. Normal priority is
   batched and an order can sit for minutes.
-- `channel_id: orders_v2` — must match exactly. The app creates this channel
+- `channel_id: orders_v3` — **changed from `orders_v2`, please update.** Must
+  match exactly. The app creates this channel
   with the alarm sound and max importance. **A channel's sound and importance
   are immutable once created on a device**, which is why the id is versioned; if
-  those ever need to change, the app ships a new id, not an edit.
+  those ever need to change, the app ships a new id, not an edit. That is
+  exactly why v3 exists: the orders channel now plays on the device's **alarm**
+  stream rather than the notification stream, so it is audible in a kitchen
+  where the ringer is down, and that could not be applied to v2 in place.
+
+  A device that still has `orders_v2` will keep the old channel until the app
+  next runs, which deletes it. Sending to a retired id means **no sound and no
+  heads-up** — the notification still appears in the shade, silently.
 - `sound: new_order` — the bundled file, named **without** the extension here.
 - `ttl: 120s` — an order alert is worthless once stale. Let it expire rather
   than wake a phone ten minutes later.

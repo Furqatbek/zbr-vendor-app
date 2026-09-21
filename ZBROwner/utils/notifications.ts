@@ -26,9 +26,9 @@ import { Platform } from 'react-native';
  * `RETIRED_CHANNEL_IDS` so it's removed from the user's notification settings.
  * The FCM payload's `android.notification.channel_id` must match ORDERS_CHANNEL.
  */
-export const ORDERS_CHANNEL = 'orders_v2';
+export const ORDERS_CHANNEL = 'orders_v3';
 export const UPDATES_CHANNEL = 'updates_v2';
-const RETIRED_CHANNEL_IDS = ['orders', 'updates'];
+const RETIRED_CHANNEL_IDS = ['orders', 'updates', 'orders_v2'];
 
 /**
  * Bundled alarm sound. The expo-notifications config plugin copies this into
@@ -70,6 +70,21 @@ export async function ensureNotificationChannels(): Promise<void> {
     description: 'Alarm for incoming orders. Keep this enabled to avoid missing orders.',
     importance: Notifications.AndroidImportance.MAX, // heads-up + wakes the screen
     sound: ALARM_SOUND,
+    // Play on the ALARM stream, not the notification stream.
+    //
+    // A kitchen turns the ringer down or off; alarm volume is a separate
+    // slider that people leave up, because it is what wakes them. This is the
+    // difference between "the phone made a noise nobody heard" and an alert
+    // that actually competes with extractor fans.
+    //
+    // Channel settings are IMMUTABLE once the channel exists on a device, so
+    // adding this required a new channel id — hence orders_v3. Editing v2 in
+    // place would have changed nothing on any phone that already had it.
+    audioAttributes: {
+      usage: Notifications.AndroidAudioUsage.ALARM,
+      contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+      flags: { enforceAudibility: true, requestHardwareAudioVideoSynchronization: false },
+    },
     vibrationPattern: [0, 400, 200, 400, 200, 400],
     enableVibrate: true,
     enableLights: true,

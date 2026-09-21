@@ -76,7 +76,7 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#FF6B00",
-          "defaultChannel": "orders_v2",
+          "defaultChannel": "orders_v3",
           "sounds": [
             "./assets/sounds/new_order.wav"
           ]
