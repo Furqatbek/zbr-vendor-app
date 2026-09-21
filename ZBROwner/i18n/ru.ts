@@ -443,6 +443,14 @@ export default {
     acknowledge: 'Понятно',
   },
 
+  update: {
+    availableMessage: 'Доступна новая версия',
+    updateAction: 'Обновить',
+    requiredTitle: 'Требуется обновление',
+    requiredMessage: 'Обновите приложение, чтобы продолжить пользоваться последними функциями и улучшениями.',
+    updateNow: 'Обновить сейчас',
+  },
+
   notifInbox: {
     unreadCount: '{{count}} непрочитанных',
     markAllRead: 'Прочитать все',

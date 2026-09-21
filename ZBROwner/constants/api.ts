@@ -45,6 +45,9 @@ export const ENDPOINTS = {
   restaurantCoverImage: (restaurantId: number) => `/api/v1/restaurants/${restaurantId}/cover-image`,
   consumerProfilePicture: '/api/v1/consumers/profile/picture',
 
+  // App version / forced update
+  appVersion: '/api/app/version',
+
   // Restos integration
   restosPreviewMenu: '/api/v1/restos/preview-menu',
   restosImportMenu: '/api/v1/restos/import-menu',

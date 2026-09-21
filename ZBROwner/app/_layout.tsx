@@ -6,12 +6,16 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import { Colors } from '../constants/theme';
 import I18nProvider from '../i18n/I18nProvider';
-import { useI18n } from '../i18n';
+import { useI18n, useT } from '../i18n';
 import { useNotifications } from '../hooks/useNotifications';
 import { useAuthStore } from '../store/authStore';
 import { useStore } from '../store';
 import NewOrderAlert from '../components/NewOrderAlert';
 import OrderCancelledAlert from '../components/OrderCancelledAlert';
+import UpdateRequiredModal from '../components/UpdateRequiredModal';
+import InAppToast from '../components/InAppToast';
+import { useVersionCheck } from '../hooks/useVersionCheck';
+import { openAppStore } from '../constants/stores';
 import ErrorBoundary from '../components/ErrorBoundary';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -110,12 +114,43 @@ function CancelledOrderOverlay() {
   );
 }
 
+/**
+ * Update prompts. Mandatory blocks; optional is a dismissible toast.
+ *
+ * Sits above the auth guard's children so it reaches a vendor stuck on the
+ * login screen too — which is exactly where someone on a build the API no
+ * longer accepts will be.
+ */
+function UpdateOverlay() {
+  const t = useT();
+  const { state, storeUrl, dismiss } = useVersionCheck();
+
+  if (state === 'mandatory') {
+    return <UpdateRequiredModal visible storeUrl={storeUrl} />;
+  }
+
+  return (
+    <InAppToast
+      message={t('update.availableMessage')}
+      type="info"
+      visible={state === 'optional'}
+      onDismiss={dismiss}
+      actionLabel={t('update.updateAction')}
+      onAction={() => {
+        dismiss();
+        openAppStore(storeUrl);
+      }}
+    />
+  );
+}
+
 function AppStack() {
   const { t } = useI18n();
   useNotifications();
 
   return (
     <>
+    <UpdateOverlay />
     <CancelledOrderOverlay />
     <OrderAlertOverlay />
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.white } }}>

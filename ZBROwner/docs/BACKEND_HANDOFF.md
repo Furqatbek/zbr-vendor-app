@@ -60,6 +60,7 @@ the §0 asks and what the client adjusted in response:
 | 8 | **Send FCM/APNs pushes** per [`PUSH_ORDER_EVENTS.md`](./PUSH_ORDER_EVENTS.md) — the full contract with curl examples, and the reason the vendor order socket can be retired | **A locked phone only wakes for a remote push.** The WebSocket cannot deliver when the app is backgrounded — this is what makes vendors miss orders. | **High** | 🔴 Open — **client side done, credentials ready (§6)** |
 | 9 | **`DELETE /api/v1/auth/account`** (§2.1) | App Store Guideline **5.1.1(v)**: an app with accounts must let the user delete it **from inside the app**. Apple rejects a link to a web form. The screen is built and shipped; without the endpoint it shows an error to every vendor who taps it. | **Yes — gates iOS submission** | 🔴 Open |
 | 10 | **Image uploads fail server-side** (§8.5) | `could not create category directory: restaurants/1/logo` — the storage root is not writable. All three uploads (logo, cover, menu item) share the service and all fail. Vendors cannot set any image. | **High** | 🔴 Open |
+| 11 | **`GET /api/app/version`** (§8.6) | Drives the update prompt. Client ships silent until it exists, so nothing breaks — but there is then no way to tell vendors to update, or to block a build that has stopped working against the API. | Medium | 🔴 Open |
 
 ---
 
@@ -451,6 +452,59 @@ leaves the restaurant or menu item exactly as it was.
 **One thing to confirm when it works:** what the response returns. The client
 expects the updated entity (`UpdateRestaurantResponse` / `MenuItemResponse`) and
 re-fetches afterwards, so a bare `200` with no body is tolerated but wasteful.
+
+---
+
+## 8.6 App version check — `GET /api/app/version` 🔴 NOT IMPLEMENTED
+
+The client checks for updates on launch and on resume, and shows either a
+dismissible toast or a blocking dialog. It is **shipped and silent until this
+endpoint exists** — any failure, including a 404, is swallowed.
+
+**Unauthenticated.** It must work on the login screen: a vendor whose build the
+API no longer accepts never gets far enough to hold a token.
+
+**Response** — either bare or inside the usual `{ data }` envelope; the client
+accepts both:
+
+```json
+{
+  "latestVersion": "1.4.0",
+  "minimumVersion": "1.2.0",
+  "updateRequired": false,
+  "storeUrl": "https://play.google.com/store/apps/details?id=com.zbr.owner"
+}
+```
+
+| Field | Required | Meaning |
+|---|---|---|
+| `latestVersion` | **yes** | Newest release. Below it → dismissible "New version available" toast. |
+| `minimumVersion` | no (defaults `0.0.0`) | Oldest build still supported. Below it → **blocking** dialog with no way out. |
+| `updateRequired` | no | `true` forces the blocking dialog regardless of the numbers. |
+| `storeUrl` | no | Used only if it matches the requesting platform; otherwise the client's own constant is used. |
+
+**Versions are compared semantically, not as strings.** `1.10.0` is newer than
+`1.9.0`, and `2.0.0` is newer than `1.99.99`. Build metadata after `+` is
+ignored. Send plain `x.y.z`.
+
+**`minimumVersion` is a blunt instrument.** A vendor below it cannot use the app
+at all — not even to see orders already in the kitchen. Raise it only when an
+older build is genuinely broken against the API, and never as a nudge; that is
+what `latestVersion` is for.
+
+**`storeUrl` is platform-specific and you do not know the caller's platform.**
+The client validates the host (`apps.apple.com` / `play.google.com`) and ignores
+a URL meant for the other one, so sending either is safe — it just may be
+unused. Omitting it entirely is fine and arguably cleaner.
+
+**Client behaviour to rely on:**
+
+- Checked at most **once every 6 hours**, not on every resume.
+- A dismissed optional prompt stays dismissed **for that version only** —
+  dismissing 1.4.0 does not suppress 1.5.0.
+- A mandatory prompt cannot be dismissed, including via the Android back button.
+- An installed build **newer** than `latestVersion` shows nothing, so TestFlight
+  and internal builds are not told to downgrade.
 
 ---
 

@@ -443,6 +443,14 @@ export default {
     acknowledge: 'Tushunarli',
   },
 
+  update: {
+    availableMessage: 'Yangi versiya mavjud',
+    updateAction: 'Yangilash',
+    requiredTitle: 'Yangilash talab qilinadi',
+    requiredMessage: 'Eng so\'nggi imkoniyatlardan foydalanishda davom etish uchun ilovani yangilang.',
+    updateNow: 'Hozir yangilash',
+  },
+
   notifInbox: {
     unreadCount: '{{count}} o\'qilmagan',
     markAllRead: 'Barchasini o\'qilgan deb belgilash',

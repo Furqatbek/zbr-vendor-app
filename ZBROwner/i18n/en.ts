@@ -465,6 +465,14 @@ export default {
     acknowledge: 'Got it',
   },
 
+  update: {
+    availableMessage: 'New version available',
+    updateAction: 'Update',
+    requiredTitle: 'Update required',
+    requiredMessage: 'Please update the app to continue using the latest features and improvements.',
+    updateNow: 'Update now',
+  },
+
   notifInbox: {
     unreadCount: '{{count}} unread',
     markAllRead: 'Mark all read',

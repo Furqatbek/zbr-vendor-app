@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
 import { financialReportSchema, isStructurallyValidOrder } from './schemas';
-import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, ReviewsPageResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, RestaurantOrdersResponse, RawApiOrder, CancelOrderRequest, Order, OrderItem, OrderStatus, PayoutsResponse, FinancialReportResponse, RestosPreviewRequest, RestosPreviewResponse, RestosImportRequest, RestosImportResponse } from '../types';
+import type { LoginRequest, LoginResponse, RefreshResponse, ApiResponse, MyRestaurantsResponse, UpdateRestaurantRequest, UpdateRestaurantResponse, MenuCategoriesResponse, MenuCategoryResponse, CreateMenuCategoryRequest, MenuItemsResponse, MenuItemResponse, CreateMenuItemRequest, RatingsResponse, ReviewsPageResponse, NotificationsPageResponse, NotificationCounts, UnreadCountResponse, MarkAllReadResponse, AppNotification, NotificationRole, NotificationCategory, UpdateOrderStatusRequest, OrderResponse, RestaurantOrdersResponse, RawApiOrder, CancelOrderRequest, Order, OrderItem, OrderStatus, PayoutsResponse, FinancialReportResponse, RestosPreviewRequest, RestosPreviewResponse, RestosImportRequest, RestosImportResponse, AppVersionInfo, AppVersionResponse} from '../types';
 
 let getAccessToken: () => string | null = () => null;
 let getRefreshToken: () => string | null = () => null;
@@ -633,6 +633,17 @@ export function deleteMenuItemImage(restaurantId: number, itemId: number): Promi
   return apiFetch<ApiResponse>(ENDPOINTS.menuItemImage(restaurantId, itemId), {
     method: 'DELETE',
   });
+}
+
+// ── App version ──
+
+/**
+ * Latest/minimum app version. Unauthenticated by design — it has to work on the
+ * login screen, and a vendor blocked by a mandatory update never gets far
+ * enough to hold a token.
+ */
+export function fetchAppVersion(): Promise<AppVersionResponse> {
+  return apiFetch<AppVersionResponse>(ENDPOINTS.appVersion);
 }
 
 // ── Restos Integration API ──

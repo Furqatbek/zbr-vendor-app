@@ -443,6 +443,14 @@ export default {
     acknowledge: 'Тушунарли',
   },
 
+  update: {
+    availableMessage: 'Янги версия мавжуд',
+    updateAction: 'Янгилаш',
+    requiredTitle: 'Янгилаш талаб қилинади',
+    requiredMessage: 'Энг сўнгги имкониятлардан фойдаланишда давом этиш учун иловани янгиланг.',
+    updateNow: 'Ҳозир янгилаш',
+  },
+
   notifInbox: {
     unreadCount: '{{count}} ўқилмаган',
     markAllRead: 'Барчасини ўқилган деб белгилаш',

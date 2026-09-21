@@ -653,3 +653,18 @@ export interface RestosImportResponse {
   message: string;
   data: RestosImportResult;
 }
+
+/** GET /api/app/version — drives the update prompt. */
+export interface AppVersionInfo {
+  latestVersion: string;
+  minimumVersion: string;
+  updateRequired?: boolean;
+  storeUrl?: string;
+}
+
+/**
+ * The endpoint may answer with the fields at the top level or wrapped in the
+ * project's usual `{ success, message, data }` envelope. Accepting both means
+ * the client does not break if the backend settles on the other shape later.
+ */
+export type AppVersionResponse = AppVersionInfo | { success: boolean; message?: string; data: AppVersionInfo };
