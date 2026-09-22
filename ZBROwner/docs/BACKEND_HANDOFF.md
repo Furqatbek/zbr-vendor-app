@@ -60,7 +60,7 @@ the §0 asks and what the client adjusted in response:
 | 8 | **Send FCM/APNs pushes** per [`PUSH_ORDER_EVENTS.md`](./PUSH_ORDER_EVENTS.md) — the full contract with curl examples, and the reason the vendor order socket can be retired | **A locked phone only wakes for a remote push.** The WebSocket cannot deliver when the app is backgrounded — this is what makes vendors miss orders. | **High** | 🔴 Open — **client side done, credentials ready (§6)** |
 | 9 | **`DELETE /api/v1/auth/account`** (§2.1) | App Store Guideline **5.1.1(v)**: an app with accounts must let the user delete it **from inside the app**. Apple rejects a link to a web form. The screen is built and shipped; without the endpoint it shows an error to every vendor who taps it. | **Yes — gates iOS submission** | 🔴 Open |
 | 10 | **Image uploads fail server-side** (§8.5) | `could not create category directory: restaurants/1/logo` — the storage root is not writable. All three uploads (logo, cover, menu item) share the service and all fail. Vendors cannot set any image. | **High** | 🔴 Open |
-| 11 | **`GET /api/app/version`** (§8.6) | Drives the update prompt. Client ships silent until it exists, so nothing breaks — but there is then no way to tell vendors to update, or to block a build that has stopped working against the API. | Medium | 🔴 Open |
+| ~~11~~ | ~~`GET /api/v1/app/version`~~ (§8.6) | ✅ Built. Client corrected to that path and now sends the required `?platform=`. **One fix outstanding:** the seeded Android `storeUrl` is the customer app's listing, not this one's. | Low | 🟠 storeUrl wrong |
 
 ---
 
@@ -455,14 +455,26 @@ re-fetches afterwards, so a bare `200` with no body is tolerated but wasteful.
 
 ---
 
-## 8.6 App version check — `GET /api/app/version` 🔴 NOT IMPLEMENTED
+## 8.6 App version check — `GET /api/v1/app/version` ✅ BUILT
 
 The client checks for updates on launch and on resume, and shows either a
 dismissible toast or a blocking dialog. It is **shipped and silent until this
 endpoint exists** — any failure, including a 404, is swallowed.
 
-**Unauthenticated.** It must work on the login screen: a vendor whose build the
-API no longer accepts never gets far enough to hold a token.
+**Unauthenticated**, and `?platform=ios|android` is **required** — the client
+always sends it. A missing or unknown platform returns 400, which the client
+treats like any other failure: silently.
+
+> ⚠️ **The seeded Android `storeUrl` points at the wrong app.**
+> `play.google.com/store/apps/details?id=app.zbr.customer` is the **customer**
+> app; this one is `com.zbr.owner`. A vendor tapping Update would be sent to
+> install the consumer app. The client now compares the `id` parameter against
+> its own package and falls back to its built-in URL, so nothing breaks — but
+> the stored value should be corrected.
+>
+> iOS store URLs carry a numeric App Store id that cannot be derived from the
+> bundle id, so the client can only host-check that one. A wrong iOS URL would
+> not be caught.
 
 **Response** — either bare or inside the usual `{ data }` envelope; the client
 accepts both:

@@ -46,7 +46,7 @@ export const ENDPOINTS = {
   consumerProfilePicture: '/api/v1/consumers/profile/picture',
 
   // App version / forced update
-  appVersion: '/api/app/version',
+  appVersion: '/api/v1/app/version',
 
   // Restos integration
   restosPreviewMenu: '/api/v1/restos/preview-menu',

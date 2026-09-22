@@ -1,4 +1,5 @@
 import { Platform, Linking } from 'react-native';
+import * as Application from 'expo-application';
 
 /**
  * Where to send a vendor to update the app.
@@ -25,39 +26,71 @@ export function storeUrlForPlatform(): string {
 }
 
 /**
- * Does a server-supplied URL belong to THIS platform's store?
+ * Does this URL point at THIS app's page in THIS platform's store?
  *
- * The backend sends one `storeUrl` without knowing which platform is asking, so
- * it may well be the other one. Checking the host rather than trusting the field
- * is what stops an iPhone being sent to Google Play.
+ * Two independent ways to get it wrong, and both have already happened:
  *
- * Host-based, not substring-based: `https://evil.example/play.google.com` would
+ * 1. **Wrong platform.** The backend answers without knowing who asked, so a
+ *    single stored `storeUrl` may be the other platform's.
+ * 2. **Wrong app.** The backend's seeded value was
+ *    `play.google.com/store/apps/details?id=app.zbr.customer` — the customer
+ *    app. A host-only check passes that happily and sends a restaurant owner to
+ *    install the consumer app.
+ *
+ * So the Android check compares the `id` parameter against this build's own
+ * package, read from the binary rather than a constant that could drift.
+ *
+ * iOS store URLs carry a numeric App Store id that cannot be derived from the
+ * bundle id, so that one is host-checked only — worth knowing as a gap rather
+ * than assuming it is covered.
+ *
+ * Host comparison, not substring: `https://evil.example/play.google.com` would
  * pass a naive `includes()`.
  */
-export function isStoreUrlForThisPlatform(url: unknown): url is string {
+export function isStoreUrlForPlatform(
+  url: unknown,
+  platform: 'ios' | 'android',
+  androidPackage?: string | null,
+): url is string {
   if (typeof url !== 'string') return false;
 
-  let host: string;
+  let parsed: URL;
   try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== 'https:') return false;
-    host = parsed.hostname.toLowerCase();
+    parsed = new URL(url);
   } catch {
     return false;
   }
+  if (parsed.protocol !== 'https:') return false;
 
-  return Platform.OS === 'ios'
-    ? host === 'apps.apple.com' || host === 'itunes.apple.com'
-    : host === 'play.google.com';
+  const host = parsed.hostname.toLowerCase();
+
+  if (platform === 'ios') {
+    return host === 'apps.apple.com' || host === 'itunes.apple.com';
+  }
+
+  if (host !== 'play.google.com') return false;
+  // No package to compare against (web, or the native value is unavailable):
+  // fall back to the host check rather than rejecting a probably-fine URL.
+  if (!androidPackage) return true;
+  return parsed.searchParams.get('id') === androidPackage;
+}
+
+/** Same check, bound to the running platform and this build's package. */
+export function isStoreUrlForThisPlatform(url: unknown): url is string {
+  return isStoreUrlForPlatform(
+    url,
+    Platform.OS === 'ios' ? 'ios' : 'android',
+    Application.applicationId,
+  );
 }
 
 /**
  * Open the store, preferring a valid server-supplied URL.
  *
- * The server value wins when it matches the platform — that is how the store
- * link can be corrected without shipping a build — and the configured constant
- * is the fallback for when it is missing, malformed, or meant for the other
- * platform.
+ * The server value wins when it checks out — that is how the link can be
+ * corrected without shipping a build — and the configured constant is the
+ * fallback for when it is missing, malformed, for the other platform, or for a
+ * different app.
  */
 export async function openAppStore(serverUrl?: string | null): Promise<void> {
   const url = isStoreUrlForThisPlatform(serverUrl) ? serverUrl : storeUrlForPlatform();

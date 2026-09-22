@@ -1,5 +1,6 @@
 import { compareVersions, isOlderThan, isValidVersion } from '../utils/semver';
 import { decideUpdateState } from '../hooks/useVersionCheck';
+import { isStoreUrlForPlatform } from '../constants/stores';
 
 jest.mock('../services/api', () => ({ fetchAppVersion: jest.fn() }));
 // The hook module pulls in AsyncStorage, which has no native module under Jest.
@@ -109,5 +110,60 @@ describe('decideUpdateState', () => {
   it('uses the two-digit comparison, not string order', () => {
     expect(decideUpdateState('1.9.0', info('1.10.0', '1.2.0'))).toBe('optional');
     expect(decideUpdateState('1.10.0', info('1.10.0', '1.9.0'))).toBe('none');
+  });
+});
+
+describe('isStoreUrlForPlatform', () => {
+  const OURS = 'com.zbr.owner';
+  const THEIRS = 'https://play.google.com/store/apps/details?id=app.zbr.customer';
+
+  it('accepts our own Play listing', () => {
+    expect(
+      isStoreUrlForPlatform(
+        'https://play.google.com/store/apps/details?id=com.zbr.owner',
+        'android',
+        OURS,
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects a Play URL for a DIFFERENT app', () => {
+    // Not hypothetical: the backend seeded exactly this, the customer app's
+    // listing. A host-only check passes it and sends a restaurant owner to
+    // install the consumer app.
+    expect(isStoreUrlForPlatform(THEIRS, 'android', OURS)).toBe(false);
+  });
+
+  it('rejects the other platform entirely', () => {
+    expect(isStoreUrlForPlatform(THEIRS, 'ios', OURS)).toBe(false);
+    expect(
+      isStoreUrlForPlatform('https://apps.apple.com/app/id123', 'android', OURS),
+    ).toBe(false);
+  });
+
+  it('accepts an Apple URL on iOS', () => {
+    expect(isStoreUrlForPlatform('https://apps.apple.com/app/id123', 'ios')).toBe(true);
+    expect(isStoreUrlForPlatform('https://itunes.apple.com/app/id123', 'ios')).toBe(true);
+  });
+
+  it('is not fooled by the host appearing in a path', () => {
+    expect(
+      isStoreUrlForPlatform('https://evil.example/play.google.com?id=com.zbr.owner', 'android', OURS),
+    ).toBe(false);
+  });
+
+  it('requires https', () => {
+    expect(
+      isStoreUrlForPlatform('http://play.google.com/store/apps/details?id=com.zbr.owner', 'android', OURS),
+    ).toBe(false);
+  });
+
+  it('falls back to the host check when the package is unknown', () => {
+    expect(isStoreUrlForPlatform(THEIRS, 'android', null)).toBe(true);
+  });
+
+  it('rejects junk', () => {
+    expect(isStoreUrlForPlatform(undefined, 'android', OURS)).toBe(false);
+    expect(isStoreUrlForPlatform('not a url', 'android', OURS)).toBe(false);
   });
 });

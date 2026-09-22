@@ -643,7 +643,11 @@ export function deleteMenuItemImage(restaurantId: number, itemId: number): Promi
  * enough to hold a token.
  */
 export function fetchAppVersion(): Promise<AppVersionResponse> {
-  return apiFetch<AppVersionResponse>(ENDPOINTS.appVersion);
+  // `platform` is required and has no default: the two stores are never in
+  // lockstep, and a default would answer an iPhone with Play's link. Omitting
+  // it is a 400.
+  const platform = Platform.OS === 'ios' ? 'ios' : 'android';
+  return apiFetch<AppVersionResponse>(`${ENDPOINTS.appVersion}?platform=${platform}`);
 }
 
 // ── Restos Integration API ──
