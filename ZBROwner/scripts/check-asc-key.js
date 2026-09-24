@@ -171,6 +171,9 @@ function makeToken(privateKey) {
           console.log('           --no-bump on the second command, because the first already');
           console.log('           set the number; bumping again would skip one for nothing.');
           console.log('');
+          console.log('           A normal build run bumps past this by itself — it asks App');
+          console.log('           Store Connect first. This only blocks --no-bump runs.');
+          console.log('');
           process.exit(1);
         }
       }
