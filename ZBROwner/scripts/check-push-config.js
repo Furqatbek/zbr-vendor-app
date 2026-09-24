@@ -17,6 +17,61 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
+
+/** Duration and format of a PCM WAV, or null if it cannot be read. */
+function describeWav(file) {
+  try {
+    const b = fs.readFileSync(file);
+    if (b.toString('ascii', 0, 4) !== 'RIFF' || b.toString('ascii', 8, 12) !== 'WAVE') return null;
+    let off = 12;
+    let fmt = null;
+    let dataLen = 0;
+    while (off + 8 <= b.length) {
+      const id = b.toString('ascii', off, off + 4);
+      const size = b.readUInt32LE(off + 4);
+      if (id === 'fmt ') {
+        fmt = {
+          channels: b.readUInt16LE(off + 10),
+          sampleRate: b.readUInt32LE(off + 12),
+          bitsPerSample: b.readUInt16LE(off + 22),
+        };
+      } else if (id === 'data') {
+        dataLen = size;
+      }
+      off += 8 + size + (size % 2);
+    }
+    if (!fmt || !dataLen) return null;
+    const bytesPerSecond = (fmt.sampleRate * fmt.channels * fmt.bitsPerSample) / 8;
+    if (!bytesPerSecond) return null;
+    return { ...fmt, seconds: dataLen / bytesPerSecond };
+  } catch {
+    return null;
+  }
+}
+
+/** First match for a filename anywhere under dir, or null. */
+function findFile(dir, name) {
+  const stack = [dir];
+  while (stack.length) {
+    const current = stack.pop();
+    let entries;
+    try {
+      entries = fs.readdirSync(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name !== 'Pods' && entry.name !== 'build') stack.push(full);
+      } else if (entry.name === name) {
+        return full;
+      }
+    }
+  }
+  return null;
+}
+
 const problems = [];
 const warnings = [];
 const ok = [];
@@ -129,6 +184,76 @@ if (!notifPlugin) {
       );
     } else {
       ok.push(`Bundled sound ok: ${base}`);
+
+      // A WAV that is corrupt, or longer than iOS allows, fails SILENTLY at
+      // runtime: iOS substitutes the default sound and Android may refuse to
+      // decode. Neither is a build error, so it has to be checked here.
+      const wav = describeWav(soundPath);
+      if (!wav) {
+        problems.push(
+          `${base} is not a readable PCM WAV. expo-notifications copies it\n` +
+            '     verbatim; a broken file is only discovered when a push arrives.',
+        );
+      } else if (wav.seconds > 30) {
+        problems.push(
+          `${base} is ${wav.seconds.toFixed(1)}s. iOS ignores a custom notification\n` +
+            '     sound longer than 30s and plays the default instead, so the alarm\n' +
+            '     would silently revert. Shorten it (npm run build:alarm).',
+        );
+      } else {
+        ok.push(
+          `  ${wav.seconds.toFixed(1)}s, ${wav.sampleRate} Hz — under the 30s iOS limit`,
+        );
+      }
+
+      // The generated native projects are where the file actually has to land.
+      // Both have gone wrong before: a hyphenated name that never reached
+      // res/raw, and a sound the channel referenced but the bundle lacked.
+      const androidRaw = path.join(root, 'android', 'app', 'src', 'main', 'res', 'raw', base);
+      if (fs.existsSync(path.join(root, 'android'))) {
+        if (!fs.existsSync(androidRaw)) {
+          problems.push(
+            `${base} is missing from android/app/src/main/res/raw/.\n` +
+              '     The channel would reference a resource that does not exist, so the\n' +
+              '     notification arrives silent. Re-run npm run prebuild:android.',
+          );
+        } else if (
+          !fs.readFileSync(androidRaw).equals(fs.readFileSync(soundPath))
+        ) {
+          problems.push(
+            `${base} in res/raw/ differs from the asset — the native project is\n` +
+              '     stale. Re-run npm run prebuild:android.',
+          );
+        } else {
+          ok.push(`  bundled into android res/raw/`);
+        }
+      }
+
+      const iosDir = path.join(root, 'ios');
+      if (fs.existsSync(iosDir)) {
+        const inIos = findFile(iosDir, base);
+        if (!inIos) {
+          problems.push(
+            `${base} is missing from ios/. APNs names it in the payload, so the\n` +
+              '     push would arrive with no sound. Re-run npm run prebuild:ios.',
+          );
+        } else {
+          // Present on disk is not enough — it must be in the Resources build
+          // phase or Xcode never copies it into the .app.
+          const pbxproj = findFile(iosDir, 'project.pbxproj');
+          const referenced = pbxproj
+            ? fs.readFileSync(pbxproj, 'utf8').includes(base)
+            : false;
+          if (!referenced) {
+            problems.push(
+              `${base} exists in ios/ but is not referenced by the Xcode project,\n` +
+                '     so it will not be copied into the app bundle.',
+            );
+          } else {
+            ok.push(`  bundled into the iOS app`);
+          }
+        }
+      }
     }
   }
 
