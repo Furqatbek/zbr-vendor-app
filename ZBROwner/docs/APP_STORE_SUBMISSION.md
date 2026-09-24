@@ -207,7 +207,12 @@ check catches that cost a full archive to discover otherwise:
 Use `go-live:ios:no-bump` when re-archiving after a failed upload, so you don't
 burn numbers.
 
-### "The train version 'X' is closed for new build submissions" (90186)
+### "The train version 'X' is closed for new build submissions" (90186/90062)
+
+> `npm run check:asc-key` now catches this **before** an archive: it asks App
+> Store Connect for the version's state and blocks when it is approved or
+> released, naming the next version to use. What follows is why.
+
 
 App Store Connect closes a version's *train* once that version is released or
 otherwise finalised. No further builds can be uploaded under it, whatever the

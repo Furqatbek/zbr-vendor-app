@@ -17,6 +17,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const { KEY_DIRS, findAscKey } = require('./lib/asc-key');
+const { fetchVersionState, nextPatchVersion } = require('./lib/asc-api');
 
 const KEY_ID = process.env.ZBR_ASC_KEY_ID;
 const ISSUER_ID = process.env.ZBR_ASC_ISSUER_ID;
@@ -180,6 +181,31 @@ function makeToken(privateKey) {
     }
   } catch {
     // Non-fatal: this is a convenience check, and the upload still enforces it.
+  }
+
+  // A version that has been approved or released refuses new builds, whatever
+  // the build number. That is the 90186/90062 pair, and it arrives only after a
+  // full archive — three times now. Apple knows the answer, so ask.
+  try {
+    const version = await fetchVersionState(BUNDLE_ID, MARKETING_VERSION);
+    if (version?.closed) {
+      console.log(`\n  PROBLEM  Version ${MARKETING_VERSION} is ${version.state} — its train is CLOSED.`);
+      console.log('           App Store Connect refuses any further build under an approved');
+      console.log('           or released version, whatever the build number.');
+      console.log('           A NEW MARKETING VERSION is the only fix:');
+      console.log('');
+      console.log(`             app.json  ->  "version": "${nextPatchVersion(MARKETING_VERSION)}"`);
+      console.log('');
+      console.log('           Then create that version in App Store Connect');
+      console.log('           (+ Version or Platform) so the build has somewhere to attach.\n');
+      process.exit(1);
+    } else if (version) {
+      console.log(`  ok      Version ${MARKETING_VERSION} is ${version.state} — still accepts builds`);
+    } else {
+      console.log(`  ok      Version ${MARKETING_VERSION} is not in App Store Connect yet`);
+    }
+  } catch {
+    // Non-fatal: the upload enforces this anyway.
   }
 
   // Nothing in the API returns "the team id" as a field, but every certificate

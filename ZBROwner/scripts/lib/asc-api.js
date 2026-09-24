@@ -81,4 +81,68 @@ async function fetchHighestBuild(bundleId) {
   }
 }
 
-module.exports = { makeToken, ascGet, fetchHighestBuild };
+
+/**
+ * App Store version states that REFUSE new builds.
+ *
+ * Once a version is approved or released its "train" is closed, and an upload
+ * under the same CFBundleShortVersionString is rejected with 90186/90062 —
+ * after a full archive. The fix is always a new marketing version, never a new
+ * build number.
+ *
+ * Deliberately a closed list: anything unrecognised is treated as open, so a
+ * state Apple adds later cannot block a legitimate release.
+ */
+const CLOSED_VERSION_STATES = new Set([
+  'ACCEPTED',
+  'DEVELOPER_REMOVED_FROM_SALE',
+  'PENDING_APPLE_RELEASE',
+  'PENDING_DEVELOPER_RELEASE',
+  'PREORDER_READY_FOR_SALE',
+  'READY_FOR_SALE',
+  'REMOVED_FROM_SALE',
+  'REPLACED_BY_NEW_VERSION',
+]);
+
+/**
+ * State of a marketing version in App Store Connect.
+ *
+ * Returns { state, closed } for the matching version, or null when it cannot be
+ * determined — no credentials, no network, or the version does not exist yet
+ * (which is the normal case for a version about to be created).
+ */
+async function fetchVersionState(bundleId, versionString) {
+  try {
+    const appRes = await ascGet(`apps?filter[bundleId]=${encodeURIComponent(bundleId)}&limit=1`);
+    if (!appRes || !appRes.ok) return null;
+
+    const appId = (await appRes.json()).data?.[0]?.id;
+    if (!appId) return null;
+
+    const versionsRes = await ascGet(`apps/${appId}/appStoreVersions?limit=50`);
+    if (!versionsRes || !versionsRes.ok) return null;
+
+    const match = ((await versionsRes.json()).data ?? []).find(
+      (v) => v.attributes?.versionString === versionString,
+    );
+    if (!match) return null;
+
+    // Older responses use appStoreState; newer ones appVersionState.
+    const state = match.attributes?.appStoreState ?? match.attributes?.appVersionState ?? null;
+    if (!state) return null;
+
+    return { state, closed: CLOSED_VERSION_STATES.has(state) };
+  } catch {
+    return null;
+  }
+}
+
+/** Next patch version: 1.0.2 -> 1.0.3. */
+function nextPatchVersion(version) {
+  const parts = String(version).split('.').map((p) => Number.parseInt(p, 10) || 0);
+  while (parts.length < 3) parts.push(0);
+  parts[parts.length - 1] += 1;
+  return parts.join('.');
+}
+
+module.exports = { makeToken, ascGet, fetchHighestBuild, fetchVersionState, nextPatchVersion, CLOSED_VERSION_STATES };
