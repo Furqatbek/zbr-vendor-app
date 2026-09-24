@@ -34,6 +34,16 @@ const RETIRED_CHANNEL_IDS = ['orders', 'updates', 'orders_v2'];
  * Bundled alarm sound. The expo-notifications config plugin copies this into
  * android `res/raw/` and the iOS bundle at build time (see app.json `sounds`).
  * Android raw-resource names may only contain [a-z0-9_], hence new_order.wav.
+ *
+ * It is ~20 seconds, built by scripts/build-alarm-sound.js from the 1.5s clip
+ * in new_order_loop.wav. A notification channel plays its sound ONCE, so the
+ * original was a blip a vendor could miss across a kitchen; this rings closer
+ * to how a phone rings. Capped under 30s because iOS silently substitutes the
+ * default sound for anything longer.
+ *
+ * Lengthening it needed NO channel bump, unlike the alarm-stream change: a
+ * channel stores a resource URI, not the bytes behind it, so the same
+ * `new_order` resource resolving to a longer file is picked up on update.
  */
 const ALARM_SOUND = 'new_order.wav';
 

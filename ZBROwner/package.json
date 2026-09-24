@@ -12,6 +12,7 @@
     "check:push": "node scripts/check-push-config.js",
     "check:privacy-url": "node scripts/check-privacy-url.js",
     "build:privacy": "node scripts/build-privacy-html.js",
+    "build:alarm": "node scripts/build-alarm-sound.js",
     "go-live": "node scripts/go-live.js",
     "go-live:checks": "node scripts/go-live.js --checks",
     "go-live:apk": "node scripts/go-live.js --apk",
