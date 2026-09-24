@@ -214,7 +214,30 @@ const logFor = (name) => path.join(logDir, `${name}.log`);
 // Bump BEFORE prebuild: Xcode stamps the archive from Info.plist, which
 // prebuild generates from app.json.
 if (!hasFlag('no-bump')) {
-  run('Bumping buildNumber (+1)', 'node', ['scripts/bump-version-code.js']);
+  // Bump past whichever is higher: app.json, or what App Store Connect already
+  // holds. app.json is version-controlled and routinely lags — a successful
+  // upload bumps it locally, and the number only reaches the repo if someone
+  // remembers to commit it. Pulling then resets it, and the next build tries a
+  // number Apple already has. That has now happened twice; asking Apple makes
+  // it self-healing instead of a manual fix each release.
+  const probe = spawnSync('node', ['scripts/print-highest-build.js'], {
+    cwd: root,
+    encoding: 'utf8',
+  });
+  const highest = probe.status === 0 ? Number(probe.stdout.trim()) : NaN;
+  const local = Number(
+    JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8')).expo?.ios?.buildNumber,
+  );
+
+  if (Number.isFinite(highest) && highest >= local) {
+    console.log(
+      `${C.dim}  App Store Connect holds build ${highest}; app.json says ${local}. ` +
+        `Using ${highest + 1}.${C.reset}`,
+    );
+    run('Bumping buildNumber', 'node', ['scripts/bump-version-code.js', '--to', String(highest + 1)]);
+  } else {
+    run('Bumping buildNumber (+1)', 'node', ['scripts/bump-version-code.js']);
+  }
 } else {
   console.log(`${C.yellow}▸ Skipping buildNumber bump (--no-bump)${C.reset}\n`);
 }
