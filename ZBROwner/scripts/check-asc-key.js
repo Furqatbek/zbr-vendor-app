@@ -27,8 +27,13 @@ const BUNDLE_ID = APP_JSON?.ios?.bundleIdentifier;
 // go-live-ios runs this BEFORE bumping, so without knowing a bump is coming the
 // check would reject the pre-bump number and block a run that was about to fix
 // itself — the same sequencing mistake the Info.plist check made.
+// go-live-ios passes this when a bump is coming. That bump is now remote-aware
+// — it asks App Store Connect and uses max(local, remote) + 1 — so a bumping run
+// CANNOT collide by construction, and comparing app.json's current number would
+// block a run that was about to pick the right one. Only --no-bump runs, which
+// upload exactly what app.json says, need checking.
 const WILL_BUMP = process.argv.slice(2).includes('--will-bump');
-const BUILD_NUMBER = Number(APP_JSON?.ios?.buildNumber) + (WILL_BUMP ? 1 : 0);
+const BUILD_NUMBER = Number(APP_JSON?.ios?.buildNumber);
 const MARKETING_VERSION = APP_JSON?.version;
 
 const b64url = (buf) =>
@@ -156,6 +161,10 @@ function makeToken(privateKey) {
 
         if (!highest) {
           console.log('  ok      No builds uploaded yet — any build number is free');
+        } else if (WILL_BUMP) {
+          console.log(
+            `  ok      Highest uploaded build is ${highest}; this run will use ${highest + 1}`,
+          );
         } else if (BUILD_NUMBER > highest) {
           console.log(`  ok      buildNumber ${BUILD_NUMBER} is above the highest uploaded (${highest})`);
         } else {
@@ -172,8 +181,8 @@ function makeToken(privateKey) {
           console.log('           --no-bump on the second command, because the first already');
           console.log('           set the number; bumping again would skip one for nothing.');
           console.log('');
-          console.log('           A normal build run bumps past this by itself — it asks App');
-          console.log('           Store Connect first. This only blocks --no-bump runs.');
+          console.log('           Or drop --no-bump: a normal run asks App Store Connect and');
+          console.log('           picks the next free number by itself.');
           console.log('');
           process.exit(1);
         }
