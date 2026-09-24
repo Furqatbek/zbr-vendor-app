@@ -17,7 +17,9 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const { KEY_DIRS, findAscKey } = require('./lib/asc-key');
+const path = require('path');
 const { fetchVersionState, nextPatchVersion } = require('./lib/asc-api');
+const { readHighwater } = require('./lib/build-highwater');
 
 const KEY_ID = process.env.ZBR_ASC_KEY_ID;
 const ISSUER_ID = process.env.ZBR_ASC_ISSUER_ID;
@@ -162,9 +164,11 @@ function makeToken(privateKey) {
         if (!highest) {
           console.log('  ok      No builds uploaded yet — any build number is free');
         } else if (WILL_BUMP) {
-          console.log(
-            `  ok      Highest uploaded build is ${highest}; this run will use ${highest + 1}`,
-          );
+          // Mirror go-live-ios's floor exactly, so the gate never announces a
+          // number the bump will not use.
+          const used = readHighwater(path.resolve(__dirname, '..'));
+          const next = Math.max(BUILD_NUMBER || 0, highest, used) + 1;
+          console.log(`  ok      Highest uploaded build is ${highest}; this run will use ${next}`);
         } else if (BUILD_NUMBER > highest) {
           console.log(`  ok      buildNumber ${BUILD_NUMBER} is above the highest uploaded (${highest})`);
         } else {
