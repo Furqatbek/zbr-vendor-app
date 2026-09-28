@@ -520,6 +520,78 @@ unused. Omitting it entirely is fine and arguably cleaner.
 
 ---
 
+## 8.7 Menu item edit — `PUT /menu/items/{itemId}` ✅ AGREED
+
+The backend's three-state design for `variants` / `options` is what the client
+needed, and the client now sends each state deliberately rather than by
+accident. Client side is done and pushed (`88b5ec3`); **untested end-to-end,
+because it needs the pending deploy.**
+
+| Body | Effect | When the client sends it |
+|---|---|---|
+| key **absent** | leave them alone | the detail call is in flight or failed |
+| `[]` | remove them all | loaded, and genuinely empty |
+| `[...]` | the complete set | loaded |
+
+### The client was about to delete vendors' sizes
+
+Worth being equally plain in return: the dangerous half of this was ours. The
+client's builder sent `variants: []` unconditionally, and the form holds an
+empty array for the few hundred milliseconds before the detail call lands — and
+permanently if it fails. Under the new semantics that is "delete them all", so
+tapping a menu row and correcting the price straight away would have wiped every
+size on the item. It is now gated on whether they were actually loaded.
+
+The opposite mistake was also ours: reading *absent = delete*, the client
+**refused to save** when the detail call had failed, blocking an edit in order
+to protect the variants. With *absent = leave alone* that is pointless, and it
+is gone.
+
+### Rename still breaks a live basket
+
+Name-matching reintroduces the problem at the rename. `Large` → `Katta` matches
+nothing, so the old row is deleted and a new one created, and a basket holding
+that `variantId` points at a row that no longer exists.
+
+Order **history** is safe, as verified — `OrderItem.variantId` is a plain `Long`
+with `variantName` / `variantPriceDelta` denormalised, not a mapped association.
+That reasoning does not extend to an in-progress basket.
+
+**If the DTO accepts an optional `id` on variants and options, the client will
+send it** — it holds the ids from the detail response. Matching on id first and
+falling back to name makes a rename keep its row. One-line change here; not done
+speculatively because an unknown property would 400 if Jackson is strict.
+
+### `originalPrice` is a round-trip, not an echo
+
+`originalPrice: 40000` alongside `price: 35000` is read from the item and sent
+back unchanged, so when the item renders as on sale that is what the database
+holds — the client is not inventing a discount. The field now carries a hint
+saying what it does, since it is easy to fill in by accident.
+
+That does raise §9 #6 below, which matters more.
+
+### Client-side faults fixed in the same pass
+
+Independent of the endpoint, and the reason a vendor saw *nothing at all*:
+
+- The price field converted to a number on every keystroke. `"12."` parsed to
+  `12` and re-rendered as `"12"`, deleting the decimal point as it was typed.
+- `"12,5"` parsed to `NaN`, and `|| 0` made it a price of **0**, sent to the
+  server. A comma is the decimal separator on Uzbek and Russian keyboards, so
+  that is the normal typing path here, not an edge case.
+- Optional numeric fields sent `NaN`, which `JSON.stringify` turns into `null`.
+- Nothing validated the price; only a blank name blocked a save.
+- `catch { /* */ }` threw away the thrown error, so the 400 explaining any of the
+  above was never shown.
+
+If any 400s from the vendor app looked nonsensical — `price: 0`, `calories:
+null`, `categoryId: 0` — that is where they came from. `categoryId: 0` is now
+caught client-side too; it came from "add item" in the all-items view, where no
+category is selected.
+
+---
+
 ## 9. Open questions / suspected backend issues
 
 1. **`isCurrentlyOpen` semantics.** We've seen payloads with `isOpen: false` and
@@ -537,6 +609,15 @@ unused. Omitting it entirely is fine and arguably cleaner.
 5. **Live courier tracking.** If/when a courier map is wanted on the vendor order
    screen, we'll consume `GET /api/v1/orders/{orderId}/tracking` (name/phone/lat/
    lng) — not built on the client yet.
+6. **`price` vs `priceWithMargin` on `MenuItem`.** 🔴 **Please answer this one.**
+   `MenuItem` carries both. The menu list and the edit form both read `price`, and
+   the edit form sends `price` straight back. **If the categories-with-items
+   listing puts the margin-inclusive number in `price`, then every price edit
+   writes the inflated value back and the price climbs on each edit.** Which field
+   does `GET /menu/categories` populate, versus `GET /menu/items/{id}`? If they
+   differ, say which one the client should treat as the editable base price.
+7. **Optional `id` on variants/options in the update DTO.** See §8.7 — it would let
+   a rename keep its row instead of deleting and recreating it.
 
 ---
 
