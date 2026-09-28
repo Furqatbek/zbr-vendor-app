@@ -189,6 +189,7 @@ export default {
     deleteItemConfirm: '"{{name}}" o\'chirilsinmi? Buni qaytarib bo\'lmaydi.',
     itemsCount: '{{count}} ta mahsulot',
     originalPrice: 'Asl narx',
+    originalPriceHint: 'Faqat chegirma uchun to\'ldiring — mijozlar uni yangi narx ustida chizilgan holda ko\'radi.',
     prepTime: 'Tayyorlash vaqti (daq)',
     calories: 'Kaloriya',
     allergens: 'Allergenlar',
@@ -215,6 +216,10 @@ export default {
     removeImage: 'Rasmni o\'chirish',
     removeImageConfirm: 'Bu mahsulot rasmini o\'chirilsinmi?',
     imageUploadFailed: 'Rasm yuklash xatosi',
+    nameRequired: 'Taom nomini kiriting',
+    categoryRequired: 'Avval kategoriyani ochib, keyin taomni qo\'shing',
+    priceInvalid: '0 dan katta narx kiriting',
+    saveFailed: 'Taomni saqlab bo\'lmadi. Qayta urinib ko\'ring.',
   },
 
   reports: {

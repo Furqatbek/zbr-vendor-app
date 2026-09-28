@@ -200,6 +200,7 @@ export default {
     deleteItemConfirm: 'Delete "{{name}}"? This cannot be undone.',
     itemsCount: '{{count}} items',
     originalPrice: 'Original Price',
+    originalPriceHint: 'Only fill this in for a sale — customers see it struck through above the new price.',
     prepTime: 'Prep Time (min)',
     calories: 'Calories',
     allergens: 'Allergens',
@@ -226,6 +227,10 @@ export default {
     removeImage: 'Remove Image',
     removeImageConfirm: 'Remove the image for this item?',
     imageUploadFailed: 'Image upload failed',
+    nameRequired: 'Enter a name for this item',
+    categoryRequired: 'Open a category first, then add the item to it',
+    priceInvalid: 'Enter a price greater than 0',
+    saveFailed: 'Could not save the item. Please try again.',
   },
 
   // Reports

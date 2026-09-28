@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Pressable, Alert, TextInput, Modal,
   ScrollView, KeyboardAvoidingView, Platform, RefreshControl, ActivityIndicator, Switch, Image,
@@ -13,13 +13,27 @@ import {
   updateMenuItemStock, deleteMenuItem as apiDeleteItem,
   uploadMenuItemImage, deleteMenuItemImage,
 } from '../../services/api';
-import type { MenuCategory, MenuItem, CreateMenuCategoryRequest, CreateMenuItemRequest } from '../../types';
+import type { MenuCategory, MenuItem } from '../../types';
+import type { ItemFormError, ItemFormState } from '../../utils/menuItemForm';
+import { emptyItemForm, itemToFormState, toItemRequest } from '../../utils/menuItemForm';
+import { sanitizeDecimalText, sanitizeIntegerText } from '../../utils/numericInput';
 import Card from '../../components/Card';
 import InAppToast from '../../components/InAppToast';
 import { useT } from '../../i18n';
 import type { TranslationKey } from '../../i18n';
 
 type ViewMode = 'categories' | 'items';
+
+/**
+ * The backend's own message if it sent one, otherwise a translated fallback.
+ *
+ * apiFetch throws with the message from the response body, which is the only
+ * thing that can explain a rejected save — so it is worth showing verbatim.
+ */
+function errorMessage(e: unknown, fallback: string): string {
+  const message = e instanceof Error ? e.message : typeof e === 'string' ? e : '';
+  return message.trim() || fallback;
+}
 
 export default function MenuScreen() {
   const restaurant = useAuthStore((s) => s.restaurant);
@@ -45,11 +59,30 @@ export default function MenuScreen() {
   // Item modals
   const [showItemForm, setShowItemForm] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [itemForm, setItemForm] = useState<CreateMenuItemRequest>({ categoryId: 0, name: '', price: 0 });
+  const [itemForm, setItemForm] = useState<ItemFormState>(() => emptyItemForm(0, 0));
   const [savingItem, setSavingItem] = useState(false);
   const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
   const [pendingImageMime, setPendingImageMime] = useState<string | undefined>(undefined);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // A toast rendered beside the Modal is painted BEHIND it — RN puts a Modal in
+  // its own native window — so an error raised while the item form is open has
+  // to be shown inside the form or it is invisible.
+  const [itemFormError, setItemFormError] = useState<{ field: ItemFormError | null; message: string } | null>(null);
+
+  // openEditItem pre-fills from the list, then awaits the detail endpoint. Both
+  // of these stop that late response from undoing work:
+  //   formDirty   the user has started typing, so their values win
+  //   editRequest a response for a previously opened item is ignored
+  const formDirtyRef = useRef(false);
+  const editRequestRef = useRef(0);
+
+  /** Every user edit goes through this, so the detail response knows to defer. */
+  const updateForm = useCallback((updater: (f: ItemFormState) => ItemFormState) => {
+    formDirtyRef.current = true;
+    setItemFormError(null);
+    setItemForm(updater);
+  }, []);
 
   // ── Data loading ──
 
@@ -114,82 +147,94 @@ export default function MenuScreen() {
   const categoryItems = selectedCategory ? (selectedCategory.items ?? []) : allItems;
 
   const openAddItem = () => {
+    editRequestRef.current += 1;
+    formDirtyRef.current = false;
     setEditingItem(null);
     setPendingImageUri(null);
-    setItemForm({ categoryId: selectedCategory?.id ?? 0, name: '', price: 0, sortOrder: categoryItems.length });
+    setItemFormError(null);
+    setItemForm(emptyItemForm(selectedCategory?.id ?? 0, categoryItems.length));
     setShowItemForm(true);
   };
 
   const openEditItem = async (item: MenuItem) => {
     if (!restaurant) return;
+    const token = (editRequestRef.current += 1);
+    formDirtyRef.current = false;
     setEditingItem(item);
     setPendingImageUri(null);
-    // Pre-fill from the list data immediately
-    setItemForm({
-      categoryId: item.categoryId,
-      name: item.name,
-      description: item.description,
-      price: item.price,
-      originalPrice: item.originalPrice,
-      prepTimeMinutes: item.prepTimeMinutes,
-      calories: item.calories,
-      vegetarian: item.vegetarian,
-      vegan: item.vegan,
-      glutenFree: item.glutenFree,
-      spicy: item.spicy,
-      allergens: item.allergens,
-      featured: item.featured,
-      sortOrder: item.sortOrder,
-    });
+    setItemFormError(null);
+    // Pre-fill from the list data immediately, so the form is usable at once.
+    // The listing carries no variants or options, hence variantsKnown: false —
+    // until the detail call lands, the save omits those keys rather than
+    // sending [] and deleting them.
+    setItemForm(itemToFormState(item, false));
     setShowItemForm(true);
-    // Fetch full details (variants, options) from the item management API
+
+    // Then fetch variants and options, which the list does not carry.
     try {
       const res = await fetchMenuItem(restaurant.id, item.id);
+      if (editRequestRef.current !== token) return; // a different item is open now
       const full = res.data;
-      if (full) {
-        setEditingItem(full);
-        setItemForm({
-          categoryId: full.categoryId,
-          name: full.name,
-          description: full.description,
-          price: full.price,
-          originalPrice: full.originalPrice,
-          prepTimeMinutes: full.prepTimeMinutes,
-          calories: full.calories,
-          vegetarian: full.vegetarian,
-          vegan: full.vegan,
-          glutenFree: full.glutenFree,
-          spicy: full.spicy,
-          allergens: full.allergens,
-          featured: full.featured,
-          sortOrder: full.sortOrder,
-          variants: full.variants?.map((v) => ({ name: v.name, priceDelta: v.priceDelta, sortOrder: v.sortOrder })),
-          options: full.options?.map((o) => ({ groupName: o.groupName, name: o.name, priceDelta: o.priceDelta, isDefault: o.isDefault, maxSelections: o.maxSelections, required: o.required })),
-        });
-      }
-    } catch { /* use pre-filled data */ }
+      if (!full) return;
+      setEditingItem(full);
+
+      const server = itemToFormState(full, true);
+      // Overwriting the form here is what made a price revert while it was
+      // being typed, so keep every scalar the user may have edited and take
+      // only what the listing could not give us. Concatenating works for both
+      // cases: the pre-fill holds no rows, so this is just the server's set
+      // unless the user managed to add one while the call was in flight.
+      setItemForm((f) => ({
+        ...(formDirtyRef.current ? f : server),
+        variantsKnown: true,
+        imageUrl: server.imageUrl,
+        variants: [...server.variants, ...f.variants],
+        options: [...server.options, ...f.options],
+      }));
+    } catch {
+      if (editRequestRef.current !== token) return;
+      // variantsKnown stays false, so a save now leaves the item's variants and
+      // options untouched instead of wiping them.
+    }
   };
 
   const handleSaveItem = async () => {
-    if (!restaurant || savingItem || !itemForm.name.trim()) return;
+    if (!restaurant || savingItem) return;
+
+    const built = toItemRequest(itemForm);
+    if (!built.ok) {
+      const message =
+        built.error === 'name' ? t('menu.nameRequired')
+        : built.error === 'category' ? t('menu.categoryRequired')
+        : t('menu.priceInvalid');
+      setItemFormError({ field: built.error, message });
+      return;
+    }
+
     setSavingItem(true);
     try {
       if (editingItem) {
-        await apiUpdateItem(restaurant.id, editingItem.id, { ...itemForm, name: itemForm.name.trim() });
+        await apiUpdateItem(restaurant.id, editingItem.id, built.request);
       } else {
-        const created = await apiCreateItem(restaurant.id, { ...itemForm, name: itemForm.name.trim() });
+        const created = await apiCreateItem(restaurant.id, built.request);
         // Upload pending image for newly created item
         if (pendingImageUri && created.data?.id) {
           try {
             await uploadMenuItemImage(restaurant.id, created.data.id, pendingImageUri, pendingImageMime);
-          } catch (e: any) { setToastMessage(e?.message ?? t('menu.imageUploadFailed')); }
+          } catch (e) { setToastMessage(errorMessage(e, t('menu.imageUploadFailed'))); }
         }
       }
       setPendingImageUri(null);
       setPendingImageMime(undefined);
       setShowItemForm(false);
       await loadData();
-    } catch { /* */ } finally { setSavingItem(false); }
+    } catch (e) {
+      // Previously swallowed, which made a rejected save look like nothing at
+      // all: the modal stayed open with no message and the old value came back.
+      setItemFormError({ field: null, message: errorMessage(e, t('menu.saveFailed')) });
+    } finally {
+      setSavingItem(false);
+    }
   };
 
   const handleToggleStock = async (item: MenuItem) => {
@@ -225,9 +270,15 @@ export default function MenuScreen() {
         await uploadMenuItemImage(restaurant.id, editingItem.id, uri, asset.mimeType ?? undefined);
         await loadData();
         const res = await fetchMenuItem(restaurant.id, editingItem.id);
-        if (res.data) setEditingItem(res.data);
-      } catch (e: any) {
-        setToastMessage(e?.message ?? t('menu.imageUploadFailed'));
+        if (res.data) {
+          setEditingItem(res.data);
+          // Keep the form's copy in step, so a later save cannot PUT a stale
+          // (or absent) imageUrl over the one just uploaded.
+          const newUrl = res.data.imageUrl;
+          setItemForm((f) => ({ ...f, imageUrl: newUrl }));
+        }
+      } catch (e) {
+        setItemFormError({ field: null, message: errorMessage(e, t('menu.imageUploadFailed')) });
       }
     } else {
       // Store locally for new items — will upload after creation
@@ -246,6 +297,7 @@ export default function MenuScreen() {
           await deleteMenuItemImage(restaurant.id, target.id);
           await loadData();
           setEditingItem((prev) => prev?.id === target.id ? { ...prev, imageUrl: undefined } : prev);
+          if (editingItem?.id === target.id) setItemForm((f) => ({ ...f, imageUrl: undefined }));
         } catch { /* */ }
       }},
     ]);
@@ -447,25 +499,43 @@ export default function MenuScreen() {
               </View>
 
               <Text style={styles.fieldLabel}>{t('common.name')} *</Text>
-              <TextInput style={styles.input} value={itemForm.name} onChangeText={(v) => setItemForm((f) => ({ ...f, name: v }))} maxLength={200} />
+              <TextInput
+                style={[styles.input, itemFormError?.field === 'name' && styles.inputError]}
+                value={itemForm.name}
+                onChangeText={(v) => updateForm((f) => ({ ...f, name: v }))}
+                maxLength={200}
+              />
 
               <Text style={styles.fieldLabel}>{t('common.description')}</Text>
-              <TextInput style={[styles.input, styles.textArea]} value={itemForm.description ?? ''} onChangeText={(v) => setItemForm((f) => ({ ...f, description: v }))} multiline maxLength={1000} />
+              <TextInput style={[styles.input, styles.textArea]} value={itemForm.description} onChangeText={(v) => updateForm((f) => ({ ...f, description: v }))} multiline maxLength={1000} />
 
+              {/* Numeric fields hold TEXT, converted once on save. A number in
+                  state fights the keyboard: it erased the decimal point as it
+                  was typed, and turned a comma-separated price into 0. */}
               <Text style={styles.fieldLabel}>{t('common.price')} *</Text>
-              <TextInput style={styles.input} value={itemForm.price ? String(itemForm.price) : ''} onChangeText={(v) => setItemForm((f) => ({ ...f, price: Number(v) || 0 }))} keyboardType="numeric" />
+              <TextInput
+                style={[styles.input, itemFormError?.field === 'price' && styles.inputError]}
+                value={itemForm.price}
+                onChangeText={(v) => updateForm((f) => ({ ...f, price: sanitizeDecimalText(v) }))}
+                keyboardType="decimal-pad"
+                maxLength={12}
+              />
 
               <Text style={styles.fieldLabel}>{t('menu.originalPrice')}</Text>
-              <TextInput style={styles.input} value={itemForm.originalPrice ? String(itemForm.originalPrice) : ''} onChangeText={(v) => setItemForm((f) => ({ ...f, originalPrice: v ? Number(v) : undefined }))} keyboardType="numeric" />
+              <TextInput style={styles.input} value={itemForm.originalPrice} onChangeText={(v) => updateForm((f) => ({ ...f, originalPrice: sanitizeDecimalText(v) }))} keyboardType="decimal-pad" maxLength={12} />
+              {/* An originalPrice above price makes the customer app render the
+                  item as on sale, with a discount percentage. Easy to fill in by
+                  accident, so say what it does. */}
+              <Text style={styles.fieldHint}>{t('menu.originalPriceHint')}</Text>
 
               <Text style={styles.fieldLabel}>{t('menu.prepTime')}</Text>
-              <TextInput style={styles.input} value={itemForm.prepTimeMinutes ? String(itemForm.prepTimeMinutes) : ''} onChangeText={(v) => setItemForm((f) => ({ ...f, prepTimeMinutes: v ? Number(v) : undefined }))} keyboardType="numeric" />
+              <TextInput style={styles.input} value={itemForm.prepTimeMinutes} onChangeText={(v) => updateForm((f) => ({ ...f, prepTimeMinutes: sanitizeIntegerText(v) }))} keyboardType="number-pad" maxLength={4} />
 
               <Text style={styles.fieldLabel}>{t('menu.calories')}</Text>
-              <TextInput style={styles.input} value={itemForm.calories ? String(itemForm.calories) : ''} onChangeText={(v) => setItemForm((f) => ({ ...f, calories: v ? Number(v) : undefined }))} keyboardType="numeric" />
+              <TextInput style={styles.input} value={itemForm.calories} onChangeText={(v) => updateForm((f) => ({ ...f, calories: sanitizeIntegerText(v) }))} keyboardType="number-pad" maxLength={6} />
 
               <Text style={styles.fieldLabel}>{t('menu.allergens')}</Text>
-              <TextInput style={styles.input} value={itemForm.allergens ?? ''} onChangeText={(v) => setItemForm((f) => ({ ...f, allergens: v }))} maxLength={500} />
+              <TextInput style={styles.input} value={itemForm.allergens} onChangeText={(v) => updateForm((f) => ({ ...f, allergens: v }))} maxLength={500} />
 
               {/* Toggle flags */}
               <View style={styles.flagsRow}>
@@ -473,7 +543,7 @@ export default function MenuScreen() {
                   <TouchableOpacity
                     key={flag}
                     style={[styles.flagChip, itemForm[flag] && styles.flagChipActive]}
-                    onPress={() => setItemForm((f) => ({ ...f, [flag]: !f[flag] }))}
+                    onPress={() => updateForm((f) => ({ ...f, [flag]: !f[flag] }))}
                   >
                     <Text style={[styles.flagChipText, itemForm[flag] && styles.flagChipTextActive]}>{t(`menu.${flag}` as TranslationKey)}</Text>
                   </TouchableOpacity>
@@ -483,14 +553,18 @@ export default function MenuScreen() {
               {/* ── Variants ── */}
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>{t('menu.variants')}</Text>
-                <TouchableOpacity onPress={() => setItemForm((f) => ({ ...f, variants: [...(f.variants ?? []), { name: '', priceDelta: 0, sortOrder: (f.variants ?? []).length }] }))}>
+                <TouchableOpacity onPress={() => updateForm((f) => ({ ...f, variants: [...f.variants, { name: '', priceDelta: '', sortOrder: f.variants.length }] }))}>
                   <Ionicons name="add-circle-outline" size={22} color={Colors.accent} />
                 </TouchableOpacity>
               </View>
-              {(itemForm.variants ?? []).length === 0 && (
-                <Text style={styles.emptyHint}>{t('menu.noVariants')}</Text>
+              {/* "None" and "not loaded yet" look the same in an empty list, and
+                  they mean different things to the save — so say which it is. */}
+              {itemForm.variants.length === 0 && (
+                <Text style={styles.emptyHint}>
+                  {itemForm.variantsKnown ? t('menu.noVariants') : t('common.loading')}
+                </Text>
               )}
-              {(itemForm.variants ?? []).map((variant, idx) => (
+              {itemForm.variants.map((variant, idx) => (
                 <View key={idx} style={styles.subItemCard}>
                   <View style={styles.subItemRow}>
                     <View style={styles.subItemFlex}>
@@ -499,8 +573,8 @@ export default function MenuScreen() {
                         placeholder={t('menu.variantName')}
                         placeholderTextColor={Colors.gray400}
                         value={variant.name}
-                        onChangeText={(v) => setItemForm((f) => {
-                          const variants = [...(f.variants ?? [])];
+                        onChangeText={(v) => updateForm((f) => {
+                          const variants = [...f.variants];
                           const existing = variants[idx];
                           if (!existing) return f;
                           variants[idx] = { ...existing, name: v };
@@ -513,19 +587,20 @@ export default function MenuScreen() {
                         style={styles.subInput}
                         placeholder={t('menu.priceDelta')}
                         placeholderTextColor={Colors.gray400}
-                        value={variant.priceDelta ? String(variant.priceDelta) : ''}
-                        onChangeText={(v) => setItemForm((f) => {
-                          const variants = [...(f.variants ?? [])];
+                        value={variant.priceDelta}
+                        onChangeText={(v) => updateForm((f) => {
+                          const variants = [...f.variants];
                           const existing = variants[idx];
                           if (!existing) return f;
-                          variants[idx] = { ...existing, priceDelta: Number(v) || 0 };
+                          variants[idx] = { ...existing, priceDelta: sanitizeDecimalText(v) };
                           return { ...f, variants };
                         })}
-                        keyboardType="numeric"
+                        keyboardType="decimal-pad"
+                        maxLength={12}
                       />
                     </View>
                     <TouchableOpacity
-                      onPress={() => setItemForm((f) => ({ ...f, variants: (f.variants ?? []).filter((_, i) => i !== idx) }))}
+                      onPress={() => updateForm((f) => ({ ...f, variants: f.variants.filter((_, i) => i !== idx) }))}
                       style={styles.removeBtn}
                     >
                       <Ionicons name="close-circle" size={20} color={Colors.danger} />
@@ -537,14 +612,16 @@ export default function MenuScreen() {
               {/* ── Options ── */}
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>{t('menu.options')}</Text>
-                <TouchableOpacity onPress={() => setItemForm((f) => ({ ...f, options: [...(f.options ?? []), { groupName: '', name: '', priceDelta: 0, isDefault: false, maxSelections: 1, required: false }] }))}>
+                <TouchableOpacity onPress={() => updateForm((f) => ({ ...f, options: [...f.options, { groupName: '', name: '', priceDelta: '', isDefault: false, maxSelections: '1', required: false }] }))}>
                   <Ionicons name="add-circle-outline" size={22} color={Colors.accent} />
                 </TouchableOpacity>
               </View>
-              {(itemForm.options ?? []).length === 0 && (
-                <Text style={styles.emptyHint}>{t('menu.noOptions')}</Text>
+              {itemForm.options.length === 0 && (
+                <Text style={styles.emptyHint}>
+                  {itemForm.variantsKnown ? t('menu.noOptions') : t('common.loading')}
+                </Text>
               )}
-              {(itemForm.options ?? []).map((option, idx) => (
+              {itemForm.options.map((option, idx) => (
                 <View key={idx} style={styles.subItemCard}>
                   <View style={styles.subItemRow}>
                     <View style={styles.subItemFlex}>
@@ -553,8 +630,8 @@ export default function MenuScreen() {
                         placeholder={t('menu.optionGroupName')}
                         placeholderTextColor={Colors.gray400}
                         value={option.groupName}
-                        onChangeText={(v) => setItemForm((f) => {
-                          const options = [...(f.options ?? [])];
+                        onChangeText={(v) => updateForm((f) => {
+                          const options = [...f.options];
                           const existing = options[idx];
                           if (!existing) return f;
                           options[idx] = { ...existing, groupName: v };
@@ -563,7 +640,7 @@ export default function MenuScreen() {
                       />
                     </View>
                     <TouchableOpacity
-                      onPress={() => setItemForm((f) => ({ ...f, options: (f.options ?? []).filter((_, i) => i !== idx) }))}
+                      onPress={() => updateForm((f) => ({ ...f, options: f.options.filter((_, i) => i !== idx) }))}
                       style={styles.removeBtn}
                     >
                       <Ionicons name="close-circle" size={20} color={Colors.danger} />
@@ -576,8 +653,8 @@ export default function MenuScreen() {
                         placeholder={t('menu.optionName')}
                         placeholderTextColor={Colors.gray400}
                         value={option.name}
-                        onChangeText={(v) => setItemForm((f) => {
-                          const options = [...(f.options ?? [])];
+                        onChangeText={(v) => updateForm((f) => {
+                          const options = [...f.options];
                           const existing = options[idx];
                           if (!existing) return f;
                           options[idx] = { ...existing, name: v };
@@ -590,23 +667,24 @@ export default function MenuScreen() {
                         style={styles.subInput}
                         placeholder={t('menu.priceDelta')}
                         placeholderTextColor={Colors.gray400}
-                        value={option.priceDelta ? String(option.priceDelta) : ''}
-                        onChangeText={(v) => setItemForm((f) => {
-                          const options = [...(f.options ?? [])];
+                        value={option.priceDelta}
+                        onChangeText={(v) => updateForm((f) => {
+                          const options = [...f.options];
                           const existing = options[idx];
                           if (!existing) return f;
-                          options[idx] = { ...existing, priceDelta: Number(v) || 0 };
+                          options[idx] = { ...existing, priceDelta: sanitizeDecimalText(v) };
                           return { ...f, options };
                         })}
-                        keyboardType="numeric"
+                        keyboardType="decimal-pad"
+                        maxLength={12}
                       />
                     </View>
                   </View>
                   <View style={styles.optionFlagsRow}>
                     <TouchableOpacity
                       style={[styles.optionFlag, option.isDefault && styles.optionFlagActive]}
-                      onPress={() => setItemForm((f) => {
-                        const options = [...(f.options ?? [])];
+                      onPress={() => updateForm((f) => {
+                        const options = [...f.options];
                         const existing = options[idx];
                         if (!existing) return f;
                         options[idx] = { ...existing, isDefault: !existing.isDefault };
@@ -617,8 +695,8 @@ export default function MenuScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.optionFlag, option.required && styles.optionFlagActive]}
-                      onPress={() => setItemForm((f) => {
-                        const options = [...(f.options ?? [])];
+                      onPress={() => updateForm((f) => {
+                        const options = [...f.options];
                         const existing = options[idx];
                         if (!existing) return f;
                         options[idx] = { ...existing, required: !existing.required };
@@ -631,20 +709,30 @@ export default function MenuScreen() {
                       <Text style={styles.maxSelectLabel}>{t('menu.maxSelections')}</Text>
                       <TextInput
                         style={styles.maxSelectInput}
-                        value={option.maxSelections ? String(option.maxSelections) : ''}
-                        onChangeText={(v) => setItemForm((f) => {
-                          const options = [...(f.options ?? [])];
+                        value={option.maxSelections}
+                        onChangeText={(v) => updateForm((f) => {
+                          const options = [...f.options];
                           const existing = options[idx];
                           if (!existing) return f;
-                          options[idx] = { ...existing, maxSelections: Number(v) || undefined };
+                          options[idx] = { ...existing, maxSelections: sanitizeIntegerText(v) };
                           return { ...f, options };
                         })}
-                        keyboardType="numeric"
+                        keyboardType="number-pad"
+                        maxLength={2}
                       />
                     </View>
                   </View>
                 </View>
               ))}
+
+              {/* Errors belong inside the Modal: a toast beside it is painted
+                  behind it, so this is the only place the user can see one. */}
+              {itemFormError ? (
+                <View style={styles.formError}>
+                  <Ionicons name="alert-circle" size={18} color={Colors.danger} />
+                  <Text style={styles.formErrorText}>{itemFormError.message}</Text>
+                </View>
+              ) : null}
 
               {/* Save */}
               <TouchableOpacity style={[styles.saveButton, savingItem && styles.disabled]} onPress={handleSaveItem} disabled={savingItem} activeOpacity={0.8}>
@@ -714,6 +802,10 @@ const styles = StyleSheet.create({
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.base },
   modalTitle: { ...Typography.title3, color: Colors.black },
   input: { borderWidth: 1, borderColor: Colors.gray200, borderRadius: BorderRadius.chip, paddingHorizontal: Spacing.md, paddingVertical: Spacing.md, ...Typography.body, marginTop: Spacing.sm, minHeight: 48 },
+  inputError: { borderColor: Colors.danger, borderWidth: 1.5 },
+  fieldHint: { ...Typography.caption1, color: Colors.gray400, marginTop: 4 },
+  formError: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.base, padding: Spacing.md, borderRadius: BorderRadius.chip, backgroundColor: Colors.dangerLight, borderWidth: 1, borderColor: Colors.danger },
+  formErrorText: { ...Typography.footnote, color: Colors.danger, flex: 1 },
   textArea: { height: 80, textAlignVertical: 'top' },
   fieldLabel: { ...Typography.subhead, fontWeight: '600', color: Colors.gray700, marginTop: Spacing.md },
   modalButtons: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: Spacing.xl, gap: Spacing.md },

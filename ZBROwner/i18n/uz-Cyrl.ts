@@ -189,6 +189,7 @@ export default {
     deleteItemConfirm: '"{{name}}" ўчирилсинми? Буни қайтариб бўлмайди.',
     itemsCount: '{{count}} та маҳсулот',
     originalPrice: 'Асл нарх',
+    originalPriceHint: 'Фақат чегирма учун тўлдиринг — мижозлар уни янги нарх устида чизилган ҳолда кўради.',
     prepTime: 'Тайёрлаш вақти (дақ)',
     calories: 'Калория',
     allergens: 'Аллергенлар',
@@ -215,6 +216,10 @@ export default {
     removeImage: 'Расмни ўчириш',
     removeImageConfirm: 'Бу маҳсулот расмини ўчирилсинми?',
     imageUploadFailed: 'Расм юклаш хатоси',
+    nameRequired: 'Таом номини киритинг',
+    categoryRequired: 'Аввал категорияни очиб, кейин таомни қўшинг',
+    priceInvalid: '0 дан катта нарх киритинг',
+    saveFailed: 'Таомни сақлаб бўлмади. Қайта уриниб кўринг.',
   },
 
   reports: {

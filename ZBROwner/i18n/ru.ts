@@ -189,6 +189,7 @@ export default {
     deleteItemConfirm: 'Удалить "{{name}}"? Это нельзя отменить.',
     itemsCount: '{{count}} позиций',
     originalPrice: 'Исходная цена',
+    originalPriceHint: 'Заполняйте только для акции — покупатели увидят её зачёркнутой над новой ценой.',
     prepTime: 'Время готовки (мин)',
     calories: 'Калории',
     allergens: 'Аллергены',
@@ -215,6 +216,10 @@ export default {
     removeImage: 'Удалить фото',
     removeImageConfirm: 'Удалить фото этого товара?',
     imageUploadFailed: 'Ошибка загрузки фото',
+    nameRequired: 'Введите название блюда',
+    categoryRequired: 'Сначала откройте категорию, затем добавьте блюдо в неё',
+    priceInvalid: 'Введите цену больше 0',
+    saveFailed: 'Не удалось сохранить блюдо. Попробуйте ещё раз.',
   },
 
   reports: {
