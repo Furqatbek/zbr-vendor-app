@@ -158,6 +158,37 @@ if (skipPrivacy) console.log(`${C.yellow}--skip-privacy: the policy URL check wi
 console.log('');
 
 // ── gates ───────────────────────────────────────────────────────────────────
+
+// Every release problem this project has had that was not a signing problem
+// came from this machine's app.json being older than the branch: a build number
+// already consumed, and then a marketing version that had been bumped in the
+// repo but not here — so the gate rejected a release that was already fixed.
+// One fetch says so before anything is archived.
+try {
+  const branch = spawnSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: root, encoding: 'utf8' });
+  const name = branch.status === 0 ? branch.stdout.trim() : '';
+  if (name && name !== 'HEAD') {
+    spawnSync('git', ['fetch', '--quiet', 'origin', name], { cwd: root, timeout: 20_000 });
+    const counts = spawnSync(
+      'git', ['rev-list', '--left-right', '--count', `HEAD...origin/${name}`],
+      { cwd: root, encoding: 'utf8' },
+    );
+    const behind = counts.status === 0 ? Number(counts.stdout.trim().split(/\s+/)[1]) : 0;
+    if (behind > 0) {
+      warnings.push(
+        `This branch is ${behind} commit(s) behind origin/${name}. ` +
+        'app.json may be stale — `git pull` before building.',
+      );
+      console.log(
+        `${C.yellow}▸ ${behind} commit(s) behind origin/${name}. If a version or build ` +
+        `number was bumped there, this run is using the old one.${C.reset}\n`,
+      );
+    }
+  }
+} catch {
+  // No git, no network, no upstream: none of it should stop a release.
+}
+
 // checksOnly is allowed to run on Linux/Windows so the config can be validated
 // away from the Mac; anything past the gates genuinely needs Xcode.
 run('iOS release configuration', 'node', [
