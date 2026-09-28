@@ -16,6 +16,14 @@ export interface VersionCheck {
   latestVersion?: string;
   /** Dismiss the optional prompt for this version. Mandatory cannot be dismissed. */
   dismiss: () => void;
+  /**
+   * Hide the optional prompt for now, without remembering it.
+   *
+   * This is what a banner that times out should call. Persisting a dismissal
+   * the vendor never made means a prompt shown for four seconds while they were
+   * looking at the stove is silenced for that version forever.
+   */
+  snooze: () => void;
 }
 
 /** Remembers the last version whose optional prompt the user waved away. */
@@ -125,10 +133,14 @@ export function useVersionCheck(): VersionCheck {
     }
   }, [info]);
 
+  // Nothing is written, so the next check past the 6h throttle raises it again.
+  const snooze = useCallback(() => setState('none'), []);
+
   return {
     state,
     storeUrl: info?.storeUrl,
     latestVersion: info?.latestVersion,
     dismiss,
+    snooze,
   };
 }

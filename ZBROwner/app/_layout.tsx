@@ -123,7 +123,7 @@ function CancelledOrderOverlay() {
  */
 function UpdateOverlay() {
   const t = useT();
-  const { state, storeUrl, dismiss } = useVersionCheck();
+  const { state, storeUrl, dismiss, snooze } = useVersionCheck();
 
   if (state === 'mandatory') {
     return <UpdateRequiredModal visible storeUrl={storeUrl} />;
@@ -134,7 +134,14 @@ function UpdateOverlay() {
       message={t('update.availableMessage')}
       type="info"
       visible={state === 'optional'}
-      onDismiss={dismiss}
+      // Timing out is not a decision. It used to call dismiss(), which records
+      // the version as waved away — so a banner shown for four seconds while
+      // the vendor was at the stove silenced that version for good. Snoozing
+      // records nothing, and the next check past the 6h throttle raises it
+      // again. Only the × below counts as "I have seen this, stop telling me".
+      onDismiss={snooze}
+      onClose={dismiss}
+      closeLabel={t('common.close')}
       actionLabel={t('update.updateAction')}
       onAction={() => {
         dismiss();
