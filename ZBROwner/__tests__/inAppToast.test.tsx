@@ -81,3 +81,34 @@ describe('InAppToast', () => {
     expect(screen.queryByLabelText('Close')).toBeNull();
   });
 });
+
+describe('InAppToast — nothing to say', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
+  });
+
+  // Callers drive visibility from truthiness (`visible={!!toastMessage}`), and
+  // a blank string passes that check while rendering no text — which is what
+  // put an empty card with a lone error icon above the menu categories.
+  it.each([
+    ['an empty message', ''],
+    ['a whitespace-only message', '   '],
+    ['a newline', '\n'],
+  ])('renders no card for %s, even when told it is visible', async (_label, message) => {
+    await render(<InAppToast message={message} type="error" visible onDismiss={jest.fn()} />);
+    expect(screen.toJSON()).toBeNull();
+  });
+
+  it('clears the caller so a blank message cannot get stuck', async () => {
+    const onDismiss = jest.fn();
+    await render(<InAppToast message="   " visible onDismiss={onDismiss} />);
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('still shows a message that is merely padded', async () => {
+    await render(<InAppToast message="  Saved  " visible onDismiss={jest.fn()} />);
+    expect(screen.getByText('  Saved  ')).toBeTruthy();
+  });
+});

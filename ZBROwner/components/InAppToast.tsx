@@ -63,13 +63,28 @@ export default function InAppToast({ message, type = 'info', visible, onDismiss,
   const hiddenYRef = useRef(-ASSUMED_OFFSCREEN);
   hiddenYRef.current = height ? -(top + height + Spacing.sm) : -ASSUMED_OFFSCREEN;
 
+  // A toast with nothing to say must not occupy the screen. Callers drive
+  // `visible` from truthiness — `visible={!!toastMessage}` — and a message that
+  // is empty or only whitespace is truthy enough to pass that and still render
+  // as a bare card with an icon and no text, which is what appeared above the
+  // menu categories. Emptiness is decided here so no caller can reintroduce it.
+  const hasText = message.trim().length > 0;
+  const shown = visible && hasText;
+
   // Unmounted while hidden, so no arithmetic mistake here can ever leave a
   // sliver on screen or swallow a touch near the top of the display again.
-  const [mounted, setMounted] = useState(visible);
+  const [mounted, setMounted] = useState(shown);
   const translateY = useRef(new Animated.Value(-ASSUMED_OFFSCREEN)).current;
 
+  // Asked to show nothing: clear the caller's state rather than sit on it, or
+  // the blank message stays set and the next real one has to fight it.
   useEffect(() => {
-    if (visible) {
+    if (visible && !hasText) onDismiss();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, hasText]);
+
+  useEffect(() => {
+    if (shown) {
       setMounted(true);
       Animated.spring(translateY, { toValue: 0, useNativeDriver: true, damping: 15 }).start();
       const timer = setTimeout(onDismiss, AUTO_DISMISS_MS);
@@ -82,23 +97,25 @@ export default function InAppToast({ message, type = 'info', visible, onDismiss,
       },
     );
     return undefined;
-    // Deliberately keyed on `visible` alone. onDismiss is usually an inline
+    // Deliberately keyed on `shown` alone. onDismiss is usually an inline
     // closure, so depending on it would restart the auto-dismiss timer on every
     // parent render and the toast would never go away.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }, [shown]);
 
   const onLayout = (e: LayoutChangeEvent) => {
     const measured = Math.round(e.nativeEvent.layout.height);
     if (measured && measured !== height) setHeight(measured);
   };
 
-  if (!mounted) return null;
+  // hasText is checked here as well as through `shown`, so a blank message
+  // disappears at once instead of playing a hide animation on an empty card.
+  if (!mounted || !hasText) return null;
 
   return (
     <Animated.View
       onLayout={onLayout}
-      pointerEvents={visible ? 'auto' : 'none'}
+      pointerEvents={shown ? 'auto' : 'none'}
       style={[styles.container, { top, transform: [{ translateY }] }]}
     >
       <Ionicons name={iconMap[type]} size={20} color={colorMap[type]} />
